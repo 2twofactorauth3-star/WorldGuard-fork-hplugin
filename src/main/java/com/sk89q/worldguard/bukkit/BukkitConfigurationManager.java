@@ -33,6 +33,7 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
 
     private final WorldGuardPlugin plugin;
     private final ConcurrentMap<String, BukkitWorldConfiguration> worlds = new ConcurrentHashMap<>();
+    private volatile long revision;
 
     /**
      * Construct the object.
@@ -78,6 +79,7 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
     @Override
     public void unload() {
         worlds.clear();
+        revision++;
     }
 
     @Override
@@ -108,6 +110,14 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
     public BukkitWorldConfiguration get(String worldName) {
         return worlds.computeIfAbsent(worldName,
                 name -> new BukkitWorldConfiguration(plugin, name, this.getConfig()));
+    }
+
+    public BukkitWorldConfiguration get(org.bukkit.World world) {
+        return get(world.getName());
+    }
+
+    public long getRevision() {
+        return revision;
     }
 
 }

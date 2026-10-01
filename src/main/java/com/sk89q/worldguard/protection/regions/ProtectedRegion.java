@@ -35,6 +35,7 @@ import java.awt.geom.Line2D;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -57,6 +58,7 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
     public static final String GLOBAL_REGION = "__global__";
     private static final Pattern VALID_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_,'\\-\\+/]{1,}$");
     private static final AtomicLong STRUCTURE_REVISION = new AtomicLong();
+    private static final AtomicLong FLAG_REVISION = new AtomicLong();
 
     protected BlockVector3 min;
     protected BlockVector3 max;
@@ -237,8 +239,12 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
         }
     }
 
-    static long structureRevision() {
+    public static long structureRevision() {
         return STRUCTURE_REVISION.get();
+    }
+
+    public static long flagRevision() {
+        return FLAG_REVISION.get();
     }
 
     /**
@@ -393,12 +399,15 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
      */
     public <T extends Flag<V>, V> void setFlag(T flag, @Nullable V val) {
         checkNotNull(flag);
-        setDirty(true);
-
+        Object previous;
         if (val == null) {
-            flags.remove(flag);
+            previous = flags.remove(flag);
         } else {
-            flags.put(flag, val);
+            previous = flags.put(flag, val);
+        }
+        if (!Objects.equals(previous, val)) {
+            setDirty(true);
+            FLAG_REVISION.incrementAndGet();
         }
     }
 
@@ -420,9 +429,12 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
      */
     public void setFlags(Map<Flag<?>, Object> flags) {
         checkNotNull(flags);
-
-        setDirty(true);
+        if (this.flags.equals(flags)) {
+            return;
+        }
         this.flags = new ConcurrentHashMap<>(flags);
+        setDirty(true);
+        FLAG_REVISION.incrementAndGet();
     }
 
     /**

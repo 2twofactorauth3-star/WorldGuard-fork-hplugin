@@ -21,6 +21,7 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.RegionQuery.QueryOption;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Keeps short-lived region-query results in independent per-world caches.
@@ -74,12 +75,7 @@ public final class QueryCache {
             }
         }
 
-        CacheEntry entry = worldCache.entries.get(position);
-        if (entry == null) {
-            CacheEntry replacement = new CacheEntry();
-            CacheEntry raced = worldCache.entries.putIfAbsent(position, replacement);
-            entry = raced == null ? replacement : raced;
-        }
+        CacheEntry entry = worldCache.getOrCreate(position);
         local.set(worldCache, position, entry);
         return entry.get(option, manager, location);
     }
@@ -106,8 +102,12 @@ public final class QueryCache {
     }
 
     private static final class WorldCache {
+        private static final int GENERATION_CAPACITY = 32768;
+
         public final RegionManager manager;
-        public final ConcurrentMap<Long, CacheEntry> entries = new ConcurrentHashMap<>();
+        private volatile ConcurrentMap<Long, CacheEntry> currentEntries = new ConcurrentHashMap<>();
+        private volatile ConcurrentMap<Long, CacheEntry> previousEntries = new ConcurrentHashMap<>();
+        private final AtomicInteger currentSize = new AtomicInteger();
         public volatile long generation;
         private volatile long managerRevision;
         private volatile long structureRevision;
@@ -120,7 +120,41 @@ public final class QueryCache {
 
         private void invalidate() {
             generation++;
-            entries.clear();
+            currentEntries = new ConcurrentHashMap<>();
+            previousEntries = new ConcurrentHashMap<>();
+            currentSize.set(0);
+        }
+
+        private CacheEntry getOrCreate(long position) {
+            CacheEntry entry = currentEntries.get(position);
+            if (entry != null) {
+                return entry;
+            }
+            entry = previousEntries.get(position);
+            if (entry != null) {
+                return entry;
+            }
+
+            CacheEntry replacement = new CacheEntry();
+            CacheEntry raced = currentEntries.putIfAbsent(position, replacement);
+            if (raced != null) {
+                return raced;
+            }
+            if (currentSize.incrementAndGet() >= GENERATION_CAPACITY) {
+                rotateEntries();
+            }
+            return replacement;
+        }
+
+        private void rotateEntries() {
+            synchronized (this) {
+                if (currentSize.get() < GENERATION_CAPACITY) {
+                    return;
+                }
+                previousEntries = currentEntries;
+                currentEntries = new ConcurrentHashMap<>();
+                currentSize.set(0);
+            }
         }
 
         private void refreshIfStale() {

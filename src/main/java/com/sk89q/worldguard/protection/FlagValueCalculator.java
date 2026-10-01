@@ -20,8 +20,6 @@
 package com.sk89q.worldguard.protection;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import com.sk89q.worldguard.domains.Association;
 import com.sk89q.worldguard.protection.association.RegionAssociable;
 import com.sk89q.worldguard.protection.flags.Flags;
@@ -60,7 +58,7 @@ public class FlagValueCalculator {
 
     @Nullable
     private final ProtectedRegion globalRegion;
-    private final Iterable<ProtectedRegion> applicable;
+    private final List<ProtectedRegion> applicable;
 
     /**
      * Create a new instance.
@@ -73,8 +71,14 @@ public class FlagValueCalculator {
 
         this.globalRegion = globalRegion;
 
-        applicable = globalRegion == null ? regions
-                : Iterables.concat(regions, Collections.singletonList(globalRegion));
+        if (globalRegion == null) {
+            applicable = regions;
+        } else {
+            List<ProtectedRegion> combined = new ArrayList<>(regions.size() + 1);
+            combined.addAll(regions);
+            combined.add(globalRegion);
+            applicable = Collections.unmodifiableList(combined);
+        }
     }
 
     /**
@@ -83,7 +87,7 @@ public class FlagValueCalculator {
      *
      * @return an iterable
      */
-    private Iterable<ProtectedRegion> getApplicable() {
+    private List<ProtectedRegion> getApplicable() {
         return applicable;
     }
 
@@ -111,7 +115,7 @@ public class FlagValueCalculator {
         int minimumPriority = Integer.MIN_VALUE;
         Result result = Result.NO_REGIONS;
 
-        Set<ProtectedRegion> ignoredRegions = Sets.newHashSet();
+        Set<ProtectedRegion> ignoredRegions = null;
 
         for (ProtectedRegion region : getApplicable()) {
             int priority = getPriority(region);
@@ -129,7 +133,7 @@ public class FlagValueCalculator {
                 continue;
             }
 
-            if (ignoredRegions.contains(region)) {
+            if (ignoredRegions != null && ignoredRegions.contains(region)) {
                 continue;
             }
 
@@ -139,7 +143,12 @@ public class FlagValueCalculator {
 
             if (member) {
                 result = Result.SUCCESS;
-                addParents(ignoredRegions, region);
+                if (region.getParent() != null) {
+                    if (ignoredRegions == null) {
+                        ignoredRegions = new HashSet<>();
+                    }
+                    addParents(ignoredRegions, region);
+                }
             } else {
                 return Result.FAIL;
             }
@@ -171,7 +180,7 @@ public class FlagValueCalculator {
         State value = null;
 
         for (StateFlag flag : flags) {
-            value = StateFlag.combine(value, queryValue(subject, flag));
+            value = combineStates(value, queryStateValue(subject, flag));
             if (value == State.DENY) {
                 break;
             }
@@ -194,7 +203,7 @@ public class FlagValueCalculator {
      */
     @Nullable
     public State queryState(@Nullable RegionAssociable subject, StateFlag flag) {
-        return queryValue(subject, flag);
+        return queryStateValue(subject, flag);
     }
 
     /**
@@ -224,8 +233,105 @@ public class FlagValueCalculator {
      */
     @Nullable
     public <V> V queryValue(@Nullable RegionAssociable subject, Flag<V> flag) {
+        if (flag instanceof StateFlag stateFlag) {
+            V state = (V) queryStateValue(subject, stateFlag);
+            return state;
+        }
+        if (!flag.hasConflictStrategy()) {
+            return queryFirstValue(subject, flag);
+        }
         Collection<V> values = queryAllValues(subject, flag, true);
         return flag.chooseValue(values);
+    }
+
+    @Nullable
+    private State queryStateValue(@Nullable RegionAssociable subject, StateFlag flag) {
+        checkNotNull(flag);
+        validateSubject(subject, flag);
+
+        int minimumPriority = Integer.MIN_VALUE;
+        State combined = null;
+        boolean found = false;
+        Set<ProtectedRegion> ignoredParents = null;
+
+        for (ProtectedRegion region : getApplicable()) {
+            int priority = getPriority(region);
+            if (priority < minimumPriority) {
+                break;
+            }
+            if (ignoredParents != null && ignoredParents.contains(region)) {
+                continue;
+            }
+
+            State value = getEffectiveFlag(region, flag, subject);
+            if (value != null) {
+                minimumPriority = priority;
+                found = true;
+                combined = combineStates(combined, value);
+                if (combined == State.DENY) {
+                    return State.DENY;
+                }
+            }
+
+            ProtectedRegion parent = region.getParent();
+            if (parent != null) {
+                if (ignoredParents == null) {
+                    ignoredParents = new HashSet<>();
+                }
+                do {
+                    ignoredParents.add(parent);
+                    parent = parent.getParent();
+                } while (parent != null);
+            }
+
+            if (setsImplicitMinimumPriority(region, priority, minimumPriority, flag, subject)) {
+                minimumPriority = priority;
+            }
+        }
+
+        if (!found && flag.usesMembershipAsDefault()) {
+            Result membership = getMembership(subject);
+            if (membership == Result.SUCCESS) {
+                return State.ALLOW;
+            }
+            if (membership == Result.FAIL) {
+                return null;
+            }
+        }
+        return found ? combined : flag.getDefault();
+    }
+
+    @Nullable
+    private <V> V queryFirstValue(@Nullable RegionAssociable subject, Flag<V> flag) {
+        checkNotNull(flag);
+        validateSubject(subject, flag);
+
+        for (ProtectedRegion region : getApplicable()) {
+            V value = getEffectiveFlag(region, flag, subject);
+            if (value != null) {
+                return value;
+            }
+        }
+
+        if (flag.usesMembershipAsDefault()) {
+            Result membership = getMembership(subject);
+            if (membership == Result.SUCCESS) {
+                V allowed = (V) State.ALLOW;
+                return allowed;
+            }
+            if (membership == Result.FAIL) {
+                return null;
+            }
+        }
+        return flag.getDefault();
+    }
+
+    @Nullable
+    private static State combineStates(@Nullable State first, @Nullable State second) {
+        if (first == State.DENY || second == State.DENY) {
+            return State.DENY;
+        }
+        return first == State.ALLOW || second == State.ALLOW ? State.ALLOW : null;
     }
 
     /**
@@ -303,11 +409,14 @@ public class FlagValueCalculator {
 
     @Nullable
     public static <V, K> V getEffectiveMapValueOf(ProtectedRegion region, MapFlag<K, V> mapFlag, K key, RegionAssociable subject) {
-        List<ProtectedRegion> seen = new ArrayList<>();
+        List<ProtectedRegion> seen = mapFlag.getRegionGroupFlag() == null
+                ? Collections.emptyList() : new ArrayList<>();
         ProtectedRegion current = region;
 
         while (current != null) {
-            seen.add(current);
+            if (mapFlag.getRegionGroupFlag() != null) {
+                seen.add(current);
+            }
 
             Map<K, V> mapValue = current.getFlag(mapFlag);
 
@@ -507,6 +616,17 @@ public class FlagValueCalculator {
         }
 
         ProtectedRegion current = region;
+        if (flag.getRegionGroupFlag() == null) {
+            while (current != null) {
+                V value = current.getFlag(flag);
+                if (value != null) {
+                    return value;
+                }
+                current = current.getParent();
+            }
+            return null;
+        }
+
         List<ProtectedRegion> seen = new ArrayList<>();
         while (current != null) {
             seen.add(current);

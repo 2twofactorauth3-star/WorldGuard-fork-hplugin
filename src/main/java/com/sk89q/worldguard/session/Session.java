@@ -23,11 +23,13 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
+import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.config.ConfigurationManager;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.StateFlag.State;
+import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import com.sk89q.worldguard.session.handler.Handler;
@@ -38,8 +40,8 @@ import com.sk89q.worldguard.util.Locations;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -52,12 +54,16 @@ public class Session {
     private final RegionQuery query;
     private boolean disableBypass;
     private final HashMap<Class<?>, Handler> handlers = Maps.newLinkedHashMap();
+    private volatile Handler[] handlerArray = new Handler[0];
     private Location lastValid;
     private Set<ProtectedRegion> lastRegionSet;
     private ApplicableRegionSet lastApplicableRegionSet;
     private boolean freshMoveSet;
-    private final AtomicBoolean needRefresh = new AtomicBoolean(false);
+    private volatile boolean needRefresh;
     private boolean initialized;
+    private volatile World bypassWorld;
+    private volatile boolean bypassValue;
+    private volatile long bypassExpiresAt;
 
     /**
      * Create a new session.
@@ -77,6 +83,7 @@ public class Session {
      */
     public void register(Handler handler) {
         handlers.put(handler.getClass(), handler);
+        handlerArray = handlers.values().toArray(Handler[]::new);
     }
 
     /**
@@ -123,7 +130,7 @@ public class Session {
         }
 
 
-        for (Handler handler : handlers.values()) {
+        for (Handler handler : handlerArray) {
             handler.initialize(player, location, set);
         }
     }
@@ -145,7 +152,7 @@ public class Session {
         Location location = player.getLocation();
         ApplicableRegionSet set = query.getApplicableRegions(location);
 
-        for (Handler handler : handlers.values()) {
+        for (Handler handler : handlerArray) {
             handler.uninitialize(player, location, set);
         }
     }
@@ -166,7 +173,7 @@ public class Session {
         }
 
         if (manager.customHandlersRegistered()) {
-            for (Handler handler : handlers.values()) {
+            for (Handler handler : handlerArray) {
                 handler.tick(player, set);
             }
         } else {
@@ -182,8 +189,13 @@ public class Session {
      * @return Whether the player is invincible
      */
     public boolean isInvincible(LocalPlayer player) {
-        boolean invincible = false;
-        for (Handler handler : handlers.values()) {
+        State regionState = query.getApplicableRegions(player.getLocation())
+                .queryState(player, Flags.INVINCIBILITY);
+        if (regionState == State.DENY) {
+            return false;
+        }
+        boolean invincible = regionState == State.ALLOW;
+        for (Handler handler : handlerArray) {
             State state = handler.getInvincibility(player);
             if (state != null) {
                 switch (state) {
@@ -197,6 +209,11 @@ public class Session {
         return invincible;
     }
 
+    @Nullable
+    public ApplicableRegionSet getLastApplicableRegionSet() {
+        return lastApplicableRegionSet;
+    }
+
     /**
      * Re-initialize the session.
      *
@@ -204,7 +221,7 @@ public class Session {
      */
     public void resetState(LocalPlayer player) {
         initialize(player);
-        needRefresh.set(true);
+        needRefresh = true;
     }
 
     /**
@@ -239,7 +256,8 @@ public class Session {
      */
     @Nullable
     public Location testMoveTo(LocalPlayer player, Location to, MoveType moveType, boolean forced) {
-        if (!forced && needRefresh.getAndSet(false)) {
+        if (!forced && needRefresh) {
+            needRefresh = false;
             forced = true;
         }
 
@@ -247,7 +265,7 @@ public class Session {
             ApplicableRegionSet toSet = query.getApplicableRegions(to);
 
             if (manager.customHandlersRegistered()) {
-                for (Handler handler : handlers.values()) {
+                for (Handler handler : handlerArray) {
                     if (!handler.testMoveTo(player, lastValid, to, toSet, moveType) && moveType.isCancellable()) {
                         return lastValid;
                     }
@@ -269,7 +287,7 @@ public class Session {
             Set<ProtectedRegion> entered = Sets.difference(toRegions, lastRegionSet);
             Set<ProtectedRegion> exited = Sets.difference(lastRegionSet, toRegions);
 
-            for (Handler handler : handlers.values()) {
+            for (Handler handler : handlerArray) {
                 if (!handler.onCrossBoundary(player, lastValid, to, toSet, entered, exited, moveType) && moveType.isCancellable()) {
                     return lastValid;
                 }
@@ -297,5 +315,18 @@ public class Session {
      */
     public void setBypassDisabled(boolean disabled) {
         disableBypass = disabled;
+        bypassExpiresAt = 0;
+    }
+
+    boolean hasBypass(LocalPlayer player, World world, BiPredicate<World, LocalPlayer> permissionTest) {
+        long now = System.nanoTime();
+        if (world.equals(bypassWorld) && now < bypassExpiresAt) {
+            return bypassValue;
+        }
+        boolean value = permissionTest.test(world, player);
+        bypassWorld = world;
+        bypassValue = value;
+        bypassExpiresAt = now + 2_000_000_000L;
+        return value;
     }
 }

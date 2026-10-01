@@ -19,9 +19,6 @@
 
 package com.sk89q.worldguard.session;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
@@ -33,7 +30,6 @@ import com.sk89q.worldguard.session.handler.GameModeFlag;
 import com.sk89q.worldguard.session.handler.GreetingFlag;
 import com.sk89q.worldguard.session.handler.Handler;
 import com.sk89q.worldguard.session.handler.HealFlag;
-import com.sk89q.worldguard.session.handler.InvincibilityFlag;
 import com.sk89q.worldguard.session.handler.TimeLockFlag;
 import com.sk89q.worldguard.session.handler.WeatherLockFlag;
 
@@ -44,7 +40,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import java.util.logging.Level;
 
@@ -56,11 +51,6 @@ public abstract class AbstractSessionManager implements SessionManager {
     private static final BiPredicate<World, LocalPlayer> BYPASS_PERMISSION_TEST = (world, player) -> {
         return player.hasPermission("worldguard.region.bypass." + world.getName());
     };
-
-    private final LoadingCache<WorldPlayerTuple, Boolean> bypassCache = CacheBuilder.newBuilder()
-            .maximumSize(1000)
-            .expireAfterWrite(2, TimeUnit.SECONDS)
-            .build(CacheLoader.from(tuple -> BYPASS_PERMISSION_TEST.test(tuple.getWorld(), tuple.getPlayer())));
 
     private final ConcurrentMap<UUID, Session> sessions = new ConcurrentHashMap<>();
 
@@ -78,7 +68,6 @@ public abstract class AbstractSessionManager implements SessionManager {
                 FarewellFlag.FACTORY,
                 GreetingFlag.FACTORY,
                 GameModeFlag.FACTORY,
-                InvincibilityFlag.FACTORY,
                 TimeLockFlag.FACTORY,
                 WeatherLockFlag.FACTORY
         };
@@ -125,7 +114,7 @@ public abstract class AbstractSessionManager implements SessionManager {
             return false;
         }
 
-        return bypassCache.getUnchecked(new WorldPlayerTuple(world, player));
+        return sess.hasBypass(player, world, BYPASS_PERMISSION_TEST);
     }
 
     @Override

@@ -20,58 +20,89 @@
 package com.sk89q.worldguard.bukkit.listener.debounce;
 
 import com.sk89q.worldguard.bukkit.util.Events;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 
 import javax.annotation.Nullable;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class EventDebounce<K> {
 
-    private final LoadingCache<K, Entry> cache;
+    private static final int GENERATION_CAPACITY = 1024;
+
+    private final long debounceNanos;
+    private volatile ConcurrentMap<K, Entry> current = new ConcurrentHashMap<>();
+    private volatile ConcurrentMap<K, Entry> previous = new ConcurrentHashMap<>();
+    private final AtomicInteger currentSize = new AtomicInteger();
 
     public EventDebounce(int debounceTime) {
-        cache = CacheBuilder.newBuilder()
-                .maximumSize(1000)
-                .expireAfterWrite(debounceTime, TimeUnit.MILLISECONDS)
-                .concurrencyLevel(2)
-                .build(new CacheLoader<K, Entry>() {
-                    @Override
-                    public Entry load(K key) throws Exception {
-                        return new Entry();
-                    }
-                });
+        debounceNanos = debounceTime * 1_000_000L;
     }
 
     public <T extends Event & Cancellable> void fireToCancel(Cancellable originalEvent, T firedEvent, K key) {
-        Entry entry = cache.getUnchecked(key);
-        if (entry.cancelled != null) {
-            if (entry.cancelled) {
-                originalEvent.setCancelled(true);
+        Entry entry = getOrCreate(key);
+        synchronized (entry) {
+            if (entry.cancelled != null) {
+                if (entry.cancelled) {
+                    originalEvent.setCancelled(true);
+                }
+            } else {
+                boolean cancelled = Events.fireAndTestCancel(firedEvent);
+                if (cancelled) {
+                    originalEvent.setCancelled(true);
+                }
+                entry.cancelled = cancelled;
             }
-        } else {
-            boolean cancelled = Events.fireAndTestCancel(firedEvent);
-            if (cancelled) {
-                originalEvent.setCancelled(true);
-            }
-            entry.cancelled = cancelled;
         }
     }
 
     @Nullable
     public <T extends Event & Cancellable> Entry getIfNotPresent(K key, Cancellable originalEvent) {
-        Entry entry = cache.getUnchecked(key);
-        if (entry.cancelled != null) {
-            if (entry.cancelled) {
-                originalEvent.setCancelled(true);
+        Entry entry = getOrCreate(key);
+        synchronized (entry) {
+            if (entry.cancelled != null) {
+                if (entry.cancelled) {
+                    originalEvent.setCancelled(true);
+                }
+                return null;
             }
-            return null;
-        } else {
             return entry;
         }
+    }
+
+    private Entry getOrCreate(K key) {
+        long now = System.nanoTime();
+        Entry entry = current.get(key);
+        if (entry == null) {
+            entry = previous.get(key);
+        }
+        if (entry != null && now < entry.expiresAtNanos) {
+            return entry;
+        }
+
+        Entry created = new Entry(now + debounceNanos);
+        Entry raced = current.putIfAbsent(key, created);
+        if (raced != null && now < raced.expiresAtNanos) {
+            return raced;
+        }
+        if (raced != null) {
+            current.replace(key, raced, created);
+        }
+        if (currentSize.incrementAndGet() >= GENERATION_CAPACITY) {
+            rotate();
+        }
+        return created;
+    }
+
+    private synchronized void rotate() {
+        if (currentSize.get() < GENERATION_CAPACITY) {
+            return;
+        }
+        previous = current;
+        current = new ConcurrentHashMap<>();
+        currentSize.set(0);
     }
 
     public static <K> EventDebounce<K> create(int debounceTime) {
@@ -79,7 +110,12 @@ public class EventDebounce<K> {
     }
 
     public static class Entry {
-        private Boolean cancelled;
+        public final long expiresAtNanos;
+        private volatile Boolean cancelled;
+
+        private Entry(long expiresAtNanos) {
+            this.expiresAtNanos = expiresAtNanos;
+        }
 
         public void setCancelled(boolean cancelled) {
             this.cancelled = cancelled;

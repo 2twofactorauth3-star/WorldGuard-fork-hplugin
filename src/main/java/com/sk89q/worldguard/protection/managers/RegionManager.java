@@ -28,6 +28,9 @@ import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.RegionResultSet;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.flags.StateFlag.State;
 import com.sk89q.worldguard.protection.managers.index.ConcurrentRegionIndex;
 import com.sk89q.worldguard.protection.managers.index.RegionIndex;
 import com.sk89q.worldguard.protection.managers.storage.DifferenceSaveException;
@@ -43,9 +46,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -61,6 +67,13 @@ public final class RegionManager {
     private final FlagRegistry flagRegistry;
     private ConcurrentRegionIndex index;
     private final AtomicLong queryRevision = new AtomicLong();
+    private volatile long observedFlagRevision = -1;
+    private volatile Map<Flag<?>, Integer> flagUsage = Collections.emptyMap();
+    private volatile long resultCacheQueryRevision = -1;
+    private volatile long resultCacheStructureRevision = -1;
+    private final Map<QueryOption, ApplicableRegionSet> emptyResults = new EnumMap<>(QueryOption.class);
+    private final Map<QueryOption, ConcurrentMap<ProtectedRegion, ApplicableRegionSet>> singletonResults =
+            new EnumMap<>(QueryOption.class);
 
     /**
      * Create a new index.
@@ -78,6 +91,9 @@ public final class RegionManager {
         this.indexFactory = indexFactory;
         this.index = indexFactory.apply(store.getName());
         this.flagRegistry = flagRegistry;
+        for (QueryOption option : QueryOption.values()) {
+            singletonResults.put(option, new ConcurrentHashMap<>());
+        }
     }
 
     /**
@@ -295,6 +311,53 @@ public final class RegionManager {
         return queryRevision.get();
     }
 
+    public boolean hasAnyFlag(Set<? extends Flag<?>> flags) {
+        Map<Flag<?>, Integer> usage = currentFlagUsage();
+        for (Flag<?> flag : flags) {
+            if (usage.containsKey(flag)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasFlag(Flag<?> flag) {
+        return currentFlagUsage().containsKey(flag);
+    }
+
+    public boolean hasState(StateFlag flag, State state) {
+        int mask = currentFlagUsage().getOrDefault(flag, 0);
+        return state == State.ALLOW ? (mask & 1) != 0 : (mask & 2) != 0;
+    }
+
+    private Map<Flag<?>, Integer> currentFlagUsage() {
+        long revision = ProtectedRegion.flagRevision();
+        Map<Flag<?>, Integer> current = flagUsage;
+        if (observedFlagRevision == revision) {
+            return current;
+        }
+        synchronized (this) {
+            if (observedFlagRevision == revision) {
+                return flagUsage;
+            }
+            Map<Flag<?>, Integer> rebuilt = new HashMap<>();
+            for (ProtectedRegion region : index.values()) {
+                for (Map.Entry<Flag<?>, Object> entry : region.getFlags().entrySet()) {
+                    int bit = 4;
+                    if (entry.getValue() == State.ALLOW) {
+                        bit = 1;
+                    } else if (entry.getValue() == State.DENY) {
+                        bit = 2;
+                    }
+                    rebuilt.merge(entry.getKey(), bit, (left, right) -> left | right);
+                }
+            }
+            flagUsage = Collections.unmodifiableMap(rebuilt);
+            observedFlagRevision = revision;
+            return flagUsage;
+        }
+    }
+
     /**
      * Query for effective flags and members for the given position.
      *
@@ -320,7 +383,7 @@ public final class RegionManager {
 
         Set<ProtectedRegion> regions = Sets.newHashSet();
         index.applyContaining(position, option.createIndexConsumer(regions));
-        return new RegionResultSet(option.constructResult(regions), index.get("__global__"), true);
+        return createResult(regions, option);
     }
 
     /**
@@ -349,7 +412,50 @@ public final class RegionManager {
 
         Set<ProtectedRegion> regions = Sets.newHashSet();
         index.applyIntersecting(region, option.createIndexConsumer(regions));
-        return new RegionResultSet(option.constructResult(regions), index.get("__global__"), true);
+        return createResult(regions, option);
+    }
+
+    private ApplicableRegionSet createResult(Set<ProtectedRegion> regions, QueryOption option) {
+        if (regions.size() <= 1) {
+            refreshResultCache();
+            if (regions.isEmpty()) {
+                synchronized (emptyResults) {
+                    return emptyResults.computeIfAbsent(option, ignored -> new RegionResultSet(
+                            option.constructResult(Collections.emptySet()), Collections.emptySet(),
+                            index.get(ProtectedRegion.GLOBAL_REGION), true));
+                }
+            }
+            ProtectedRegion only = regions.iterator().next();
+            return singletonResults.get(option).computeIfAbsent(only, ignored -> {
+                Set<ProtectedRegion> singleton = Collections.singleton(only);
+                return new RegionResultSet(
+                        option.constructResult(singleton), singleton,
+                        index.get(ProtectedRegion.GLOBAL_REGION), true);
+            });
+        }
+        Set<ProtectedRegion> retained = Collections.unmodifiableSet(regions);
+        return new RegionResultSet(
+                option.constructResult(regions), retained,
+                index.get(ProtectedRegion.GLOBAL_REGION), true);
+    }
+
+    private void refreshResultCache() {
+        long query = queryRevision.get();
+        long structure = ProtectedRegion.structureRevision();
+        if (resultCacheQueryRevision == query && resultCacheStructureRevision == structure) {
+            return;
+        }
+        synchronized (emptyResults) {
+            if (resultCacheQueryRevision == query && resultCacheStructureRevision == structure) {
+                return;
+            }
+            emptyResults.clear();
+            for (ConcurrentMap<ProtectedRegion, ApplicableRegionSet> cache : singletonResults.values()) {
+                cache.clear();
+            }
+            resultCacheQueryRevision = query;
+            resultCacheStructureRevision = structure;
+        }
     }
 
     /**

@@ -23,6 +23,9 @@ import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.util.Entities;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.flags.StateFlag.State;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -44,11 +47,20 @@ public class InvincibilityListener extends AbstractListener {
         return WorldGuard.getInstance().getPlatform().getSessionManager().get(player).isInvincible(player);
     }
 
+    private boolean mayBeInvincible(Player player) {
+        if (WorldGuard.getInstance().getPlatform().getSessionManager().customHandlersRegistered()) {
+            return true;
+        }
+        RegionManager manager = getRegionManager(player.getWorld());
+        return manager != null && manager.hasState(Flags.INVINCIBILITY, State.ALLOW);
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
         Entity victim = event.getEntity();
         if (!(victim instanceof Player player)) return;
         if (Entities.isNPC(player)) return;
+        if (!mayBeInvincible(player)) return;
 
         LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
 
@@ -77,6 +89,7 @@ public class InvincibilityListener extends AbstractListener {
         Entity entity = event.getEntity();
         if (!(entity instanceof Player player)) return;
         if (Entities.isNPC(player)) return;
+        if (!mayBeInvincible(player)) return;
 
         LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
 
@@ -89,6 +102,7 @@ public class InvincibilityListener extends AbstractListener {
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (Entities.isNPC(player)) return;
+        if (!mayBeInvincible(player)) return;
 
         LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
 

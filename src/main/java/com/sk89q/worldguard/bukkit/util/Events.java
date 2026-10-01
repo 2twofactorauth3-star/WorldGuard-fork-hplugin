@@ -20,14 +20,19 @@
 package com.sk89q.worldguard.bukkit.util;
 
 import com.sk89q.worldguard.bukkit.event.BulkEvent;
+import com.sk89q.worldguard.bukkit.event.DelegateEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventException;
 import org.bukkit.event.Event.Result;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.plugin.RegisteredListener;
+
+import java.util.logging.Level;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -46,7 +51,28 @@ public final class Events {
      */
     public static void fire(Event event) {
         checkNotNull(event);
-        Bukkit.getServer().getPluginManager().callEvent(event);
+        if (event instanceof DelegateEvent) {
+            fireDelegate(event);
+        } else {
+            Bukkit.getServer().getPluginManager().callEvent(event);
+        }
+    }
+
+    private static void fireDelegate(Event event) {
+        for (RegisteredListener registration : event.getHandlers().getRegisteredListeners()) {
+            if (!registration.getPlugin().isEnabled()) {
+                continue;
+            }
+            try {
+                registration.callEvent(event);
+            } catch (EventException exception) {
+                registration.getPlugin().getLogger().log(
+                        Level.SEVERE,
+                        "Could not pass " + event.getEventName() + " to "
+                                + registration.getPlugin().getName(),
+                        exception.getCause() == null ? exception : exception.getCause());
+            }
+        }
     }
 
     /**
@@ -57,7 +83,7 @@ public final class Events {
      * @return true if the event was cancelled
      */
     public static <T extends Event & Cancellable> boolean fireAndTestCancel(T eventToFire) {
-        Bukkit.getServer().getPluginManager().callEvent(eventToFire);
+        fire(eventToFire);
         return eventToFire.isCancelled();
     }
 
@@ -71,7 +97,7 @@ public final class Events {
      * @return true if the event was fired and it caused the original event to be cancelled
      */
     public static <T extends Event & Cancellable> boolean fireToCancel(Cancellable original, T eventToFire) {
-        Bukkit.getServer().getPluginManager().callEvent(eventToFire);
+        fire(eventToFire);
         if (eventToFire.isCancelled()) {
             original.setCancelled(true);
             return true;
@@ -90,7 +116,7 @@ public final class Events {
      * @return true if the event was fired and it caused the original event to be cancelled
      */
     public static <T extends Event & Cancellable> boolean fireItemEventToCancel(PlayerInteractEvent original, T eventToFire) {
-        Bukkit.getServer().getPluginManager().callEvent(eventToFire);
+        fire(eventToFire);
         if (eventToFire.isCancelled()) {
             original.setUseItemInHand(Result.DENY);
             return true;
@@ -109,7 +135,7 @@ public final class Events {
      * @return true if the event was fired and it caused the original event to be cancelled
      */
     public static <T extends Event & Cancellable & BulkEvent> boolean fireBulkEventToCancel(Cancellable original, T eventToFire) {
-        Bukkit.getServer().getPluginManager().callEvent(eventToFire);
+        fire(eventToFire);
         if (eventToFire.getExplicitResult() == Result.DENY) {
             original.setCancelled(true);
             return true;

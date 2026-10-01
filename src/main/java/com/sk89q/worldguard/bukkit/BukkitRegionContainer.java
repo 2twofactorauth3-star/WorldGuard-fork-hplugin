@@ -42,19 +42,17 @@ import org.bukkit.event.world.WorldUnloadEvent;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.Nullable;
 
 public class BukkitRegionContainer extends RegionContainer {
 
-    /**
-     * Invalidation frequency in ticks.
-     */
-    private static final int CACHE_INVALIDATION_INTERVAL = 200;
-
     private final WorldGuardPlugin plugin;
     private final boolean active;
+    private final ConcurrentMap<UUID, RegionManager> managersByWorld = new ConcurrentHashMap<>();
 
     /**
      * Create a new instance.
@@ -86,13 +84,14 @@ public class BukkitRegionContainer extends RegionContainer {
             @EventHandler
             public void onWorldUnload(WorldUnloadEvent event) {
                 World world = BukkitAdapter.adapt(event.getWorld());
+                managersByWorld.remove(event.getWorld().getUID());
                 cache.invalidate(world);
                 unload(world);
             }
 
             @EventHandler
             public void onChunkLoad(ChunkLoadEvent event) {
-                RegionManager manager = get(BukkitAdapter.adapt(event.getWorld()));
+                RegionManager manager = get(event.getWorld());
                 if (manager != null) {
                     Chunk chunk = event.getChunk();
                     manager.loadChunk(BlockVector2.at(chunk.getX(), chunk.getZ()));
@@ -101,7 +100,7 @@ public class BukkitRegionContainer extends RegionContainer {
 
             @EventHandler
             public void onChunkUnload(ChunkUnloadEvent event) {
-                RegionManager manager = get(BukkitAdapter.adapt(event.getWorld()));
+                RegionManager manager = get(event.getWorld());
                 if (manager != null) {
                     Chunk chunk = event.getChunk();
                     manager.unloadChunk(BlockVector2.at(chunk.getX(), chunk.getZ()));
@@ -109,20 +108,36 @@ public class BukkitRegionContainer extends RegionContainer {
             }
         }, plugin);
 
-        if (WorldGuardPlugin.inst().isFolia()) {
-            Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, new Consumer() {
-                @Override
-                public void accept(Object ignored) {
-                    cache.invalidateAll();
-                }
-            }, CACHE_INVALIDATION_INTERVAL, CACHE_INVALIDATION_INTERVAL);
-        } else {
-            Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, cache::invalidateAll, CACHE_INVALIDATION_INTERVAL, CACHE_INVALIDATION_INTERVAL);
-        }
     }
 
     public void shutdown() {
+        managersByWorld.clear();
         container.shutdown();
+    }
+
+    @Nullable
+    public RegionManager get(org.bukkit.World world) {
+        RegionManager cached = managersByWorld.get(world.getUID());
+        if (cached != null) {
+            return cached;
+        }
+        RegionManager manager = super.get(BukkitAdapter.adapt(world));
+        if (manager != null) {
+            managersByWorld.putIfAbsent(world.getUID(), manager);
+        }
+        return manager;
+    }
+
+    @Override
+    public void unload() {
+        managersByWorld.clear();
+        super.unload();
+    }
+
+    @Override
+    public void reload() {
+        managersByWorld.clear();
+        super.reload();
     }
 
     @Override
@@ -173,6 +188,9 @@ public class BukkitRegionContainer extends RegionContainer {
             }
         }
 
+        if (manager != null && world instanceof BukkitWorld bukkitWorld) {
+            managersByWorld.put(bukkitWorld.getWorld().getUID(), manager);
+        }
         return manager;
     }
 

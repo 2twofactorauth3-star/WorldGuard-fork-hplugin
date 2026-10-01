@@ -25,6 +25,7 @@ import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.world.weather.WeatherType;
 import com.sk89q.worldedit.world.weather.WeatherTypes;
 import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.util.MessagingUtil;
 import org.bukkit.Bukkit;
@@ -35,6 +36,7 @@ import java.time.Duration;
 import net.kyori.adventure.title.Title;
 
 public class BukkitPlayer extends com.sk89q.worldedit.bukkit.BukkitPlayer implements LocalPlayer {
+    private volatile Session worldGuardSession;
 
     protected final WorldGuardPlugin plugin;
     private final boolean silenced;
@@ -251,5 +253,13 @@ public class BukkitPlayer extends com.sk89q.worldedit.bukkit.BukkitPlayer implem
     @Override
     public boolean hasPermission(String perm) {
         return plugin.hasPermission(getPlayer(), perm);
+    }
+
+    public Session getWorldGuardSession() {
+        return worldGuardSession;
+    }
+
+    public void setWorldGuardSession(Session session) {
+        worldGuardSession = session;
     }
 }

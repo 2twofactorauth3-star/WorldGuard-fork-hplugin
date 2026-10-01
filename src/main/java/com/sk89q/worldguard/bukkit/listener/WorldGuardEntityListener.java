@@ -445,7 +445,11 @@ public class WorldGuardEntityListener extends AbstractListener {
 
         Location eventLoc = event.getLocation();
 
-        if (wcfg.useRegions && cfg.useRegionsCreatureSpawnEvent) {
+        RegionManager regionManager = getRegionManager(eventLoc.getWorld());
+        if (wcfg.useRegions && cfg.useRegionsCreatureSpawnEvent
+                && regionManager != null
+                && (regionManager.hasState(Flags.MOB_SPAWNING, State.DENY)
+                || regionManager.hasFlag(Flags.DENY_SPAWN))) {
             ApplicableRegionSet set =
                     WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery().getApplicableRegions(BukkitAdapter.adapt(eventLoc));
 
@@ -537,7 +541,9 @@ public class WorldGuardEntityListener extends AbstractListener {
 
         WorldConfiguration wcfg = getWorldConfig(ent.getWorld());
 
-        if (wcfg.useRegions && ent instanceof Player player && !Entities.isNPC(ent)
+        RegionManager manager = getRegionManager(ent.getWorld());
+        if (wcfg.useRegions && manager != null && manager.hasState(Flags.HEALTH_REGEN, State.DENY)
+                && ent instanceof Player player && !Entities.isNPC(ent)
                 && !WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery().testState(
                         BukkitAdapter.adapt(ent.getLocation()),
                         WorldGuardPlugin.inst().wrapPlayer(player),
@@ -556,8 +562,9 @@ public class WorldGuardEntityListener extends AbstractListener {
 
         LocalPlayer player = WorldGuardPlugin.inst().wrapPlayer(bukkitPlayer);
         WorldConfiguration wcfg = getWorldConfig(ent.getWorld());
+        RegionManager manager = getRegionManager(ent.getWorld());
 
-        if (wcfg.useRegions
+        if (wcfg.useRegions && manager != null && manager.hasState(Flags.HUNGER_DRAIN, State.DENY)
                 && !WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery().testState(
                         player.getLocation(), player, Flags.HUNGER_DRAIN)) {
             event.setCancelled(true);

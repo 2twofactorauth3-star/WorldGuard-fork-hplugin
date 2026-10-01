@@ -72,6 +72,7 @@ public final class SelectionVisualizer {
         long updatePeriodTicks = Math.max(1, settings.selectionParticleUpdatePeriodTicks);
         if (plugin.isFolia()) {
             plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, ignored -> {
+                refreshSettings();
                 if (!shouldProcessSelections()) {
                     return;
                 }
@@ -94,6 +95,7 @@ public final class SelectionVisualizer {
             }, updatePeriodTicks, updatePeriodTicks);
         } else {
             Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+                refreshSettings();
                 if (!shouldProcessSelections()) {
                     return;
                 }
@@ -325,17 +327,13 @@ public final class SelectionVisualizer {
     }
 
     private ParticleSettings particleSettings() {
+        return particleSettings;
+    }
+
+    private void refreshSettings() {
         ParticleSettings cached = particleSettings;
-        if (cached.matches(settings)) {
-            return cached;
-        }
-        synchronized (this) {
-            cached = particleSettings;
-            if (!cached.matches(settings)) {
-                cached = ParticleSettings.from(settings);
-                particleSettings = cached;
-            }
-            return cached;
+        if (!cached.matches(settings)) {
+            particleSettings = ParticleSettings.from(settings);
         }
     }
 

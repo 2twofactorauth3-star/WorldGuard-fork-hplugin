@@ -22,11 +22,14 @@ package com.sk89q.worldguard.bukkit.listener;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.bukkit.BukkitRegionContainer;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.session.BukkitSessionManager;
 import com.sk89q.worldguard.bukkit.util.Entities;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import com.sk89q.worldguard.session.MoveType;
 import com.sk89q.worldguard.session.Session;
@@ -50,8 +53,22 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.util.Vector;
 
 import java.util.function.Consumer;
+import java.util.Set;
 
 public class PlayerMoveListener extends AbstractListener {
+
+    private static final Set<com.sk89q.worldguard.protection.flags.Flag<?>> MOVEMENT_FLAGS = Set.of(
+            Flags.ENTRY,
+            Flags.EXIT,
+            Flags.EXIT_OVERRIDE,
+            Flags.GREET_MESSAGE,
+            Flags.GREET_TITLE,
+            Flags.FAREWELL_MESSAGE,
+            Flags.FAREWELL_TITLE,
+            Flags.GAME_MODE,
+            Flags.TIME_LOCK,
+            Flags.WEATHER_LOCK
+    );
 
     public PlayerMoveListener(WorldGuardPlugin plugin) {
         super(plugin);
@@ -117,6 +134,11 @@ public class PlayerMoveListener extends AbstractListener {
         }
 
         final Player player = event.getPlayer();
+        RegionManager regionManager = ((BukkitRegionContainer) WorldGuard.getInstance().getPlatform()
+                .getRegionContainer()).get(player.getWorld());
+        if (!requiresMovementQuery(player, regionManager)) {
+            return;
+        }
         LocalPlayer localPlayer = getPlugin().wrapPlayer(player);
 
         Session session = WorldGuard.getInstance().getPlatform().getSessionManager().get(localPlayer);
@@ -177,7 +199,9 @@ public class PlayerMoveListener extends AbstractListener {
             }
         }
 
-        enforceFlightFlags(player, event.getTo());
+        if (weLocation == null) {
+            enforceFlightFlags(player, session.getLastApplicableRegionSet());
+        }
     }
 
     @EventHandler
@@ -247,6 +271,31 @@ public class PlayerMoveListener extends AbstractListener {
         if (player.isGliding() && !query.testState(target, localPlayer, Flags.ELYTRA)) {
             player.setGliding(false);
         }
+    }
+
+    private void enforceFlightFlags(Player player, ApplicableRegionSet regions) {
+        if (regions == null || Entities.isNPC(player) || !player.isFlying() && !player.isGliding()) {
+            return;
+        }
+        LocalPlayer localPlayer = getPlugin().wrapPlayer(player);
+        if (player.isFlying() && !regions.testState(localPlayer, Flags.FLY)) {
+            player.setFlying(false);
+        }
+        if (player.isGliding() && !regions.testState(localPlayer, Flags.ELYTRA)) {
+            player.setGliding(false);
+        }
+    }
+
+    private boolean requiresMovementQuery(Player player, RegionManager manager) {
+        if (manager == null || !isRegionSupportEnabled(player.getWorld())) {
+            return false;
+        }
+        if (WorldGuard.getInstance().getPlatform().getSessionManager().customHandlersRegistered()
+                || manager.hasAnyFlag(MOVEMENT_FLAGS)) {
+            return true;
+        }
+        return player.isFlying() && manager.hasState(Flags.FLY, StateFlag.State.DENY)
+                || player.isGliding() && manager.hasState(Flags.ELYTRA, StateFlag.State.DENY);
     }
 
     @EventHandler

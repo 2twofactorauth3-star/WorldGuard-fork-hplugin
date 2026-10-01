@@ -26,6 +26,7 @@ import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.BukkitConfigurationManager;
 import com.sk89q.worldguard.bukkit.BukkitPlayer;
+import com.sk89q.worldguard.bukkit.BukkitRegionContainer;
 import com.sk89q.worldguard.bukkit.BukkitWorldConfiguration;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.cause.Cause;
@@ -40,6 +41,7 @@ import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
@@ -53,6 +55,8 @@ import org.bukkit.event.Listener;
 class AbstractListener implements Listener {
 
     private final WorldGuardPlugin plugin;
+    private static final ThreadLocal<WorldConfigCache> WORLD_CONFIG_CACHE =
+            ThreadLocal.withInitial(WorldConfigCache::new);
 
     /**
      * Construct the listener.
@@ -100,7 +104,17 @@ class AbstractListener implements Listener {
     }
 
     protected static BukkitWorldConfiguration getWorldConfig(org.bukkit.World world) {
-        return getWorldConfig(world.getName());
+        BukkitConfigurationManager manager = getConfig();
+        WorldConfigCache cache = WORLD_CONFIG_CACHE.get();
+        long revision = manager.getRevision();
+        if (cache.world == world && cache.revision == revision) {
+            return cache.configuration;
+        }
+        BukkitWorldConfiguration configuration = manager.get(world);
+        cache.world = world;
+        cache.configuration = configuration;
+        cache.revision = revision;
+        return configuration;
     }
 
     /**
@@ -121,6 +135,11 @@ class AbstractListener implements Listener {
      */
     protected static boolean isRegionSupportEnabled(org.bukkit.World world) {
         return getWorldConfig(world).useRegions;
+    }
+
+    protected static RegionManager getRegionManager(org.bukkit.World world) {
+        return ((BukkitRegionContainer) WorldGuard.getInstance().getPlatform()
+                .getRegionContainer()).get(world);
     }
 
     protected RegionAssociable createRegionAssociable(Cause cause) {
@@ -177,12 +196,23 @@ class AbstractListener implements Listener {
         RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
         com.sk89q.worldedit.util.Location adapted = BukkitAdapter.adapt(target);
         ApplicableRegionSet regions = query.getApplicableRegions(adapted);
-        boolean hasLocalRegion = regions.getRegions().stream()
-                .anyMatch(region -> !ProtectedRegion.GLOBAL_REGION.equals(region.getId()));
+        boolean hasLocalRegion = false;
+        for (ProtectedRegion region : regions) {
+            if (!ProtectedRegion.GLOBAL_REGION.equals(region.getId())) {
+                hasLocalRegion = true;
+                break;
+            }
+        }
 
         if (setting.mode == WorldMechanicSetting.Mode.OUTSIDE_REGIONS) {
             return !hasLocalRegion;
         }
-        return hasLocalRegion && !query.testBuild(adapted, associable, Flags.BUILD);
+        return hasLocalRegion && !regions.testState(associable, Flags.BUILD);
+    }
+
+    private static final class WorldConfigCache {
+        private org.bukkit.World world;
+        private BukkitWorldConfiguration configuration;
+        private long revision = -1;
     }
 }

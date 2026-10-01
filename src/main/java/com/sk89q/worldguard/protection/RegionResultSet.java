@@ -84,11 +84,25 @@ public class RegionResultSet extends AbstractRegionSet {
      * @param sorted true if the list is already sorted with {@link NormativeOrders}
      */
     public RegionResultSet(List<ProtectedRegion> applicable, @Nullable ProtectedRegion globalRegion, boolean sorted) {
+        this(applicable, null, globalRegion, sorted);
+    }
+
+    /**
+     * Create a result while retaining an already-built immutable region set.
+     * Internal callers use this to avoid copying the same spatial result twice.
+     */
+    public RegionResultSet(
+            List<ProtectedRegion> applicable,
+            @Nullable Set<ProtectedRegion> regionSet,
+            @Nullable ProtectedRegion globalRegion,
+            boolean sorted
+    ) {
         checkNotNull(applicable);
         if (!sorted) {
             NormativeOrders.sort(applicable);
         }
         this.applicable = Collections.unmodifiableList(applicable);
+        this.regionSet = regionSet;
         this.flagValueCalculator = new FlagValueCalculator(applicable, globalRegion);
     }
 

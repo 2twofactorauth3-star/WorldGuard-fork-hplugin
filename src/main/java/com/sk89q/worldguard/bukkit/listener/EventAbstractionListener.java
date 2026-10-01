@@ -217,10 +217,10 @@ public class EventAbstractionListener extends AbstractListener {
         public final Object source;
         public final Object target;
 
-        private InventoryMoveItemKey(InventoryMoveItemEvent event) {
-            cause = normalizeHolder(event.getInitiator().getHolder(false));
-            source = normalizeHolder(event.getSource().getHolder(false));
-            target = normalizeHolder(event.getDestination().getHolder(false));
+        private InventoryMoveItemKey(InventoryHolder cause, InventoryHolder source, InventoryHolder target) {
+            this.cause = normalizeHolder(cause);
+            this.source = normalizeHolder(source);
+            this.target = normalizeHolder(target);
         }
 
         private static Object normalizeHolder(InventoryHolder holder) {
@@ -245,7 +245,9 @@ public class EventAbstractionListener extends AbstractListener {
 
         @Override
         public int hashCode() {
-            return Objects.hash(cause, source, target);
+            int result = Objects.hashCode(cause);
+            result = 31 * result + Objects.hashCode(source);
+            return 31 * result + Objects.hashCode(target);
         }
     }
 
@@ -1095,13 +1097,13 @@ public class EventAbstractionListener extends AbstractListener {
     @EventHandler(ignoreCancelled = true)
     public void onInventoryMoveItem(InventoryMoveItemEvent event) {
         InventoryHolder causeHolder = event.getInitiator().getHolder(false);
+        InventoryHolder sourceHolder = event.getSource().getHolder(false);
+        InventoryHolder targetHolder = event.getDestination().getHolder(false);
 
         EventDebounce.Entry entry;
 
-        if ((entry = moveItemDebounce.getIfNotPresent(new InventoryMoveItemKey(event), event)) != null) {
-            InventoryHolder sourceHolder = event.getSource().getHolder(false);
-            InventoryHolder targetHolder = event.getDestination().getHolder(false);
-
+        if ((entry = moveItemDebounce.getIfNotPresent(
+                new InventoryMoveItemKey(causeHolder, sourceHolder, targetHolder), event)) != null) {
             Cause cause;
 
             if (causeHolder instanceof Entity) {

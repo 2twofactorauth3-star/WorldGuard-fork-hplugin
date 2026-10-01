@@ -21,17 +21,24 @@ package com.sk89q.worldguard.bukkit.session;
 
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.BukkitPlayer;
+import com.sk89q.worldguard.bukkit.BukkitRegionContainer;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.event.player.ProcessPlayerEvent;
 import com.sk89q.worldguard.session.AbstractSessionManager;
 import com.sk89q.worldguard.session.Session;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import javax.annotation.Nullable;
 import java.util.function.Consumer;
+import java.util.Set;
 
 
 /**
@@ -39,6 +46,17 @@ import java.util.function.Consumer;
  * (flags, etc.).
  */
 public class BukkitSessionManager extends AbstractSessionManager implements Runnable, Listener {
+
+    private static final Set<Flag<?>> TICK_FLAGS = Set.of(
+            Flags.HEAL_AMOUNT,
+            Flags.HEAL_DELAY,
+            Flags.MIN_HEAL,
+            Flags.MAX_HEAL,
+            Flags.FEED_AMOUNT,
+            Flags.FEED_DELAY,
+            Flags.MIN_FOOD,
+            Flags.MAX_FOOD
+    );
 
     /**
      * Re-initialize handlers and clear "last position," "last state," etc.
@@ -72,13 +90,20 @@ public class BukkitSessionManager extends AbstractSessionManager implements Runn
     public void onPlayerProcess(ProcessPlayerEvent event) {
         // Pre-load a session
         LocalPlayer player = WorldGuardPlugin.inst().wrapPlayer(event.getPlayer());
-        get(player).initialize(player);
+        get(player);
     }
 
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void run() {
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
+            if (!customHandlersRegistered()) {
+                RegionManager manager = ((BukkitRegionContainer) WorldGuard.getInstance().getPlatform()
+                        .getRegionContainer()).get(player.getWorld());
+                if (manager == null || !manager.hasAnyFlag(TICK_FLAGS)) {
+                    continue;
+                }
+            }
             Runnable task = () -> {
                 LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
                 get(localPlayer).tick(localPlayer);
@@ -104,6 +129,45 @@ public class BukkitSessionManager extends AbstractSessionManager implements Runn
             }
         }
         return super.hasBypass(player, world);
+    }
+
+    @Override
+    public Session get(LocalPlayer player) {
+        if (player instanceof BukkitPlayer bukkitPlayer) {
+            Session cached = bukkitPlayer.getWorldGuardSession();
+            if (cached != null) {
+                return cached;
+            }
+            Session session = super.get(player);
+            bukkitPlayer.setWorldGuardSession(session);
+            return session;
+        }
+        return super.get(player);
+    }
+
+    @Override
+    @Nullable
+    public Session getIfPresent(LocalPlayer player) {
+        if (player instanceof BukkitPlayer bukkitPlayer) {
+            Session cached = bukkitPlayer.getWorldGuardSession();
+            if (cached != null) {
+                return cached;
+            }
+            Session session = super.getIfPresent(player);
+            if (session != null) {
+                bukkitPlayer.setWorldGuardSession(session);
+            }
+            return session;
+        }
+        return super.getIfPresent(player);
+    }
+
+    @Override
+    public void remove(LocalPlayer player) {
+        super.remove(player);
+        if (player instanceof BukkitPlayer bukkitPlayer) {
+            bukkitPlayer.setWorldGuardSession(null);
+        }
     }
 
     public void shutdown() {

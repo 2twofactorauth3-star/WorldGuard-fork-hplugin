@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -52,9 +53,12 @@ import javax.annotation.Nullable;
  */
 public class ChunkHashTable implements ConcurrentRegionIndex {
 
+    private static final int RECENT_CHUNK_CAPACITY = 4096;
     private final String name;
     private ListeningExecutorService executor = createExecutor();
     private LongHashTable<ChunkState> states = new LongHashTable<>();
+    private final LinkedHashMap<Long, ChunkState> recentStates =
+            new LinkedHashMap<>(256, 0.75f, true);
     private final RegionIndex index;
     private final Object lock = new Object();
     private final ThreadLocal<CachedChunkState> lastState = ThreadLocal.withInitial(CachedChunkState::new);
@@ -94,6 +98,14 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
         ChunkState state;
         synchronized (lock) {
             state = states.get(position.x(), position.z());
+            if (state == null) {
+                long key = chunkKey(position.x(), position.z());
+                state = recentStates.get(key);
+                if (state != null && create) {
+                    recentStates.remove(key);
+                    states.put(position.x(), position.z(), state);
+                }
+            }
             if (state == null && create) {
                 state = new ChunkState(position);
                 states.put(position.x(), position.z(), state);
@@ -124,6 +136,7 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
 
             previousExecutor.shutdownNow();
             states = new LongHashTable<>();
+            recentStates.clear();
             executor = createExecutor();
 
             List<BlockVector2> positions = new ArrayList<>();
@@ -179,7 +192,14 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
     public void forget(BlockVector2 chunkPosition) {
         checkNotNull(chunkPosition);
         synchronized (lock) {
+            ChunkState state = states.get(chunkPosition.x(), chunkPosition.z());
             states.remove(chunkPosition.x(), chunkPosition.z());
+            if (state != null && state.isLoaded()) {
+                recentStates.put(chunkKey(chunkPosition.x(), chunkPosition.z()), state);
+                if (recentStates.size() > RECENT_CHUNK_CAPACITY) {
+                    recentStates.remove(recentStates.entrySet().iterator().next().getKey());
+                }
+            }
             generation++;
         }
     }
@@ -189,6 +209,7 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
         synchronized (lock) {
             executor.shutdownNow();
             states = new LongHashTable<>();
+            recentStates.clear();
             executor = createExecutor();
             generation++;
         }
@@ -361,6 +382,10 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
         public boolean isLoaded() {
             return loaded;
         }
+    }
+
+    private static long chunkKey(int x, int z) {
+        return ((long) x << 32) ^ (z & 0xffffffffL);
     }
 
     private class CachedChunkState {
