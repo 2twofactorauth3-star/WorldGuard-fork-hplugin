@@ -81,6 +81,7 @@ public abstract class WorldConfiguration {
     public WorldMechanicSetting blockEntityVehicleEntry;
     public WorldMechanicSetting blockGroundSlimes;
     public WorldMechanicSetting blockZombieDoorDestruction;
+    public boolean blockPluginSpawning;
     public boolean highFreqFlags;
     public boolean checkLiquidFlow;
     public String regionWand;

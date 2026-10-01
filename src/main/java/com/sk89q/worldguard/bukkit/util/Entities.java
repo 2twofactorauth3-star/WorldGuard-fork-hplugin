@@ -52,6 +52,7 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.WindCharge;
 import org.bukkit.entity.Wither;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.projectiles.ProjectileSource;
 
@@ -236,6 +237,17 @@ public final class Entities {
 
     public static boolean isAoECloud(EntityType type) {
         return type == EntityType.AREA_EFFECT_CLOUD;
+    }
+
+    /**
+     * Check whether the spawn reason represents a plugin or command-created entity.
+     *
+     * @param spawnReason the spawn reason
+     * @return true for plugin and command spawning
+     */
+    public static boolean isPluginSpawning(CreatureSpawnEvent.SpawnReason spawnReason) {
+        return spawnReason == CreatureSpawnEvent.SpawnReason.CUSTOM
+                || spawnReason == CreatureSpawnEvent.SpawnReason.COMMAND;
     }
 
     /**

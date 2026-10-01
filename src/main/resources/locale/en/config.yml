@@ -215,6 +215,8 @@ settings:
       enable: false
       # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
       mode: 3
+    # Applies WorldGuard spawn restrictions to mobs created by plugins or commands.
+    blockPluginSpawning: true
   # Controls region protection and storage.
   regions:
     # Shows the blocked-cmds-messages flag and its messages in /rg info. When false, the flag is hidden while command denial and its message still work.

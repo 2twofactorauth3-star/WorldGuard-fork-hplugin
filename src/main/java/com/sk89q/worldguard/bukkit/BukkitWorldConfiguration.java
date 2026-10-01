@@ -128,6 +128,8 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
         blockOtherExplosions = mechanic("mobs.blockOtherExplosions");
         blockZombieDoorDestruction = mechanic("mobs.blockZombieDoorDestruction");
         blockEntityVehicleEntry = mechanic("mobs.blockVehicleEntry");
+        blockPluginSpawning = getBoolean("mobs.blockPluginSpawning",
+                getBoolean("event-handling.block-plugin-spawning", true));
 
         useRegions = getBoolean("regions.enable", true);
         regionInvinciblityRemovesMobs = getBoolean("regions.invincibilityRemovesMobs", false);

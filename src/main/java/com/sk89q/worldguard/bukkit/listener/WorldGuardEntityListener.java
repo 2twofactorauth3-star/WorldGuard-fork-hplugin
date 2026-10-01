@@ -435,6 +435,10 @@ public class WorldGuardEntityListener extends AbstractListener {
         ConfigurationManager cfg = getConfig();
         WorldConfiguration wcfg = getWorldConfig(event.getEntity().getWorld());
 
+        if (!wcfg.blockPluginSpawning && Entities.isPluginSpawning(event.getSpawnReason())) {
+            return;
+        }
+
         // armor stands are living entities, but we check them as blocks/non-living entities, so ignore them here
         if (Entities.isConsideredBuildingIfUsed(event.getEntity())) {
             return;
