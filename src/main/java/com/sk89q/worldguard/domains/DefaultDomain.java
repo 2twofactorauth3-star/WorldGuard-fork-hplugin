@@ -217,6 +217,11 @@ public class DefaultDomain implements Domain, ChangeTracked {
     }
 
     @Override
+    public boolean contains(String playerName) {
+        return playerDomain.contains(playerName);
+    }
+
+    @Override
     public int size() {
         return groupDomain.size() + playerDomain.size();
     }

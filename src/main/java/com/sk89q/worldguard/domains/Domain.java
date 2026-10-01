@@ -47,6 +47,16 @@ public interface Domain {
     boolean contains(UUID uniqueId);
 
     /**
+     * Returns true if a domain contains a player with the given name.
+     *
+     * <p>This method doesn't check for groups.</p>
+     *
+     * @param playerName the player name
+     * @return whether this domain contains the player
+     */
+    boolean contains(String playerName);
+
+    /**
      * Get the number of entries.
      *
      * @return the number of entries

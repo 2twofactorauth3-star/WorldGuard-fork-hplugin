@@ -118,6 +118,11 @@ public class GroupDomain implements Domain, ChangeTracked {
     }
 
     @Override
+    public boolean contains(String playerName) {
+        return false; // GroupDomains can't contain players by name
+    }
+
+    @Override
     public int size() {
         return groups.size();
     }

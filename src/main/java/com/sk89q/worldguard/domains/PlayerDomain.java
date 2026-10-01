@@ -20,7 +20,10 @@
 package com.sk89q.worldguard.domains;
 
 import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.util.ChangeTracked;
+import org.enginehub.squirrelid.Profile;
+import org.enginehub.squirrelid.cache.ProfileCache;
 
 import java.util.Collections;
 import java.util.Set;
@@ -117,6 +120,31 @@ public class PlayerDomain implements Domain, ChangeTracked {
     public boolean contains(UUID uniqueId) {
         checkNotNull(uniqueId);
         return uniqueIds.contains(uniqueId);
+    }
+
+    @Override
+    public boolean contains(String playerName) {
+        checkNotNull(playerName);
+        String identifier = playerName.startsWith("uuid:")
+                ? playerName.substring("uuid:".length()) : playerName;
+        try {
+            return contains(UUID.fromString(identifier));
+        } catch (IllegalArgumentException ignored) {
+            // Continue with a case-insensitive lookup in the local profile cache.
+        }
+
+        ProfileCache cache = WorldGuard.getInstance().getProfileCache();
+        if (cache == null) {
+            return false;
+        }
+        for (UUID uniqueId : uniqueIds) {
+            Profile profile = cache.getIfPresent(uniqueId);
+            if (profile != null && profile.getName() != null
+                    && profile.getName().equalsIgnoreCase(playerName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
