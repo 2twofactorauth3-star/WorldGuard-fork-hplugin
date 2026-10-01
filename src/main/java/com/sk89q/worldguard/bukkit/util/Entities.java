@@ -70,7 +70,7 @@ public final class Entities {
      * @return true if tamed
      */
     public static boolean isTamed(@Nullable Entity entity) {
-        return entity instanceof Tameable && ((Tameable) entity).isTamed();
+        return entity instanceof Tameable tameable && tameable.isTamed();
     }
 
     /**
@@ -101,7 +101,7 @@ public final class Entities {
      * @return true if the entity can be ridden
      */
     public static boolean isRiddenOnUse(Entity entity) {
-        return entity instanceof Steerable ? ((Steerable) entity).hasSaddle() : entity instanceof Vehicle;
+        return entity instanceof Steerable steerable ? steerable.hasSaddle() : entity instanceof Vehicle;
     }
 
     /**
@@ -148,11 +148,10 @@ public final class Entities {
      */
     public static Entity getShooter(Entity entity) {
 
-        while (entity instanceof Projectile) {
-            Projectile projectile = (Projectile) entity;
+        while (entity instanceof Projectile projectile) {
             ProjectileSource remover = projectile.getShooter();
-            if (remover instanceof Entity && remover != entity) {
-                entity = (Entity) remover;
+            if (remover instanceof Entity source && remover != entity) {
+                entity = source;
             } else {
                 return entity;
             }

@@ -48,14 +48,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class AbstractSessionManager implements SessionManager {
 
     public static final int RUN_DELAY = 20;
-    private static final BiPredicate<World, LocalPlayer> BYPASS_PERMISSION_TEST = (world, player) -> {
-        return player.hasPermission("worldguard.region.bypass." + world.getName());
-    };
+    private static final BiPredicate<World, LocalPlayer> BYPASS_PERMISSION_TEST =
+            (world, player) -> player.hasPermission("worldguard.region.bypass." + world.getName());
 
     private final ConcurrentMap<UUID, Session> sessions = new ConcurrentHashMap<>();
 
     private boolean hasCustom = false;
-    private List<Handler.Factory<? extends Handler>> handlers = new LinkedList<>();
+    private final List<Handler.Factory<? extends Handler>> handlers = new LinkedList<>();
 
     private static final List<Handler.Factory<? extends Handler>> defaultHandlers = new LinkedList<>();
 

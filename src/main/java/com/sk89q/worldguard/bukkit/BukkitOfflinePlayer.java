@@ -34,6 +34,7 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
+@SuppressWarnings("deprecation")
 class BukkitOfflinePlayer extends BukkitPlayer {
 
     private final OfflinePlayer player;

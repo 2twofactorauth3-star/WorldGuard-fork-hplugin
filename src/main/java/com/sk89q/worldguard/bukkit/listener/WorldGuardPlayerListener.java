@@ -52,7 +52,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Iterator;
@@ -63,6 +62,7 @@ import javax.annotation.Nullable;
 /**
  * Handles all events thrown in relation to a player.
  */
+@SuppressWarnings("deprecation")
 public class WorldGuardPlayerListener extends AbstractListener {
 
     public WorldGuardPlayerListener(WorldGuardPlugin plugin) {
@@ -94,7 +94,7 @@ public class WorldGuardPlayerListener extends AbstractListener {
         World world = player.getWorld();
 
         Events.fire(new ProcessPlayerEvent(player));
-        WorldGuard.getInstance().getExecutorService().submit(() ->
+        WorldGuard.getInstance().getExecutorService().execute(() ->
             WorldGuard.getInstance().getProfileCache().put(new Profile(player.getUniqueId(), player.getName())));
     }
 
@@ -116,6 +116,7 @@ public class WorldGuardPlayerListener extends AbstractListener {
         }
 
         Block block = event.getClickedBlock();
+        if (block == null) return;
         World world = block.getWorld();
         Player player = event.getPlayer();
         @Nullable ItemStack item = event.getItem();
@@ -252,7 +253,6 @@ public class WorldGuardPlayerListener extends AbstractListener {
                 RegionProtectionListener.formatAndSendDenyMessage(BukkitMessages.template(
                         "protectionActionUseCommand", "command", event.getMessage()), localPlayer, message);
                 event.setCancelled(true);
-                return;
             }
         }
 

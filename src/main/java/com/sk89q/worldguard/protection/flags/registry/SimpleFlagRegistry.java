@@ -150,7 +150,7 @@ public class SimpleFlagRegistry implements FlagRegistry {
             }
         }
         for (Entry<String, Object> entry : regionFlags.entrySet()) {
-            String parentName = entry.getKey().replaceAll("-group", "");
+            String parentName = entry.getKey().replace("-group", "");
             Flag<?> parent = get(parentName);
             if (parent == null || parent instanceof UnknownFlag) {
                 if (createUnknown && get(entry.getKey()) == null) {
@@ -175,6 +175,7 @@ public class SimpleFlagRegistry implements FlagRegistry {
     }
 
     @Override
+    @javax.annotation.Nonnull
     public Iterator<Flag<?>> iterator() {
         return Iterators.unmodifiableIterator(flags.values().iterator());
     }

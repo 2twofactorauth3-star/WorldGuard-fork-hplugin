@@ -128,13 +128,11 @@ public class RegionFlagsListener extends AbstractListener {
             LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
             if (!query.testState(BukkitAdapter.adapt(entity.getLocation()), localPlayer, Flags.FALL_DAMAGE)) {
                 event.setCancelled(true);
-                return;
             }
         } else if (event.getCause() == DamageCause.FLY_INTO_WALL) {
             LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
             if (!query.testState(BukkitAdapter.adapt(entity.getLocation()), localPlayer, Flags.FALL_DAMAGE)) {
                 event.setCancelled(true);
-                return;
             }
         }
     }

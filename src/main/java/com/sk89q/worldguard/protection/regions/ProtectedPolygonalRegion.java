@@ -60,6 +60,7 @@ public class ProtectedPolygonalRegion extends ProtectedRegion {
      * @param minY the minimum y coordinate
      * @param maxY the maximum y coordinate
      */
+    @SuppressWarnings("this-escape")
     public ProtectedPolygonalRegion(String id, boolean transientRegion, List<BlockVector2> points, int minY, int maxY) {
         super(id, transientRegion);
         ImmutableList<BlockVector2> immutablePoints = ImmutableList.copyOf(points);

@@ -97,9 +97,7 @@ public class MapFlag<K, V> extends Flag<Map<K, V>> {
     @Override
     public Map<K, V> unmarshal(@Nullable final Object o) {
 
-        if (o instanceof Map<?, ?>) {
-
-            final Map<?, ?> map = (Map<?, ?>) o;
+        if (o instanceof Map<?, ?> map) {
             final Map<K, V> items = Maps.newHashMap();
             for (final Entry<?, ?> entry : map.entrySet()) {
 

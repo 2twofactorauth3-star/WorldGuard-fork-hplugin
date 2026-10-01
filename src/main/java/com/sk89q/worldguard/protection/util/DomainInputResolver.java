@@ -41,7 +41,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DomainInputResolver implements Callable<DefaultDomain> {
 
-    private static final Pattern GROUP_PATTERN = Pattern.compile("(?i)^[G]:(.+)$");
+    private static final Pattern GROUP_PATTERN = Pattern.compile("(?i)^G:(.+)$");
 
     private final ProfileService profileService;
     private final String[] input;

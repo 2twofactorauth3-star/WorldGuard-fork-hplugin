@@ -62,6 +62,7 @@ public class SpawnEntityEvent extends AbstractEntityEvent {
     }
 
     @Override
+    @javax.annotation.Nonnull
     public HandlerList getHandlers() {
         return handlers;
     }

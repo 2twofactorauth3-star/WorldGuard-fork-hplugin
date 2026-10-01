@@ -118,7 +118,7 @@ public final class QueryCache {
             structureRevision = ProtectedRegion.structureRevision();
         }
 
-        private void invalidate() {
+        private synchronized void invalidate() {
             generation++;
             currentEntries = new ConcurrentHashMap<>();
             previousEntries = new ConcurrentHashMap<>();

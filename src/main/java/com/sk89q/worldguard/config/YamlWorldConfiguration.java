@@ -66,7 +66,7 @@ public abstract class YamlWorldConfiguration extends WorldConfiguration {
         node = settingsPath(node);
         List<Integer> res = parentConfig.getIntList(node, def);
 
-        if (res == null || res.size() == 0) {
+        if (res == null || res.isEmpty()) {
             parentConfig.setProperty(node, new ArrayList<Integer>());
         }
 
@@ -81,7 +81,7 @@ public abstract class YamlWorldConfiguration extends WorldConfiguration {
         node = settingsPath(node);
         List<String> res = parentConfig.getStringList(node, def);
 
-        if (res == null || res.size() == 0) {
+        if (res == null || res.isEmpty()) {
             parentConfig.setProperty(node, new ArrayList<String>());
         }
 
@@ -96,7 +96,7 @@ public abstract class YamlWorldConfiguration extends WorldConfiguration {
         node = settingsPath(node);
         List<String> res = parentConfig.getKeys(node);
 
-        if (res == null || res.size() == 0) {
+        if (res == null || res.isEmpty()) {
             res = config.getKeys(node);
         }
         if (res == null) {

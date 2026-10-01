@@ -84,7 +84,7 @@ public class YamlRegionFile implements RegionDatabase {
             "# hand, be aware that A SINGLE MISTYPED CHARACTER CAN CORRUPT THE FILE. If\r\n" +
             "# WorldGuard is unable to parse the file, your regions will FAIL TO LOAD and\r\n" +
             "# the contents of this file will reset. Please use a YAML validator such as\r\n" +
-            "# http://yaml-online-parser.appspot.com (for smaller files).\r\n" +
+            "# https://yaml-online-parser.appspot.com (for smaller files).\r\n" +
             "#\r\n" +
             "# REMEMBER TO KEEP PERIODICAL BACKUPS.\r\n" +
             "#";
@@ -232,13 +232,11 @@ public class YamlRegionFile implements RegionDatabase {
             map.put(region.getId(), nodeMap);
             YAMLNode node = new YAMLNode(nodeMap, false);
 
-            if (region instanceof ProtectedCuboidRegion) {
-                ProtectedCuboidRegion cuboid = (ProtectedCuboidRegion) region;
+            if (region instanceof ProtectedCuboidRegion cuboid) {
                 node.setProperty("type", "cuboid");
                 node.setProperty("min", cuboid.getMinimumPoint());
                 node.setProperty("max", cuboid.getMaximumPoint());
-            } else if (region instanceof ProtectedPolygonalRegion) {
-                ProtectedPolygonalRegion poly = (ProtectedPolygonalRegion) region;
+            } else if (region instanceof ProtectedPolygonalRegion poly) {
                 node.setProperty("type", "poly2d");
                 node.setProperty("min-y", poly.getMinimumPoint().y());
                 node.setProperty("max-y", poly.getMaximumPoint().y());

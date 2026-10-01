@@ -106,6 +106,7 @@ public final class SelectionExpiry {
         }
 
         LocalSession session = WorldEdit.getInstance().getSessionManager().getIfPresent(actor);
+        if (session == null) return;
         RegionSelector emptySelector = snapshot.polygon
                 ? new Polygonal2DRegionSelector(world)
                 : new CuboidRegionSelector(world);

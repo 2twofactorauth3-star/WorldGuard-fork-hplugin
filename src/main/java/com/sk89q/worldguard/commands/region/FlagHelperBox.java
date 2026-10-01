@@ -53,7 +53,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 class FlagHelperBox extends PaginationBox {
 
@@ -69,7 +68,7 @@ class FlagHelperBox extends PaginationBox {
                 if (idx1 < 0) return f1.getName().compareTo(f2.getName());
                 return idx1 < idx2 ? -1 : 1;
             })
-            .collect(Collectors.toList());
+            .toList();
     private static final int SIZE = FLAGS.size() == Flags.INBUILT_FLAGS.size() ? FLAGS.size() : FLAGS.size() + 1;
     private static final int PAD_PX_SIZE = 180;
     static final Set<Flag<?>> DANGER_ZONE = ImmutableSet.of(Flags.BUILD, Flags.PASSTHROUGH, Flags.BLOCK_PLACE, Flags.BLOCK_BREAK);

@@ -80,8 +80,8 @@ public class HealFlag extends Handler {
         if (healDelay <= 0) {
             player.setHealth(healAmount > 0 ? maxHealth : minHealth);
             lastHeal = now;
-        } else if (now - lastHeal > healDelay * 1000) {
-            player.setHealth(Math.min(maxHealth, Math.max(minHealth, player.getHealth() + healAmount)));
+        } else if (now - lastHeal > healDelay * 1000L) {
+            player.setHealth(Math.clamp(player.getHealth() + healAmount, minHealth, maxHealth));
             lastHeal = now;
         }
     }

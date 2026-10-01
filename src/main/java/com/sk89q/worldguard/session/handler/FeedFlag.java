@@ -78,9 +78,9 @@ public class FeedFlag extends Handler {
             player.setFoodLevel(feedAmount > 0 ? maxHunger : minHunger);
             player.setSaturation(player.getFoodLevel());
             lastFeed = now;
-        } else if (now - lastFeed > feedDelay * 1000) {
+        } else if (now - lastFeed > feedDelay * 1000L) {
             // clamp health between minimum and maximum
-            player.setFoodLevel(Math.min(maxHunger, Math.max(minHunger, player.getFoodLevel() + feedAmount)));
+            player.setFoodLevel(Math.clamp(player.getFoodLevel() + feedAmount, minHunger, maxHunger));
             player.setSaturation(player.getFoodLevel());
             lastFeed = now;
         }

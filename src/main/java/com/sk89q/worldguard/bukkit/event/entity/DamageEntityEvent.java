@@ -46,10 +46,11 @@ public class DamageEntityEvent extends AbstractEntityEvent {
     @Override
     @Nonnull
     public Entity getEntity() {
-        return super.getEntity();
+        return checkNotNull(super.getEntity());
     }
 
     @Override
+    @Nonnull
     public HandlerList getHandlers() {
         return handlers;
     }

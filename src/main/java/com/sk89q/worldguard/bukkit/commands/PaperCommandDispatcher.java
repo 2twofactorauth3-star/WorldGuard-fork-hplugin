@@ -184,12 +184,12 @@ public final class PaperCommandDispatcher {
                     || binding.max >= 0 && context.argsLength() > binding.max) {
                 plugin.getMessages().send(source.getSender(), BukkitMessages.template(
                         "commandUsage", "usage",
-                        "/" + root + " " + binding.aliases.get(0) + " " + binding.usage));
+                        "/" + root + " " + binding.aliases.getFirst() + " " + binding.usage));
                 return 0;
             }
             binding.executor.execute(context, actor);
             if (root.equals("region")
-                    && MUTATING_REGION_COMMANDS.contains(binding.aliases.get(0))) {
+                    && MUTATING_REGION_COMMANDS.contains(binding.aliases.getFirst())) {
                 WorldGuard.getInstance().getPlatform().getRegionContainer().invalidateCache();
                 WorldGuard.getInstance().getPlatform().getSessionManager().resetAllStates();
             }
@@ -260,7 +260,7 @@ public final class PaperCommandDispatcher {
             CommandSourceStack source, Binding binding, SuggestionInput input) {
         List<String> positional = positionalArguments(input.completed, binding.flags);
         int index = positional.size();
-        String command = binding.aliases.get(0);
+        String command = binding.aliases.getFirst();
         Collection<String> values = positionalSuggestionValues(
                 source, input.completed, positional, command, index);
         values.forEach(value -> suggest(input.target, input.current, value));
@@ -352,7 +352,7 @@ public final class PaperCommandDispatcher {
 
     private static String pendingValueFlag(List<String> arguments, String specification) {
         if (arguments.isEmpty()) return null;
-        String token = arguments.get(arguments.size() - 1);
+        String token = arguments.getLast();
         if (token.length() == 2 && token.charAt(0) == '-'
                 && isValueFlag(specification, token.charAt(1))) {
             return String.valueOf(token.charAt(1));

@@ -36,7 +36,6 @@ import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.util.Vector;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class WorldGuardVehicleListener extends AbstractListener {
 
@@ -49,7 +48,9 @@ public class WorldGuardVehicleListener extends AbstractListener {
         Vehicle vehicle = event.getVehicle();
         if (vehicle.getPassengers().isEmpty()) return;
         List<Player> playerPassengers = vehicle.getPassengers().stream()
-                .filter(ent -> ent instanceof Player).map(ent -> (Player) ent).collect(Collectors.toList());
+                .filter(Player.class::isInstance)
+                .map(Player.class::cast)
+                .toList();
         if (playerPassengers.isEmpty()) {
             return;
         }

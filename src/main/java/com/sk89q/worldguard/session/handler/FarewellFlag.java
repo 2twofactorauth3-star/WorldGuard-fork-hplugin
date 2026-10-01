@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
+@SuppressWarnings("deprecation")
 public class FarewellFlag extends Handler {
 
     public static final Factory FACTORY = new Factory();

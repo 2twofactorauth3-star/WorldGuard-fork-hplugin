@@ -19,12 +19,14 @@
 
 package com.sk89q.worldguard.protection.flags;
 
+import java.util.Locale;
+
 /**
  * Stores an enum value.
  */
 public class EnumFlag<T extends Enum<T>> extends Flag<T> {
 
-    private Class<T> enumClass;
+    private final Class<T> enumClass;
 
     public EnumFlag(String name, Class<T> enumClass, RegionGroup defaultGroup) {
         super(name, defaultGroup);
@@ -46,9 +48,8 @@ public class EnumFlag<T extends Enum<T>> extends Flag<T> {
     }
 
     private T findValue(String input) throws IllegalArgumentException {
-        if (input != null) {
-            input = input.toUpperCase();
-        }
+        if (input == null) throw new IllegalArgumentException("input must not be null");
+        input = input.toUpperCase(Locale.ROOT);
 
         try {
             return Enum.valueOf(enumClass, input);

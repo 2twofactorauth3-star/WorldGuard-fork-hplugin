@@ -178,13 +178,14 @@ public class RegionResultSet extends AbstractRegionSet {
         }
         regionSet = switch (applicable.size()) {
             case 0 -> Collections.emptySet();
-            case 1 -> Collections.singleton(applicable.get(0));
+            case 1 -> Collections.singleton(applicable.getFirst());
             default -> ImmutableSet.copyOf(applicable);
         };
         return regionSet;
     }
 
     @Override
+    @javax.annotation.Nonnull
     public Iterator<ProtectedRegion> iterator() {
         return applicable.iterator();
     }

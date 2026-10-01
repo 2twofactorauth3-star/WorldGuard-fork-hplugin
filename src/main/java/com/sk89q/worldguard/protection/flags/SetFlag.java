@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class SetFlag<T> extends Flag<Set<T>> {
 
-    private Flag<T> subFlag;
+    private final Flag<T> subFlag;
 
     public SetFlag(String name, RegionGroup defaultGroup, Flag<T> subFlag) {
         super(name, defaultGroup);
@@ -76,8 +76,7 @@ public class SetFlag<T> extends Flag<Set<T>> {
 
     @Override
     public Set<T> unmarshal(Object o) {
-        if (o instanceof Collection<?>) {
-            Collection<?> collection = (Collection<?>) o;
+        if (o instanceof Collection<?> collection) {
             Set<T> items = new HashSet<>();
 
             for (Object sub : collection) {

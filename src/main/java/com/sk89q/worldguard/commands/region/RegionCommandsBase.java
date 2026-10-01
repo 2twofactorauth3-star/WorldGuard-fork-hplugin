@@ -32,12 +32,7 @@ import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.RegionSelector;
-import com.sk89q.worldedit.regions.selector.CuboidRegionSelector;
-import com.sk89q.worldedit.regions.selector.Polygonal2DRegionSelector;
-import com.sk89q.worldedit.util.formatting.component.ErrorFormat;
-import com.sk89q.worldedit.util.formatting.component.SubtleFormat;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
-import com.sk89q.worldedit.util.formatting.text.format.TextDecoration;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
@@ -105,8 +100,8 @@ class RegionCommandsBase {
                 } catch (NoSuchMethodError ignored) {
                 }
             }
-            if (sender instanceof LocalPlayer) {
-                return ((LocalPlayer) sender).getWorld();
+            if (sender instanceof LocalPlayer player) {
+                return player.getWorld();
             } else {
                 throw new CommandException(BukkitMessages.template(
                         "specifyWorld", "flag", String.valueOf(flag)));
@@ -294,8 +289,7 @@ class RegionCommandsBase {
         Region selection = checkSelection(actor);
 
         // Detect the type of region from WorldEdit
-        if (selection instanceof Polygonal2DRegion) {
-            Polygonal2DRegion polySel = (Polygonal2DRegion) selection;
+        if (selection instanceof Polygonal2DRegion polySel) {
             int minY = polySel.getMinimumPoint().y();
             int maxY = polySel.getMaximumPoint().y();
             return new ProtectedPolygonalRegion(id, polySel.getPoints(), minY, maxY);

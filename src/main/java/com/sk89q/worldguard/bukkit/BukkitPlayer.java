@@ -28,13 +28,14 @@ import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.util.MessagingUtil;
-import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 
 import java.time.Duration;
+import java.util.Objects;
 import net.kyori.adventure.title.Title;
 
+@SuppressWarnings("deprecation")
 public class BukkitPlayer extends com.sk89q.worldedit.bukkit.BukkitPlayer implements LocalPlayer {
     private volatile Session worldGuardSession;
 
@@ -93,7 +94,7 @@ public class BukkitPlayer extends com.sk89q.worldedit.bukkit.BukkitPlayer implem
 
     @Override
     public double getMaxHealth() {
-        return getPlayer().getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+        return Objects.requireNonNull(getPlayer().getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
     }
 
     @Override

@@ -111,7 +111,7 @@ public class CommandFilter implements Predicate<String> {
         for (int i = 0; i < stripped.length(); i++) {
             char character = stripped.charAt(i);
             if (Character.isWhitespace(character)) {
-                pendingSpace = output.length() > 0;
+                pendingSpace = !output.isEmpty();
             } else {
                 if (pendingSpace) {
                     output.append(' ');
@@ -122,7 +122,7 @@ public class CommandFilter implements Predicate<String> {
         }
         int space = output.indexOf(" ");
         int colon = output.indexOf(":");
-        if (output.length() > 0 && output.charAt(0) == '/'
+        if (!output.isEmpty() && output.charAt(0) == '/'
                 && colon > 0 && (space < 0 || colon < space)) {
             output.delete(1, colon + 1);
         }

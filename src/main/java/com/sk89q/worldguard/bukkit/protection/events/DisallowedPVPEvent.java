@@ -71,6 +71,7 @@ public class DisallowedPVPEvent extends Event implements Cancellable {
     }
 
     @Override
+    @javax.annotation.Nonnull
     public HandlerList getHandlers() {
         return handlers;
     }

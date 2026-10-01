@@ -52,7 +52,7 @@ public abstract class ConfigurationManager {
             "#   in categories (like \"enforce-single-session\" is in the \"protection\"\r\n" +
             "#   category.\r\n" +
             "# - If you want to check the format of this file before putting it\r\n" +
-            "#   into WorldGuard, paste it into http://yaml-online-parser.appspot.com/\r\n" +
+            "#   into WorldGuard, paste it into https://yaml-online-parser.appspot.com/\r\n" +
             "#   and see if it gives \"ERROR:\".\r\n" +
             "# - Lines starting with # are comments and so they are ignored.\r\n" +
             "#\r\n";

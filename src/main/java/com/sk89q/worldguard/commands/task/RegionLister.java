@@ -41,7 +41,6 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -167,9 +166,9 @@ public class RegionLister implements Callable<Integer> {
             iterableRegions = filterByIntersecting.getIntersectingRegions(iterableRegions);
         }
         List<RegionListEntry> entries = collectEntries(iterableRegions);
-        Collections.sort(entries);
+        entries.sort(null);
         addGlobalEntry(regions, entries);
-        if (ownerMatcher != null) Collections.sort(entries);
+        if (ownerMatcher != null) entries.sort(null);
 
         RegionPermissionModel perms = sender.isPlayer() ? new RegionPermissionModel(sender) : null;
         String title = ownerMatcher == null
@@ -197,7 +196,7 @@ public class RegionLister implements Callable<Integer> {
         ProtectedRegion global = regions.get(ProtectedRegion.GLOBAL_REGION);
         if (global == null) return;
         RegionListEntry entry = new RegionListEntry(global);
-        if (entry.matches(idFilter) && entry.matches(ownerMatcher)) entries.add(0, entry);
+        if (entry.matches(idFilter) && entry.matches(ownerMatcher)) entries.addFirst(entry);
     }
 
     private String pageCommand() {
@@ -264,7 +263,7 @@ public class RegionLister implements Callable<Integer> {
     private static class RegionListBox extends PaginationBox {
         private final RegionPermissionModel perms;
         private final List<RegionListEntry> entries;
-        private String world;
+        private final String world;
 
         RegionListBox(String title, String cmd, RegionPermissionModel perms, List<RegionListEntry> entries, String world) {
             super(title, cmd);

@@ -77,9 +77,10 @@ public final class WorldGuard {
                 "WorldGuard Task Executor - %s"));
 
         File cacheDir = new File(getPlatform().getConfigDir().toFile(), "cache");
-        cacheDir.mkdirs();
-
         try {
+            if (!cacheDir.isDirectory() && !cacheDir.mkdirs()) {
+                throw new IOException("Unable to create profile cache directory");
+            }
             profileCache = new SQLiteCache(new File(cacheDir, "profiles.sqlite"));
         } catch (IOException | UnsatisfiedLinkError ignored) {
             logger.log(Level.WARNING, "@wglog:logFailedToInitializeSqliteProfileCache@");
@@ -170,8 +171,8 @@ public final class WorldGuard {
      * @throws CommandException if it isn't a player
      */
     public LocalPlayer checkPlayer(Actor sender) throws CommandException {
-        if (sender instanceof LocalPlayer) {
-            return (LocalPlayer) sender;
+        if (sender instanceof LocalPlayer player) {
+            return player;
         } else {
             throw new CommandException("@wg:playerExpected@");
         }
@@ -192,7 +193,9 @@ public final class WorldGuard {
             }
 
             //Futures.successfulAsList(tasks).get();
-            executorService.awaitTermination(5, TimeUnit.SECONDS);
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

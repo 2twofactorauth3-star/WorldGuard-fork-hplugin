@@ -75,6 +75,7 @@ import java.util.List;
 /**
  * Handle events that need to be processed by region protection.
  */
+@SuppressWarnings("deprecation")
 public class RegionProtectionListener extends AbstractListener {
 
     private static final String DISEMBARK_MESSAGE_KEY = "worldguard.region.disembarkMessage";
@@ -104,8 +105,7 @@ public class RegionProtectionListener extends AbstractListener {
 
         Object rootCause = cause.getRootCause();
 
-        if (rootCause instanceof Player) {
-            Player player = (Player) rootCause;
+        if (rootCause instanceof Player player) {
             RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
             LocalPlayer localPlayer = getPlugin().wrapPlayer(player);
             String message = query.queryValue(BukkitAdapter.adapt(location), localPlayer, Flags.DENY_MESSAGE);
@@ -143,8 +143,7 @@ public class RegionProtectionListener extends AbstractListener {
     private boolean isWhitelisted(Cause cause, World world, boolean pvp) {
         Object rootCause = cause.getRootCause();
 
-        if (rootCause instanceof Player) {
-            Player player = (Player) rootCause;
+        if (rootCause instanceof Player player) {
             LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
             return !pvp && WorldGuard.getInstance().getPlatform().getSessionManager().hasBypass(localPlayer, localPlayer.getWorld());
         } else {
@@ -171,6 +170,7 @@ public class RegionProtectionListener extends AbstractListener {
         }
 
         event.filter((Predicate<Location>) target -> {
+            if (target == null) return true;
             boolean canPlace;
             String what;
 
@@ -184,7 +184,8 @@ public class RegionProtectionListener extends AbstractListener {
                 flags.add(Flags.LIGHTER);
                 if (fire) flags.add(Flags.FIRE_SPREAD);
                 if (lava) flags.add(Flags.LAVA_FIRE);
-                canPlace = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, flags.toArray(new StateFlag[flags.size()])));
+                canPlace = query.testBuild(BukkitAdapter.adapt(target), associable,
+                        combine(event, flags.toArray(StateFlag[]::new)));
                 what = "@wg:protectionActionPlaceFire@";
 
             } else if (type == Material.FROSTED_ICE) {
@@ -219,6 +220,7 @@ public class RegionProtectionListener extends AbstractListener {
             final RegionAssociable associable = createRegionAssociable(event.getCause());
 
             event.filter((Predicate<Location>) target -> {
+                if (target == null) return true;
                 boolean canBreak;
                 String what;
 
@@ -253,6 +255,7 @@ public class RegionProtectionListener extends AbstractListener {
         final RegionAssociable associable = createRegionAssociable(event.getCause());
 
         event.filter((Predicate<Location>) target -> {
+            if (target == null) return true;
             boolean canUse;
             String what;
             final Material type = target.getBlock().getType();

@@ -120,7 +120,7 @@ final class CommentedYamlProcessor extends YAMLProcessor {
                 if (!candidate.startsWith("#")) {
                     break;
                 }
-                description.add(0, candidate);
+                description.addFirst(candidate);
             }
             if (!description.isEmpty()) {
                 comments.put(path, description);
@@ -157,13 +157,13 @@ final class CommentedYamlProcessor extends YAMLProcessor {
     }
 
     private static String updatePath(List<PathPart> parents, ParsedKey key) {
-        while (!parents.isEmpty() && parents.get(parents.size() - 1).indent >= key.indent) {
-            parents.remove(parents.size() - 1);
+        while (!parents.isEmpty() && parents.getLast().indent >= key.indent) {
+            parents.removeLast();
         }
         parents.add(new PathPart(key.indent, key.name));
         StringBuilder path = new StringBuilder();
         for (PathPart part : parents) {
-            if (path.length() > 0) {
+            if (!path.isEmpty()) {
                 path.append('.');
             }
             path.append(part.name);

@@ -83,6 +83,7 @@ import java.util.logging.Logger;
 /**
  * The main class for WorldGuard as a Bukkit plugin.
  */
+@SuppressWarnings("unused") // Constructed by Paper from plugin.yml.
 public class WorldGuardPlugin extends JavaPlugin {
 
     private static final int BSTATS_SERVICE_ID = 34427;
@@ -330,8 +331,7 @@ public class WorldGuardPlugin extends JavaPlugin {
         }
 
         // Invoke the permissions resolver
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
+        if (sender instanceof Player player) {
             return PermissionsResolverManager.getInstance().hasPermission(player.getWorld().getName(), player, perm);
         }
 
@@ -366,8 +366,8 @@ public class WorldGuardPlugin extends JavaPlugin {
             throw new CommandException("@wg:worldEditDisabled@");
         }
 
-        if (worldEdit instanceof WorldEditPlugin) {
-            return (WorldEditPlugin) worldEdit;
+        if (worldEdit instanceof WorldEditPlugin plugin) {
+            return plugin;
         } else {
             throw new CommandException("@wg:worldEditDetectionFailed@");
         }
@@ -415,8 +415,8 @@ public class WorldGuardPlugin extends JavaPlugin {
     }
 
     public CommandSender unwrapActor(Actor sender) {
-        if (sender instanceof BukkitPlayer) {
-            return ((BukkitPlayer) sender).getPlayer();
+        if (sender instanceof BukkitPlayer player) {
+            return player.getPlayer();
         } else if (sender instanceof BukkitCommandSender bukkitSender) {
             return bukkitSender.getSender();
         } else {
@@ -509,8 +509,9 @@ public class WorldGuardPlugin extends JavaPlugin {
 
         // Make parent directories
         File parent = actual.getParentFile();
-        if (!parent.exists()) {
-            parent.mkdirs();
+        if (!parent.isDirectory() && !parent.mkdirs()) {
+            getLogger().severe("@wglog:unableReadDefaultConfiguration@" + defaultName);
+            return;
         }
 
         if (actual.exists()) {
@@ -547,7 +548,7 @@ public class WorldGuardPlugin extends JavaPlugin {
             return ServerBuildInfo.buildInfo().isBrandCompatible(net.kyori.adventure.key.Key.key("papermc", "folia"));
         } catch (Throwable t) {
             // Ignore, this likely means an outdated version.
-            getLogger().log(Level.WARNING, "@wglog:failedFoliaCheck@", t);
+            WorldGuard.logger.log(Level.WARNING, "@wglog:failedFoliaCheck@", t);
         }
 
         return false;

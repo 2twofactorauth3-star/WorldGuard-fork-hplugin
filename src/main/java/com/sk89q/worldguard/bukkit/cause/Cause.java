@@ -114,9 +114,7 @@ public final class Cause {
 
         if (object instanceof TNTPrimed || object instanceof Vehicle) {
             Entity entity = (Entity) object;
-            if (entity.getOrigin() == null) {
-                return false;
-            }
+            return entity.getOrigin() != null;
         }
 
         return true;
@@ -125,7 +123,7 @@ public final class Cause {
     @Nullable
     public Object getRootCause() {
         if (!causes.isEmpty()) {
-            return causes.get(0);
+            return causes.getFirst();
         }
 
         return null;

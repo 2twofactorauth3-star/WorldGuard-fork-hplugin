@@ -69,7 +69,6 @@ public class BukkitRegionContainer extends RegionContainer {
     }
 
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void initialize() {
         super.initialize();
         if (!active) {
@@ -188,7 +187,7 @@ public class BukkitRegionContainer extends RegionContainer {
             }
         }
 
-        if (manager != null && world instanceof BukkitWorld bukkitWorld) {
+        if (world instanceof BukkitWorld bukkitWorld) {
             managersByWorld.put(bukkitWorld.getWorld().getUID(), manager);
         }
         return manager;

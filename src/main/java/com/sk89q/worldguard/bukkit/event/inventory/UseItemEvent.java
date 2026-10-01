@@ -69,6 +69,7 @@ public class UseItemEvent extends DelegateEvent {
     }
 
     @Override
+    @javax.annotation.Nonnull
     public HandlerList getHandlers() {
         return handlers;
     }

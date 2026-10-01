@@ -41,7 +41,7 @@ final class BukkitConfigValidator {
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
     private static final java.util.regex.Pattern MINI_MESSAGE_TAG =
-            java.util.regex.Pattern.compile("<\\/?([A-Za-z_][A-Za-z0-9_-]*)(?=[:>])");
+            java.util.regex.Pattern.compile("</?([A-Za-z_][A-Za-z0-9_-]*)(?=[:>])");
     private static final Set<String> MINI_MESSAGE_TAGS = Set.of(
             "black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple",
             "gold", "gray", "grey", "dark_gray", "dark_grey", "blue", "green", "aqua",

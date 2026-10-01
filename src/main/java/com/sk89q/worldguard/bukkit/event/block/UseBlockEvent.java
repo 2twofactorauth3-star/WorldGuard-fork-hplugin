@@ -53,6 +53,7 @@ public class UseBlockEvent extends AbstractBlockEvent {
     }
 
     @Override
+    @javax.annotation.Nonnull
     public HandlerList getHandlers() {
         return handlers;
     }

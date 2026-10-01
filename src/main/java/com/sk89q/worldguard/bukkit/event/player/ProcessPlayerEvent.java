@@ -48,6 +48,7 @@ public class ProcessPlayerEvent extends Event {
     }
 
     @Override
+    @javax.annotation.Nonnull
     public HandlerList getHandlers() {
         return handlers;
     }

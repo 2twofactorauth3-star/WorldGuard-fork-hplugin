@@ -167,38 +167,19 @@ public final class Materials {
             putMaterialTag(tag, MODIFIED_ON_RIGHT);
         }
 
-//        DAMAGE_EFFECTS.add(PotionEffectType.SPEED);
         DAMAGE_EFFECTS.add(PotionEffectType.SLOWNESS);
-//        DAMAGE_EFFECTS.add(PotionEffectType.HASTE);
         DAMAGE_EFFECTS.add(PotionEffectType.MINING_FATIGUE);
-//        DAMAGE_EFFECTS.add(PotionEffectType.STRENGTH);
-//        DAMAGE_EFFECTS.add(PotionEffectType.INSTANT_HEALTH);
         DAMAGE_EFFECTS.add(PotionEffectType.INSTANT_DAMAGE);
-//        DAMAGE_EFFECTS.add(PotionEffectType.JUMP_BOOST);
         DAMAGE_EFFECTS.add(PotionEffectType.NAUSEA);
-//        DAMAGE_EFFECTS.add(PotionEffectType.REGENERATION);
-//        DAMAGE_EFFECTS.add(PotionEffectType.RESISTANCE);
-//        DAMAGE_EFFECTS.add(PotionEffectType.FIRE_RESISTANCE);
-//        DAMAGE_EFFECTS.add(PotionEffectType.WATER_BREATHING);
-//        DAMAGE_EFFECTS.add(PotionEffectType.INVISIBILITY);
         DAMAGE_EFFECTS.add(PotionEffectType.BLINDNESS);
-//        DAMAGE_EFFECTS.add(PotionEffectType.NIGHT_VISION);
         DAMAGE_EFFECTS.add(PotionEffectType.HUNGER);
         DAMAGE_EFFECTS.add(PotionEffectType.WEAKNESS);
         DAMAGE_EFFECTS.add(PotionEffectType.POISON);
         DAMAGE_EFFECTS.add(PotionEffectType.WITHER);
-//        DAMAGE_EFFECTS.add(PotionEffectType.HEALTH_BOOST);
-//        DAMAGE_EFFECTS.add(PotionEffectType.ABSORPTION);
-//        DAMAGE_EFFECTS.add(PotionEffectType.SATURATION);
         DAMAGE_EFFECTS.add(PotionEffectType.GLOWING);
         DAMAGE_EFFECTS.add(PotionEffectType.LEVITATION);
-//        DAMAGE_EFFECTS.add(PotionEffectType.LUCK);
         DAMAGE_EFFECTS.add(PotionEffectType.UNLUCK);
-//        DAMAGE_EFFECTS.add(PotionEffectType.SLOW_FALLING);
-//        DAMAGE_EFFECTS.add(PotionEffectType.CONDUIT_POWER);
-//        DAMAGE_EFFECTS.add(PotionEffectType.DOLPHINS_GRACE);
         DAMAGE_EFFECTS.add(PotionEffectType.BAD_OMEN);
-//        DAMAGE_EFFECTS.add(PotionEffectType.HERO_OF_THE_VILLAGE);
         DAMAGE_EFFECTS.add(PotionEffectType.DARKNESS);
         DAMAGE_EFFECTS.add(PotionEffectType.TRIAL_OMEN);
         DAMAGE_EFFECTS.add(PotionEffectType.WIND_CHARGED);
@@ -246,11 +227,7 @@ public final class Materials {
      * @return the block material
      */
     public static Material getBucketBlockMaterial(Material type) {
-        return switch (type) {
-            case LAVA_BUCKET -> Material.LAVA;
-            case WATER_BUCKET -> Material.WATER;
-            default -> Material.WATER;
-        };
+        return type == Material.LAVA_BUCKET ? Material.LAVA : Material.WATER;
     }
 
     /**

@@ -69,8 +69,7 @@ public class LocationFlag extends Flag<Location> {
         }
         if (loc != null) {
             Object obj = context.get("region");
-            if (obj instanceof ProtectedRegion) {
-                ProtectedRegion rg = (ProtectedRegion) obj;
+            if (obj instanceof ProtectedRegion rg) {
                 if (WorldGuard.getInstance().getPlatform().getGlobalStateManager().get(player.getWorld()).boundedLocationFlags) {
                     if (!rg.contains(loc.toVector().toBlockPoint())) {
                         if (new RegionPermissionModel(player).mayOverrideLocationFlagBounds(rg)) {
@@ -92,8 +91,7 @@ public class LocationFlag extends Flag<Location> {
 
     @Override
     public Location unmarshal(Object o) {
-        if (o instanceof Map<?, ?>) {
-            Map<?, ?> map = (Map<?, ?>) o;
+        if (o instanceof Map<?, ?> map) {
 
             Object rawWorld = map.get("world");
             if (rawWorld == null) return null;
@@ -127,12 +125,12 @@ public class LocationFlag extends Flag<Location> {
     public Object marshal(Location o) {
         Vector3 position = o.toVector();
         Map<String, Object> vec = new HashMap<>();
-        if (o instanceof LazyLocation) {
-            vec.put("world", ((LazyLocation) o).getWorldName());
+        if (o instanceof LazyLocation location) {
+            vec.put("world", location.getWorldName());
         } else {
             try {
-                if (o.getExtent() instanceof World) {
-                    vec.put("world", ((World) o.getExtent()).getName());
+                if (o.getExtent() instanceof World world) {
+                    vec.put("world", world.getName());
                 }
             } catch (NullPointerException e) {
                 return null;
@@ -147,8 +145,8 @@ public class LocationFlag extends Flag<Location> {
     }
 
     private double toNumber(Object o) {
-        if (o instanceof Number) {
-            return ((Number) o).doubleValue();
+        if (o instanceof Number number) {
+            return number.doubleValue();
         } else {
             return 0;
         }

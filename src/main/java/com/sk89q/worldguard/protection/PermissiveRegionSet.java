@@ -105,6 +105,7 @@ public class PermissiveRegionSet extends AbstractRegionSet {
     }
 
     @Override
+    @javax.annotation.Nonnull
     public Iterator<ProtectedRegion> iterator() {
         return Collections.emptyIterator();
     }

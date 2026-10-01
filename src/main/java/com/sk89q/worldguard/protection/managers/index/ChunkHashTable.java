@@ -35,7 +35,6 @@ import com.sk89q.worldguard.util.collect.LongHashTable;
 import com.sk89q.worldguard.util.concurrent.EvenMoreExecutors;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -109,7 +108,7 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
             if (state == null && create) {
                 state = new ChunkState(position);
                 states.put(position.x(), position.z(), state);
-                executor.submit(new EnumerateRegions(position));
+                executor.execute(new EnumerateRegions(position));
             }
         }
         return state;
@@ -122,8 +121,10 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
      * @param position the position
      * @return a state
      */
-    private ChunkState getOrCreate(BlockVector2 position) {
-        return get(position, true);
+    private void getOrCreate(BlockVector2 position) {
+        if (get(position, true) == null) {
+            throw new IllegalStateException("Failed to create chunk state");
+        }
     }
 
     /**
@@ -147,7 +148,7 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
             }
 
             if (!positions.isEmpty()) {
-                executor.submit(new EnumerateRegions(positions));
+                executor.execute(new EnumerateRegions(positions));
             }
 
             generation++;
@@ -321,7 +322,7 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
         private final List<BlockVector2> positions;
 
         private EnumerateRegions(BlockVector2 position) {
-            this(Arrays.asList(checkNotNull(position)));
+            this(List.of(checkNotNull(position)));
         }
 
         private EnumerateRegions(List<BlockVector2> positions) {
@@ -342,7 +343,7 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
                             position.multiply(16).toBlockVector3(Integer.MIN_VALUE),
                             position.add(1, 1).multiply(16).toBlockVector3(Integer.MAX_VALUE));
                     index.applyIntersecting(chunkRegion, new RegionCollectionConsumer(regions, false));
-                    Collections.sort(regions);
+                    regions.sort(null);
 
                     state.setRegions(Collections.unmodifiableList(regions));
 
@@ -357,7 +358,7 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
     /**
      * Stores a cache of region data for a chunk.
      */
-    private class ChunkState {
+    private static class ChunkState {
         private final BlockVector2 position;
         private volatile boolean loaded = false;
         private volatile List<ProtectedRegion> regions = Collections.emptyList();
@@ -388,7 +389,7 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
         return ((long) x << 32) ^ (z & 0xffffffffL);
     }
 
-    private class CachedChunkState {
+    private static class CachedChunkState {
         private long generation = -1;
         private int chunkX;
         private int chunkZ;

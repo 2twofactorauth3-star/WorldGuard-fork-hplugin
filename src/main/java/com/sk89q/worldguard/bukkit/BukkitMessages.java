@@ -133,7 +133,7 @@ public final class BukkitMessages {
     private void migrateBooleanLikeKeys() {
         try {
             String contents = Files.readString(file.toPath(), StandardCharsets.UTF_8);
-            String migrated = contents.replaceAll("(?m)^  (yes|no):\\r?$", "  '$1':");
+            String migrated = contents.replaceAll("(?m)^ {2}(yes|no):\\r?$", "  '$1':");
             if (!contents.equals(migrated)) {
                 Files.writeString(file.toPath(), migrated, StandardCharsets.UTF_8);
             }
@@ -365,7 +365,7 @@ public final class BukkitMessages {
 
     public net.kyori.adventure.text.Component component(String input) {
         List<String> translated = lines(input);
-        return translated.isEmpty() ? MMSupport.component("") : MMSupport.component(translated.get(0));
+        return translated.isEmpty() ? MMSupport.component("") : MMSupport.component(translated.getFirst());
     }
 
     public void send(CommandSender sender, String message) {
@@ -383,7 +383,7 @@ public final class BukkitMessages {
 
         if (title) {
             if (sender instanceof Player player) {
-                net.kyori.adventure.text.Component titleLine = MMSupport.component(lines.get(0));
+                net.kyori.adventure.text.Component titleLine = MMSupport.component(lines.getFirst());
                 net.kyori.adventure.text.Component subtitleLine = lines.size() > 1
                         ? MMSupport.component(lines.get(1))
                         : MMSupport.component("");
@@ -404,7 +404,7 @@ public final class BukkitMessages {
 
     static String selectActionBarLine(List<String> lines, int mode) {
         if (lines == null || lines.isEmpty()) return null;
-        if (lines.size() == 1) return lines.get(0);
+        if (lines.size() == 1) return lines.getFirst();
         if (mode == 1) return null;
         return lines.get(ThreadLocalRandom.current().nextInt(lines.size()));
     }

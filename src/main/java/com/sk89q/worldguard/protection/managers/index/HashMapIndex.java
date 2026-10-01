@@ -175,7 +175,8 @@ public class HashMapIndex extends AbstractRegionIndex implements ConcurrentRegio
                                     try {
                                         current.setParent(replacement);
                                     } catch (CircularInheritanceException e) {
-                                        WorldGuard.logger.log(Level.WARNING, "@wglog:logFailedToReplaceParent@" + parent.getId() + "@wglog:logOfChild@" + current.getId() + "@wglog:logWithReplacement@" + replacement.getId() + "@wglog:logText@", e);
+                                        String replacementId = replacement == null ? "null" : replacement.getId();
+                                        WorldGuard.logger.log(Level.WARNING, "@wglog:logFailedToReplaceParent@" + parent.getId() + "@wglog:logOfChild@" + current.getId() + "@wglog:logWithReplacement@" + replacementId + "@wglog:logText@", e);
                                         current.clearParent();
                                     }
                             }

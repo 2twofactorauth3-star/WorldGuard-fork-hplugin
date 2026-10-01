@@ -33,7 +33,6 @@ import com.sk89q.worldguard.protection.util.NormativeOrders;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,8 +55,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class FlagValueCalculator {
 
-    @Nullable
-    private final ProtectedRegion globalRegion;
     private final List<ProtectedRegion> applicable;
 
     /**
@@ -68,8 +65,6 @@ public class FlagValueCalculator {
      */
     public FlagValueCalculator(List<ProtectedRegion> regions, @Nullable ProtectedRegion globalRegion) {
         checkNotNull(regions);
-
-        this.globalRegion = globalRegion;
 
         if (globalRegion == null) {
             applicable = regions;
@@ -231,11 +226,11 @@ public class FlagValueCalculator {
      * @param flag the flag
      * @return a value, which could be {@code null}
      */
+    @SuppressWarnings("unchecked")
     @Nullable
     public <V> V queryValue(@Nullable RegionAssociable subject, Flag<V> flag) {
         if (flag instanceof StateFlag stateFlag) {
-            V state = (V) queryStateValue(subject, stateFlag);
-            return state;
+            return (V) queryStateValue(subject, stateFlag);
         }
         if (!flag.hasConflictStrategy()) {
             return queryFirstValue(subject, flag);
@@ -301,6 +296,7 @@ public class FlagValueCalculator {
         return found ? combined : flag.getDefault();
     }
 
+    @SuppressWarnings("unchecked")
     @Nullable
     private <V> V queryFirstValue(@Nullable RegionAssociable subject, Flag<V> flag) {
         checkNotNull(flag);
@@ -316,8 +312,7 @@ public class FlagValueCalculator {
         if (flag.usesMembershipAsDefault()) {
             Result membership = getMembership(subject);
             if (membership == Result.SUCCESS) {
-                V allowed = (V) State.ALLOW;
-                return allowed;
+                return (V) State.ALLOW;
             }
             if (membership == Result.FAIL) {
                 return null;
@@ -487,7 +482,6 @@ public class FlagValueCalculator {
      * @param acceptOne if possible, return only one value if it doesn't matter
      * @return a collection of values
      */
-    @SuppressWarnings("unchecked")
     private <V> Collection<V> queryAllValues(@Nullable RegionAssociable subject, Flag<V> flag, boolean acceptOne) {
         checkNotNull(flag);
 
@@ -516,7 +510,7 @@ public class FlagValueCalculator {
                 minimumPriority = priority;
 
                 if (returnFirst) {
-                    return Arrays.asList(value);
+                    return List.of(value);
                 }
                 consideredValues.put(region, value);
             }
@@ -604,7 +598,6 @@ public class FlagValueCalculator {
         return getEffectiveFlagOf(region, flag, subject);
     }
 
-    @SuppressWarnings("unchecked")
     @Nullable
     public static <V> V getEffectiveFlagOf(
             final ProtectedRegion region, Flag<V> flag, @Nullable RegionAssociable subject) {
@@ -686,7 +679,7 @@ public class FlagValueCalculator {
      * Describes the membership result from
      * {@link #getMembership(RegionAssociable)}.
      */
-    public static enum Result {
+    public enum Result {
         /**
          * Indicates that there are no regions or the only regions are
          * ones with {@link Flags#PASSTHROUGH} enabled.

@@ -58,6 +58,7 @@ public class PlaceBlockEvent extends AbstractBlockEvent {
     }
 
     @Override
+    @javax.annotation.Nonnull
     public HandlerList getHandlers() {
         return handlers;
     }

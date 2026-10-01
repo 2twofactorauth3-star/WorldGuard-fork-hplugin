@@ -21,7 +21,6 @@ package com.sk89q.worldguard.internal.platform;
 
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.gamemode.GameMode;
-import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.config.ConfigurationManager;
 import com.sk89q.worldguard.protection.flags.FlagContext;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;

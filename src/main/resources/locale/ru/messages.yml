@@ -508,11 +508,6 @@ messages:
       cooldownMillis: -1
       message:
         - "{prefix} Регион <#FDBE00>{region}<white> уже существует <click:run_command:'/rg redefine {region}'><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>переопределить<white> регион'><#FDBE00>[Переопределить]</hover></click>"
-    managerMissing:
-      mode: message
-      cooldownMillis: -1
-      message:
-        - '{prefix} Для мира <#FDBE00>{world}<white> отсутствует <#FDBE00>менеджер<white> регионов'
     listScopeRequired:
       mode: message
       cooldownMillis: -1

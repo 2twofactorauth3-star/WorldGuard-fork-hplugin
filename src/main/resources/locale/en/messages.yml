@@ -508,11 +508,6 @@ messages:
       cooldownMillis: -1
       message:
         - "{prefix} Region <#FDBE00>{region}<white> already exists <click:run_command:'/rg redefine {region}'><hover:show_text:'<white>Click to <#FDBE00>redefine<white> the region'><#FDBE00>[Redefine]</hover></click>"
-    managerMissing:
-      mode: message
-      cooldownMillis: -1
-      message:
-        - '{prefix} World <#FDBE00>{world}<white> has no <#FDBE00>region<white> manager'
     listScopeRequired:
       mode: message
       cooldownMillis: -1

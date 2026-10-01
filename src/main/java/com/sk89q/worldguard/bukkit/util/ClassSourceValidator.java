@@ -22,7 +22,6 @@ package com.sk89q.worldguard.bukkit.util;
 import com.google.common.collect.ImmutableMap;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.PluginClassLoader;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;

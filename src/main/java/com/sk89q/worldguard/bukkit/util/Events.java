@@ -134,6 +134,7 @@ public final class Events {
      * @param <T> an event that can be fired and is cancellable
      * @return true if the event was fired and it caused the original event to be cancelled
      */
+    @SuppressWarnings("UnusedReturnValue") // Public utility API; callers may use the cancellation result.
     public static <T extends Event & Cancellable & BulkEvent> boolean fireBulkEventToCancel(Cancellable original, T eventToFire) {
         fire(eventToFire);
         if (eventToFire.getExplicitResult() == Result.DENY) {
@@ -173,8 +174,7 @@ public final class Events {
      * @param cause the cuase
      */
     public static void restoreStatistic(Entity entity, DamageCause cause) {
-        if (cause == DamageCause.DROWNING && entity instanceof LivingEntity) {
-            LivingEntity living = (LivingEntity) entity;
+        if (cause == DamageCause.DROWNING && entity instanceof LivingEntity living) {
             living.setRemainingAir(living.getMaximumAir());
         }
 

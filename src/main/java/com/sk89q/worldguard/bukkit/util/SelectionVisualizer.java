@@ -248,7 +248,6 @@ public final class SelectionVisualizer {
             return List.of();
         }
 
-        double minY = minimumY;
         double maxY = maximumY + 1.0;
         List<Line> lines = new ArrayList<>(points.size() * 3);
         for (int i = 0; i < points.size(); i++) {
@@ -258,9 +257,9 @@ public final class SelectionVisualizer {
             double z = point.z() + 0.5;
             double nextX = next.x() + 0.5;
             double nextZ = next.z() + 0.5;
-            addLine(lines, x, minY, z, nextX, minY, nextZ);
+            addLine(lines, x, minimumY, z, nextX, minimumY, nextZ);
             addLine(lines, x, maxY, z, nextX, maxY, nextZ);
-            addLine(lines, x, minY, z, x, maxY, z);
+            addLine(lines, x, minimumY, z, x, maxY, z);
         }
         return lines;
     }

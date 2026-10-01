@@ -21,7 +21,6 @@ package com.sk89q.worldguard.config;
 
 import com.sk89q.worldguard.LocalPlayer;
 
-import java.io.File;
 import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
@@ -127,7 +126,7 @@ public abstract class WorldConfiguration {
                 max = groupMax;
             }
         }
-        if (max <= -1) {
+        if (max == -1) {
             max = defaultValue;
         }
         return max;

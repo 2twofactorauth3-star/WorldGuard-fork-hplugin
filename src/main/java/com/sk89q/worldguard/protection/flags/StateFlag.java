@@ -32,7 +32,7 @@ public class StateFlag extends Flag<StateFlag.State> {
         DENY
     }
 
-    private boolean def;
+        private final boolean def;
 
     public StateFlag(String name, boolean def, RegionGroup defaultGroup) {
         super(name, defaultGroup);
@@ -94,6 +94,7 @@ public class StateFlag extends Flag<StateFlag.State> {
 
     @Override
     public State unmarshal(Object o) {
+        if (o == null) return null;
         String str = o.toString();
         if (str.equalsIgnoreCase("allow")) {
             return State.ALLOW;

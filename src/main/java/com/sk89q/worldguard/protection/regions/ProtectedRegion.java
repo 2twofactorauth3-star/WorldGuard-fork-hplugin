@@ -56,7 +56,7 @@ import javax.annotation.Nullable;
 public abstract class ProtectedRegion implements ChangeTracked, Comparable<ProtectedRegion> {
 
     public static final String GLOBAL_REGION = "__global__";
-    private static final Pattern VALID_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_,'\\-\\+/]{1,}$");
+    private static final Pattern VALID_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_,'+/-]+$");
     private static final AtomicLong STRUCTURE_REVISION = new AtomicLong();
     private static final AtomicLong FLAG_REVISION = new AtomicLong();
 
@@ -96,9 +96,9 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
      * @param points the points to set with at least one entry
      */
     protected void setMinMaxPoints(List<BlockVector3> points) {
-        int minX = points.get(0).x();
-        int minY = points.get(0).y();
-        int minZ = points.get(0).z();
+        int minX = points.getFirst().x();
+        int minY = points.getFirst().y();
+        int minZ = points.getFirst().z();
         int maxX = minX;
         int maxY = minY;
         int maxZ = minZ;
@@ -585,11 +585,9 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
         BlockVector3 rMinPoint = region.getMinimumPoint();
         BlockVector3 max = getMaximumPoint();
 
-        if (rMinPoint.x() > max.x()) return false;
-        if (rMinPoint.y() > max.y()) return false;
-        if (rMinPoint.z() > max.z()) return false;
-
-        return true;
+        return rMinPoint.x() <= max.x()
+                && rMinPoint.y() <= max.y()
+                && rMinPoint.z() <= max.z();
     }
 
     /**
@@ -601,8 +599,8 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
     protected boolean intersectsEdges(ProtectedRegion region) {
         List<BlockVector2> pts1 = getPoints();
         List<BlockVector2> pts2 = region.getPoints();
-        BlockVector2 lastPt1 = pts1.get(pts1.size() - 1);
-        BlockVector2 lastPt2 = pts2.get(pts2.size() - 1);
+        BlockVector2 lastPt1 = pts1.getLast();
+        BlockVector2 lastPt2 = pts2.getLast();
         for (BlockVector2 aPts1 : pts1) {
             for (BlockVector2 aPts2 : pts2) {
 

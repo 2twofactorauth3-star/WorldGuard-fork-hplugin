@@ -177,8 +177,10 @@ public class Session {
                 handler.tick(player, set);
             }
         } else {
-            getHandler(HealFlag.class).tick(player, set);
-            getHandler(FeedFlag.class).tick(player, set);
+            HealFlag heal = getHandler(HealFlag.class);
+            FeedFlag feed = getHandler(FeedFlag.class);
+            if (heal != null) heal.tick(player, set);
+            if (feed != null) feed.tick(player, set);
         }
     }
 

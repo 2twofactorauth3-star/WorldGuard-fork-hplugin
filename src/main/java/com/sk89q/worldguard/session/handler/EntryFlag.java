@@ -31,6 +31,7 @@ import com.sk89q.worldguard.session.Session;
 
 import java.util.Set;
 
+@SuppressWarnings("deprecation")
 public class EntryFlag extends Handler {
 
     public static final Factory FACTORY = new Factory();

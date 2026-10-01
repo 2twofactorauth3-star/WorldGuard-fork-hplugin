@@ -174,15 +174,8 @@ public class RegionPrintoutBuilder implements Callable<TextComponent> {
         while (it.hasPrevious()) {
             ProtectedRegion cur = it.previous();
 
-            StringBuilder namePrefix = new StringBuilder();
-            
             // Put symbol for child
-            if (indent != 0) {
-                for (int i = 0; i < indent; i++) {
-                    namePrefix.append(" ");
-                }
-                namePrefix.append("\u2937"); //⤷
-            }
+            String namePrefix = indent == 0 ? "" : " ".repeat(indent) + "⤷";
 
             boolean parent = !cur.equals(region);
             boolean clickable = perms != null && perms.mayLookup(cur);

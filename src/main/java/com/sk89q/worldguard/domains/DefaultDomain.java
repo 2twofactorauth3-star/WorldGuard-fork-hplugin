@@ -59,6 +59,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
      *
      * @param existing the other domain to copy values from
      */
+    @SuppressWarnings("this-escape")
     public DefaultDomain(DefaultDomain existing) {
         setPlayerDomain(existing.getPlayerDomain());
         setGroupDomain(existing.getGroupDomain());
@@ -284,7 +285,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
         }
 
         if (groupDomain.size() > 0) {
-            if (str.length() > 0) {
+            if (!str.isEmpty()) {
                 str.append("; ");
             }
 
@@ -302,7 +303,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
         }
 
         if (groupDomain.size() > 0) {
-            if (str.length() > 0) {
+            if (!str.isEmpty()) {
                 str.append("; ");
             }
 

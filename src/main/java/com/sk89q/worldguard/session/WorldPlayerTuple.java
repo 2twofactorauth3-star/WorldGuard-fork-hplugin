@@ -39,10 +39,7 @@ public class WorldPlayerTuple {
 
         WorldPlayerTuple that = (WorldPlayerTuple) o;
 
-        if (!player.equals(that.player)) return false;
-        if (!world.equals(that.world)) return false;
-
-        return true;
+        return player.equals(that.player) && world.equals(that.world);
     }
 
     public LocalPlayer getPlayer() {

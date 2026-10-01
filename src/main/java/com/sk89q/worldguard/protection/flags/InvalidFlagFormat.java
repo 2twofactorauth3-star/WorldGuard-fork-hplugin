@@ -21,8 +21,11 @@ package com.sk89q.worldguard.protection.flags;
 
 import com.sk89q.worldguard.bukkit.BukkitMessages;
 
+import java.io.Serial;
+
 public class InvalidFlagFormat extends Exception {
-    
+
+    @Serial
     private static final long serialVersionUID = 8101615074524004172L;
 
     public InvalidFlagFormat(String msg) {

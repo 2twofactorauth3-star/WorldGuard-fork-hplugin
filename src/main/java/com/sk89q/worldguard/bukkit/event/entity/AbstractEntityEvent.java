@@ -28,6 +28,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Event;
 
 import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -41,7 +42,7 @@ abstract class AbstractEntityEvent extends DelegateEvent {
     @Nullable
     private final Entity entity;
 
-    protected AbstractEntityEvent(@Nullable Event originalEvent, Cause cause, Entity entity) {
+    protected AbstractEntityEvent(@Nullable Event originalEvent, Cause cause, @Nonnull Entity entity) {
         super(originalEvent, cause);
         checkNotNull(entity);
         this.target = entity.getLocation();

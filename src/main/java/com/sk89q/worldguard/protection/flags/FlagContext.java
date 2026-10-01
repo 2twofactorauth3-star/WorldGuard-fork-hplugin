@@ -33,7 +33,7 @@ public final class FlagContext {
     private final Actor sender;
     private final String input;
 
-    private Map<String, Object> context;
+    private final Map<String, Object> context;
 
     private FlagContext(Actor sender, String input, Map<String, Object> values) {
         this.sender = sender;
@@ -139,7 +139,7 @@ public final class FlagContext {
     public static class FlagContextBuilder {
         private Actor sender;
         private String input;
-        private Map<String, Object> map = Maps.newHashMap();
+        private final Map<String, Object> map = Maps.newHashMap();
 
         public FlagContextBuilder setSender(Actor sender) {
             this.sender = sender;

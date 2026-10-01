@@ -82,8 +82,8 @@ final class RegionOverlapDetails {
                                         int minimumZ,
                                         int maximumZ) {
         for (BlockVector2 point : region.getPoints()) {
-            int x = Math.max(minimumX, Math.min(maximumX, point.x()));
-            int z = Math.max(minimumZ, Math.min(maximumZ, point.z()));
+            int x = Math.clamp(point.x(), minimumX, maximumX);
+            int z = Math.clamp(point.z(), minimumZ, maximumZ);
             candidates.add(BlockVector3.at(x, y, z));
         }
     }

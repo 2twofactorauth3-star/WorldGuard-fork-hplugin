@@ -196,5 +196,6 @@ public abstract class RegionContainer {
      * @param world the world
      * @return a region manager, either returned from the cache or newly loaded
      */
+    @SuppressWarnings("UnusedReturnValue") // Subclasses and external integrations may consume the loaded manager.
     @Nullable protected abstract RegionManager load(World world);
 }

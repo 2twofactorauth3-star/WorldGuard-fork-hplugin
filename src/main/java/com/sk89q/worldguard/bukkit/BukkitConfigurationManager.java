@@ -28,12 +28,13 @@ import com.sk89q.worldguard.config.YamlConfigurationManager;
 import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class BukkitConfigurationManager extends YamlConfigurationManager {
 
     private final WorldGuardPlugin plugin;
     private final ConcurrentMap<String, BukkitWorldConfiguration> worlds = new ConcurrentHashMap<>();
-    private volatile long revision;
+    private final AtomicLong revision = new AtomicLong();
 
     /**
      * Construct the object.
@@ -79,7 +80,7 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
     @Override
     public void unload() {
         worlds.clear();
-        revision++;
+        revision.incrementAndGet();
     }
 
     @Override
@@ -117,7 +118,7 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
     }
 
     public long getRevision() {
-        return revision;
+        return revision.get();
     }
 
 }

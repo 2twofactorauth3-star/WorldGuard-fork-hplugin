@@ -142,6 +142,7 @@ public final class RegionManager {
      * @return true if there were changes to be saved
      * @throws StorageException thrown on save error
      */
+    @SuppressWarnings("UnusedReturnValue") // Kept for API compatibility with external integrations.
     public boolean saveChanges() throws StorageException {
         RegionDifference diff = index.getAndClearDifference();
         boolean successful = false;
@@ -286,7 +287,6 @@ public final class RegionManager {
      * @param id the name of the region
      * @return a list of removed regions where the first entry is the region specified by {@code id}
      */
-    @Nullable
     public Set<ProtectedRegion> removeRegion(String id) {
         return removeRegion(id, RemovalStrategy.REMOVE_CHILDREN);
     }
@@ -298,7 +298,6 @@ public final class RegionManager {
      * @param strategy what to do with children
      * @return a list of removed regions where the first entry is the region specified by {@code id}
      */
-    @Nullable
     public Set<ProtectedRegion> removeRegion(String id, RemovalStrategy strategy) {
         Set<ProtectedRegion> removed = index.remove(id, strategy);
         if (!removed.isEmpty()) {

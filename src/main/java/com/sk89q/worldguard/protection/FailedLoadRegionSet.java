@@ -39,6 +39,7 @@ import java.util.Set;
  * A region set that is to be used when region data has failed. Operations
  * are blocked.
  */
+@SuppressWarnings("deprecation")
 public class FailedLoadRegionSet extends AbstractRegionSet {
 
     private static final FailedLoadRegionSet INSTANCE = new FailedLoadRegionSet();
@@ -112,6 +113,7 @@ public class FailedLoadRegionSet extends AbstractRegionSet {
     }
 
     @Override
+    @javax.annotation.Nonnull
     public Iterator<ProtectedRegion> iterator() {
         return Collections.emptyIterator();
     }

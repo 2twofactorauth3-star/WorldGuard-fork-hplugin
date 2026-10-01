@@ -424,10 +424,9 @@ public class EventAbstractionListener extends AbstractListener {
         Entity entity = event.getEntity();
         Block block = event.getBlock();
 
-        if (entity instanceof FallingBlock) {
+        if (entity instanceof FallingBlock fallingBlock) {
             try {
                 if (dropItem) {
-                    FallingBlock fallingBlock = (FallingBlock) entity;
                     if (!fallingBlock.getDropItem()) return;
                     final Material material = fallingBlock.getBlockData().getMaterial();
                     if (!material.isItem()) return;
@@ -615,6 +614,7 @@ public class EventAbstractionListener extends AbstractListener {
 
         switch (event.getAction()) {
             case PHYSICAL:
+                if (clicked == null) return;
                 if (event.useInteractedBlock() != Result.DENY) {
                     if (clicked.getType() == Material.FARMLAND ||
                             clicked.getType() == Material.TURTLE_EGG ||
@@ -651,6 +651,7 @@ public class EventAbstractionListener extends AbstractListener {
                 break;
 
             case RIGHT_CLICK_BLOCK:
+                if (clicked == null) return;
                 if (event.useInteractedBlock() != Result.DENY) {
                     placed = clicked.getRelative(event.getBlockFace());
 
@@ -659,6 +660,7 @@ public class EventAbstractionListener extends AbstractListener {
                 }
 
             case LEFT_CLICK_BLOCK:
+                if (clicked == null) return;
                 if (event.useInteractedBlock() != Result.DENY) {
                     placed = clicked.getRelative(event.getBlockFace());
 
@@ -777,12 +779,8 @@ public class EventAbstractionListener extends AbstractListener {
             blockAffected = blockClicked.getRelative(event.getBlockFace());
         }
 
-        boolean allowed = false;
-
         // Milk buckets can't be emptied as of writing
-        if (event.getBucket() == Material.MILK_BUCKET) {
-            allowed = true;
-        }
+        boolean allowed = event.getBucket() == Material.MILK_BUCKET;
 
         ItemStack item = new ItemStack(event.getBucket(), 1);
         Material blockMaterial = Materials.getBucketBlockMaterial(event.getBucket());
@@ -798,12 +796,9 @@ public class EventAbstractionListener extends AbstractListener {
     public void onPlayerBucketFill(PlayerBucketFillEvent event) {
         Player player = event.getPlayer();
         Block blockAffected = event.getBlockClicked().getRelative(event.getBlockFace());
-        boolean allowed = false;
-
         // Milk buckets can't be emptied as of writing
-        if (event.getItemStack().getType() == Material.MILK_BUCKET) {
-            allowed = true;
-        }
+        boolean allowed = event.getItemStack() != null
+                && event.getItemStack().getType() == Material.MILK_BUCKET;
 
         ItemStack item = new ItemStack(event.getBucket(), 1);
         Events.fireToCancel(event, new BreakBlockEvent(event, create(player), blockAffected).setAllowed(allowed));
@@ -850,11 +845,6 @@ public class EventAbstractionListener extends AbstractListener {
 
         Cause cause = create(from);
 
-        // Disable since it's probably not needed
-        /*if (from.getType() != Material.AIR) {
-            Events.fireToCancel(event, new BreakBlockEvent(event, cause, to));
-        }*/
-
         Events.fireToCancel(event, new PlaceBlockEvent(event, cause, to.getLocation(), from.getType()));
     }
 
@@ -867,8 +857,11 @@ public class EventAbstractionListener extends AbstractListener {
         Events.fireToCancel(event, new SpawnEntityEvent(event, create(event.getPlayer()), event.getEntity()));
 
         if (event.isCancelled()) {
-            Block effectBlock = event.getBlock().getRelative(event.getBlockFace());
-            playDenyEffect(event.getPlayer(), effectBlock.getLocation().add(0.5, 0.5, 0.5));
+            Block attachedBlock = event.getBlock();
+            if (attachedBlock != null) {
+                Block effectBlock = attachedBlock.getRelative(event.getBlockFace());
+                playDenyEffect(event.getPlayer(), effectBlock.getLocation().add(0.5, 0.5, 0.5));
+            }
         }
     }
 
@@ -941,8 +934,7 @@ public class EventAbstractionListener extends AbstractListener {
 
             // Give the player back his or her XP bottle
             ProjectileSource shooter = event.getEntity().getShooter();
-            if (shooter instanceof Player) {
-                Player player = (Player) shooter;
+            if (shooter instanceof Player player) {
                 if (player.getGameMode() != GameMode.CREATIVE) {
                     player.getInventory().addItem(new ItemStack(Material.EXPERIENCE_BOTTLE, 1));
                 }
@@ -979,8 +971,8 @@ public class EventAbstractionListener extends AbstractListener {
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
-        if (event instanceof EntityDamageByBlockEvent) {
-            @Nullable Block attacker = ((EntityDamageByBlockEvent) event).getDamager();
+        if (event instanceof EntityDamageByBlockEvent blockEvent) {
+            @Nullable Block attacker = blockEvent.getDamager();
 
             // The attacker should NOT be null, but sometimes it is
             // See WORLDGUARD-3350
@@ -988,8 +980,7 @@ public class EventAbstractionListener extends AbstractListener {
                 Events.fireToCancel(event, new DamageEntityEvent(event, create(attacker), event.getEntity()));
             }
 
-        } else if (event instanceof EntityDamageByEntityEvent) {
-            EntityDamageByEntityEvent entityEvent = (EntityDamageByEntityEvent) event;
+        } else if (event instanceof EntityDamageByEntityEvent entityEvent) {
             Entity damager = entityEvent.getDamager();
             final DamageEntityEvent eventToFire = new DamageEntityEvent(event, create(damager), event.getEntity());
             if (damager instanceof Firework) {

@@ -24,6 +24,7 @@ import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.util.formatting.text.Component;
 import org.bukkit.command.CommandSender;
 
+@SuppressWarnings("deprecation")
 final class BukkitWorldGuardCommandSender extends BukkitCommandSender {
 
     private final BukkitMessages messages;

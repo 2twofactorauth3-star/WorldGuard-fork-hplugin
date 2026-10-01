@@ -114,7 +114,7 @@ public final class NormativeOrders {
             }
         }
 
-        Collections.sort(sorted, PRIORITY_COMPARATOR);
+        sorted.sort(PRIORITY_COMPARATOR);
     }
 
     private static RegionNode addNode(Map<ProtectedRegion, RegionNode> nodes, List<RegionNode> root, ProtectedRegion region) {
@@ -140,25 +140,15 @@ public final class NormativeOrders {
         }
 
         private void insertAfter(RegionNode node) {
-            if (this.next == null) {
-                this.next = node;
-            } else {
-                node.next = this.next;
-                this.next = node;
-            }
+            node.next = this.next;
+            this.next = node;
         }
     }
 
     private static class PriorityComparator implements Comparator<ProtectedRegion> {
         @Override
         public int compare(ProtectedRegion o1, ProtectedRegion o2) {
-            if (o1.getPriority() > o2.getPriority()) {
-                return -1;
-            } else if (o1.getPriority() < o2.getPriority()) {
-                return 1;
-            } else {
-                return 0;
-            }
+            return Integer.compare(o2.getPriority(), o1.getPriority());
         }
     }
 

@@ -24,7 +24,6 @@ import com.sk89q.worldguard.commands.framework.CommandException;
 import com.sk89q.worldguard.commands.framework.CommandPermissionsException;
 import com.sk89q.worldedit.command.util.AsyncCommandBuilder;
 import com.sk89q.worldedit.extension.platform.Actor;
-import com.sk89q.worldedit.util.auth.AuthorizationException;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.LocalPlayer;
@@ -139,8 +138,7 @@ public class MemberCommands extends RegionCommandsBase {
         return () -> {
             DefaultDomain owners = resolver.call();
             // Ownership limits apply to the invoking player; resolved additions are not re-evaluated here.
-            if (sender instanceof LocalPlayer) {
-                LocalPlayer player = (LocalPlayer) sender;
+            if (sender instanceof LocalPlayer player) {
                 if (owners.contains(player) && !sender.hasPermission("worldguard.region.unlimited")) {
                     int maxRegionCount = WorldGuard.getInstance().getPlatform().getGlobalStateManager()
                             .get(world).getMaxRegionCount(player);
@@ -189,9 +187,8 @@ public class MemberCommands extends RegionCommandsBase {
             }
 
             // Resolve members asynchronously
-            DomainInputResolver resolver = new DomainInputResolver(
+            callable = new DomainInputResolver(
                     WorldGuard.getInstance().getProfileService(), args.getParsedPaddedSlice(1, 0));
-            callable = resolver;
         }
 
         final String description = BukkitMessages.template(
@@ -227,9 +224,8 @@ public class MemberCommands extends RegionCommandsBase {
             }
 
             // Resolve owners asynchronously
-            DomainInputResolver resolver = new DomainInputResolver(
+            callable = new DomainInputResolver(
                     WorldGuard.getInstance().getProfileService(), args.getParsedPaddedSlice(1, 0));
-            callable = resolver;
         }
 
         final String description = BukkitMessages.template(

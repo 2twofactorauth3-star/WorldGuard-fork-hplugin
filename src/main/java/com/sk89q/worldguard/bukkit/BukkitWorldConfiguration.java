@@ -20,7 +20,6 @@
 package com.sk89q.worldguard.bukkit;
 
 import com.sk89q.util.yaml.YAMLProcessor;
-import com.sk89q.worldedit.world.item.ItemTypes;
 import com.sk89q.worldguard.config.ClaimExpansion;
 import com.sk89q.worldguard.config.WorldMechanicSetting;
 import com.sk89q.worldguard.config.YamlWorldConfiguration;
@@ -56,6 +55,7 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
      * @param worldName The world name that this BukkitWorldConfiguration is for.
      * @param parentConfig The parent configuration to read defaults from
      */
+    @SuppressWarnings("this-escape")
     public BukkitWorldConfiguration(WorldGuardPlugin plugin, String worldName, YAMLProcessor parentConfig) {
         this.plugin = plugin;
         File baseFolder = new File(plugin.getDataFolder(), "worlds/" + worldName);
@@ -140,7 +140,7 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
         if (regionListCommandMode != 1 && regionListCommandMode != 2) {
             regionListCommandMode = 2;
         }
-        regionWand = getString("regions.wand", ItemTypes.LEATHER.id());
+        regionWand = getString("regions.wand", "minecraft:leather");
         maxClaimVolumePerPlayer = getInt("regions.maxClaimVolumePerPlayer.default", 1500000);
         maxClaimVolumes = loadGroupLimits("regions.maxClaimVolumePerPlayer", maxClaimVolumePerPlayer);
         claimExpansion = new ClaimExpansion(

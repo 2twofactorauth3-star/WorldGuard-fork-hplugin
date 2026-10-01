@@ -74,8 +74,7 @@ public class LongBaseHashTable extends LongHash {
         EntryBase[] inner = outer[outerIdx];
         if (inner == null) return false;
 
-        for (int i = 0; i < inner.length; i++) {
-            EntryBase e = inner[i];
+        for (EntryBase e : inner) {
             if (e == null) {
                 return false;
             } else if (e.key == key) {

@@ -25,7 +25,7 @@ import org.bukkit.event.HandlerList;
 
 public class FlagContextCreateEvent extends Event {
 
-    private FlagContextBuilder builder;
+    private final FlagContextBuilder builder;
 
     public FlagContextCreateEvent(FlagContextBuilder builder) {
         this.builder = builder;
@@ -45,6 +45,7 @@ public class FlagContextCreateEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
 
     @Override
+    @javax.annotation.Nonnull
     public HandlerList getHandlers() {
         return handlers;
     }

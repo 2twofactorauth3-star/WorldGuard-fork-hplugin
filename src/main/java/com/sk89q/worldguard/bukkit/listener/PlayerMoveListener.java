@@ -55,6 +55,7 @@ import org.bukkit.util.Vector;
 import java.util.function.Consumer;
 import java.util.Set;
 
+@SuppressWarnings("deprecation")
 public class PlayerMoveListener extends AbstractListener {
 
     private static final Set<com.sk89q.worldguard.protection.flags.Flag<?>> MOVEMENT_FLAGS = Set.of(

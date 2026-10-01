@@ -30,7 +30,7 @@ public abstract class LongHash {
     }
 
     public static int lsw(long l) {
-        return (int) (l & 0xFFFFFFFF) + Integer.MIN_VALUE;
+        return (int) (l & 0xFFFFFFFFL) + Integer.MIN_VALUE;
     }
 
     public boolean containsKey(int msw, int lsw) {

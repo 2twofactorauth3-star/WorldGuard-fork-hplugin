@@ -51,6 +51,7 @@ public class GroupDomain implements Domain, ChangeTracked {
     public GroupDomain(GroupDomain domain) {
         checkNotNull(domain, "domain");
         groups.addAll(domain.getGroups());
+        dirty = domain.dirty;
     }
 
     /**
@@ -58,6 +59,7 @@ public class GroupDomain implements Domain, ChangeTracked {
      *
      * @param groups an array of groups
      */
+    @SuppressWarnings("this-escape")
     public GroupDomain(String[] groups) {
         checkNotNull(groups);
         for (String group : groups) {

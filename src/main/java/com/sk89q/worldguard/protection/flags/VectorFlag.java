@@ -62,8 +62,7 @@ public class VectorFlag extends Flag<Vector3> {
 
     @Override
     public Vector3 unmarshal(Object o) {
-        if (o instanceof Map<?, ?>) {
-            Map<?, ?> map  = (Map<?, ?>) o;
+        if (o instanceof Map<?, ?> map) {
 
             Object rawX = map.get("x");
             Object rawY = map.get("y");
@@ -89,16 +88,6 @@ public class VectorFlag extends Flag<Vector3> {
     }
 
     private double toNumber(Object o) {
-        if (o instanceof Integer) {
-            return (Integer) o;
-        } else if (o instanceof Long) {
-            return (Long) o;
-        } else if (o instanceof Float) {
-            return (Float) o;
-        } else if (o instanceof Double) {
-            return (Double) o;
-        } else {
-            return 0;
-        }
+        return o instanceof Number number ? number.doubleValue() : 0;
     }
 }

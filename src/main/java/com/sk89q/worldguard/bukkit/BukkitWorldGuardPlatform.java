@@ -25,7 +25,6 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.gamemode.GameMode;
 import com.sk89q.worldedit.world.gamemode.GameModes;
-import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.enginehub.squirrelid.resolver.PaperPlayerService;
@@ -135,7 +134,7 @@ public class BukkitWorldGuardPlatform implements WorldGuardPlatform {
     public ProtectedRegion getSpawnProtection(World world) {
         if (world instanceof BukkitWorld) {
             org.bukkit.World bWorld = ((BukkitWorld) world).getWorld();
-            if (bWorld.getUID().equals(Bukkit.getServer().getWorlds().get(0).getUID())) {
+            if (bWorld.getUID().equals(Bukkit.getServer().getWorlds().getFirst().getUID())) {
                 int radius = Bukkit.getServer().getSpawnRadius();
                 if (radius > 0) {
                     BlockVector3 spawnLoc = BukkitAdapter.asBlockVector(bWorld.getSpawnLocation());

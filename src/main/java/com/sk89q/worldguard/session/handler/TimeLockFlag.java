@@ -42,7 +42,7 @@ public class TimeLockFlag extends FlagValueChangeHandler<String> {
     private long initialTime;
     private boolean initialRelative;
 
-    private static Pattern timePattern = Pattern.compile("([+\\-])?\\d+");
+    private static final Pattern timePattern = Pattern.compile("([+-])?\\d+");
 
     public TimeLockFlag(Session session) {
         super(session, Flags.TIME_LOCK);

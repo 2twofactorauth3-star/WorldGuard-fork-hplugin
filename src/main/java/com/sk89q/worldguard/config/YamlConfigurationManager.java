@@ -100,7 +100,7 @@ public abstract class YamlConfigurationManager extends ConfigurationManager {
     }
 
     private static double clamp(double value, double minimum, double maximum) {
-        return Math.max(minimum, Math.min(maximum, value));
+        return Math.clamp(value, minimum, maximum);
     }
 
 }

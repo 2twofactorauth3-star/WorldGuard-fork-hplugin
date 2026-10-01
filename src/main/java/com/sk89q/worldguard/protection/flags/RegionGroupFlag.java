@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  */
 public class RegionGroupFlag extends EnumFlag<RegionGroup> {
 
-    private RegionGroup def;
+    private final RegionGroup def;
 
     public RegionGroupFlag(String name, RegionGroup def) {
         super(name, RegionGroup.class, null);

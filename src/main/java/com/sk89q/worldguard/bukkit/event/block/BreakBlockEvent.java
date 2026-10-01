@@ -53,6 +53,7 @@ public class BreakBlockEvent extends AbstractBlockEvent {
     }
 
     @Override
+    @javax.annotation.Nonnull
     public HandlerList getHandlers() {
         return handlers;
     }

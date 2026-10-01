@@ -59,6 +59,7 @@ public class ProtectedCuboidRegion extends ProtectedRegion {
      * @param pt1 the first point of this region
      * @param pt2 the second point of this region
      */
+    @SuppressWarnings("this-escape")
     public ProtectedCuboidRegion(String id, boolean transientRegion, BlockVector3 pt1, BlockVector3 pt2) {
         super(id, transientRegion);
         setMinMaxPoints(pt1, pt2);

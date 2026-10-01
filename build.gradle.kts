@@ -67,6 +67,7 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.hamcrest.library)
     testImplementation("net.kyori:adventure-text-minimessage:4.17.0")
     testImplementation("net.kyori:adventure-text-serializer-gson:4.17.0")

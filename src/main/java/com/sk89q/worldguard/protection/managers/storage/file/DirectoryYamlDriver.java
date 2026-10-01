@@ -63,8 +63,7 @@ public class DirectoryYamlDriver implements RegionDriver {
 
         File f = new File(rootDir, id + File.separator + filename);
         try {
-            f.getCanonicalPath();
-            return f;
+            return f.getCanonicalFile();
         } catch (IOException e) {
             throw new IllegalArgumentException("Invalid file path for the world's regions file");
         }
@@ -83,7 +82,7 @@ public class DirectoryYamlDriver implements RegionDriver {
     public List<RegionDatabase> getAll() throws StorageException {
         List<RegionDatabase> stores = new ArrayList<>();
 
-        File files[] = rootDir.listFiles();
+        File[] files = rootDir.listFiles();
         if (files != null) {
             for (File dir : files) {
                 if (dir.isDirectory() && new File(dir, "regions.yml").isFile()) {

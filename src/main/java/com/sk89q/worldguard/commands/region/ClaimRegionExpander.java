@@ -65,7 +65,7 @@ public final class ClaimRegionExpander {
                                                   int volumeLimit,
                                                   Predicate<ProtectedPolygonalRegion> permitted) {
         int originalVolume = original.volume();
-        if (volumeLimit <= 0 || originalVolume <= 0 || originalVolume >= volumeLimit
+        if (originalVolume <= 0 || originalVolume >= volumeLimit
                 || (!settings.negativeY && !settings.positiveY)) {
             return original;
         }
@@ -268,7 +268,7 @@ public final class ClaimRegionExpander {
     }
 
     private static int boundedDistance(int greater, int lesser) {
-        return (int) Math.min(Integer.MAX_VALUE, Math.max(0, (long) greater - lesser));
+        return Math.clamp((long) greater - lesser, 0, Integer.MAX_VALUE);
     }
 
     private static long volume(ProtectedCuboidRegion region) {

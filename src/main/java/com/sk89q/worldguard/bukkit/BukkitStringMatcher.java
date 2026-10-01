@@ -37,7 +37,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class BukkitStringMatcher implements StringMatcher {
 
@@ -64,7 +63,7 @@ public class BukkitStringMatcher implements StringMatcher {
     private World matchSpecialWorld(Actor sender, String filter, List<? extends World> worlds)
             throws CommandException {
         return switch (filter.toLowerCase(Locale.ROOT)) {
-            case "#main" -> worlds.get(0);
+            case "#main" -> worlds.getFirst();
             case "#normal" -> matchEnvironment(
                     worlds, org.bukkit.World.Environment.NORMAL, "@wg:noNormalWorld@");
             case "#nether" -> matchEnvironment(
@@ -98,7 +97,9 @@ public class BukkitStringMatcher implements StringMatcher {
 
     @Override
     public List<LocalPlayer> matchPlayerNames(String filter) {
-        List<LocalPlayer> wgPlayers = Bukkit.getServer().getOnlinePlayers().stream().map(player -> WorldGuardPlugin.inst().wrapPlayer(player)).collect(Collectors.toList());
+        List<LocalPlayer> wgPlayers = Bukkit.getServer().getOnlinePlayers().stream()
+                .map(player -> WorldGuardPlugin.inst().wrapPlayer(player))
+                .toList();
 
         filter = filter.toLowerCase();
 
@@ -164,7 +165,9 @@ public class BukkitStringMatcher implements StringMatcher {
             throw new CommandException("@wg:noPlayersMatched@");
         }
 
-        List<LocalPlayer> wgPlayers = Bukkit.getServer().getOnlinePlayers().stream().map(player -> WorldGuardPlugin.inst().wrapPlayer(player)).collect(Collectors.toList());
+        List<LocalPlayer> wgPlayers = Bukkit.getServer().getOnlinePlayers().stream()
+                .map(player -> WorldGuardPlugin.inst().wrapPlayer(player))
+                .toList();
 
         if (filter.equals("*")) {
             return checkPlayerMatch(wgPlayers);
@@ -242,8 +245,7 @@ public class BukkitStringMatcher implements StringMatcher {
         message = BukkitMessages.replacePlaceholder(message, "id", sender.getUniqueId());
         message = BukkitMessages.replacePlaceholder(message, "online", online.size());
 
-        if (sender instanceof LocalPlayer) {
-            LocalPlayer player = (LocalPlayer) sender;
+        if (sender instanceof LocalPlayer player) {
             World world = (World) player.getExtent();
 
             message = BukkitMessages.replacePlaceholder(message, "world", world.getName());

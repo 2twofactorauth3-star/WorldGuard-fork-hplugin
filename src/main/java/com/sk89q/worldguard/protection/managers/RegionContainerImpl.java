@@ -31,7 +31,6 @@ import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.util.Normal;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -217,7 +216,7 @@ public class RegionContainerImpl {
      * @return an immutable list
      */
     public List<RegionManager> getLoaded() {
-        return Collections.unmodifiableList(new ArrayList<>(mapping.values()));
+        return List.copyOf(mapping.values());
     }
 
     /**
@@ -277,10 +276,10 @@ public class RegionContainerImpl {
                         } catch (StorageException e) {
                             if (e.getCause() != null && e.getCause().getMessage().equals(lastMsg)) {
                                 // if it's the same error, don't print a whole stacktrace
-                                log.log(Level.WARNING, "@wglog:logRegionDataIsStillFailingTo@" + normal.toString() + "@wglog:logText@");
+                                log.log(Level.WARNING, "@wglog:logRegionDataIsStillFailingTo@" + normal + "@wglog:logText@");
                                 break;
                             }
-                            log.log(Level.WARNING, "@wglog:logRegionDataIsStillFailingTo@" + normal.toString() + "@wglog:logText@", e);
+                            log.log(Level.WARNING, "@wglog:logRegionDataIsStillFailingTo@" + normal + "@wglog:logText@", e);
                             lastMsg = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
                             break;
                         }

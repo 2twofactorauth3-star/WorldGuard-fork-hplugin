@@ -89,6 +89,7 @@ import java.util.Set;
 /**
  * Listener for entity related events.
  */
+@SuppressWarnings("deprecation")
 public class WorldGuardEntityListener extends AbstractListener {
 
     /**
@@ -655,12 +656,9 @@ public class WorldGuardEntityListener extends AbstractListener {
                 }
             }
         }
-        if (!(attacker instanceof Player)
+        return !(attacker instanceof Player)
                 && blocksMechanic(wcfg.blockEntityItemFrameDestroy, defender.getLocation(),
-                        Cause.create(attacker))) {
-            return true;
-        }
-        return false;
+                        Cause.create(attacker));
     }
 
     private boolean blocksExplosion(

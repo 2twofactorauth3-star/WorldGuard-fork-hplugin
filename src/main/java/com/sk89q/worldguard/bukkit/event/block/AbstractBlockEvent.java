@@ -71,7 +71,7 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
         this.world = world;
         this.blockStates = blocks;
         this.blocks = null;
-        this.effectiveMaterial = blocks.get(0).getType();
+        this.effectiveMaterial = blocks.getFirst().getType();
     }
 
     protected AbstractBlockEvent(@Nullable Event originalEvent, Cause cause, Block block) {
@@ -156,6 +156,7 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
      * @param predicate the predicate
      * @return true if one or more blocks were filtered out
      */
+    @SuppressWarnings("UnusedReturnValue") // Public event API; external listeners may use the result.
     public boolean filter(Predicate<Location> predicate) {
         return filter(predicate, false);
     }

@@ -80,6 +80,7 @@ import java.util.stream.Collectors;
 /**
  * Implements the /region commands for WorldGuard.
  */
+@SuppressWarnings("deprecation")
 public final class RegionCommands extends RegionCommandsBase {
 
     private final WorldGuard worldGuard;
@@ -281,7 +282,7 @@ public final class RegionCommands extends RegionCommandsBase {
         }
 
         int maxClaimVolume = wcfg.getMaxClaimVolume(player);
-        if (maxClaimVolume >= Integer.MAX_VALUE) {
+        if (maxClaimVolume == Integer.MAX_VALUE) {
             throw new CommandException(BukkitMessages.template(
                     "claimVolumeInvalid", "maximum", Integer.MAX_VALUE));
         }
@@ -769,11 +770,6 @@ public final class RegionCommands extends RegionCommandsBase {
         if (world != null) {
             RegionManager manager = checkRegionManager(world);
 
-            if (manager == null) {
-                throw new CommandException(BukkitMessages.template(
-                        "regionManagerMissing", "world", world.getName()));
-            }
-
             final String description = BukkitMessages.template(
                     "taskLoadingRegionData", "world", world.getName());
             AsyncCommandBuilder.wrap(new RegionManagerLoader(manager), sender)
@@ -829,11 +825,6 @@ public final class RegionCommands extends RegionCommandsBase {
 
         if (world != null) {
             RegionManager manager = checkRegionManager(world);
-
-            if (manager == null) {
-                throw new CommandException(BukkitMessages.template(
-                        "regionManagerMissing", "world", world.getName()));
-            }
 
             final String description = BukkitMessages.template(
                     "taskSavingRegionData", "world", world.getName());
