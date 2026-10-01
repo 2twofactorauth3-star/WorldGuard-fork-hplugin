@@ -1,0 +1,101 @@
+name: WorldGuard
+website: https://t.me/hplugin
+authors:
+  - He3HaukaX
+  - sk89q
+main: com.sk89q.worldguard.bukkit.WorldGuardPlugin
+version: "7.0.17"
+depend: [WorldEdit]
+api-version: "1.21"
+folia-supported: true
+
+permissions:
+  worldguard.*:
+    default: op
+    children:
+      worldguard.reload: true
+      worldguard.region.*: true
+      worldguard.override.*: true
+  worldguard.reload:
+    default: op
+  worldguard.region.*:
+    default: op
+    children:
+      worldguard.region.wand: true
+      worldguard.region.define: true
+      worldguard.region.claim: true
+      worldguard.region.unlimited: true
+      worldguard.region.list: true
+      worldguard.region.list.own: true
+      worldguard.region.toggle-bypass: true
+      worldguard.region.bypass.*: true
+      worldguard.region.redefine.*: true
+      worldguard.region.remove.*: true
+      worldguard.region.setpriority.*: true
+      worldguard.region.setparent.*: true
+      worldguard.region.select.*: true
+      worldguard.region.info.*: true
+      worldguard.region.teleport.*: true
+      worldguard.region.teleportcenter.*: true
+      worldguard.region.locationoverride.*: true
+      worldguard.region.flag.regions.*: true
+      worldguard.region.flag.flags.*: true
+      worldguard.region.addmember.*: true
+      worldguard.region.addowner.*: true
+      worldguard.region.addowner.unclaimed.*: true
+      worldguard.region.removemember.*: true
+      worldguard.region.removeowner.*: true
+  worldguard.region.wand:
+    default: false
+  worldguard.region.define:
+    default: false
+  worldguard.region.claim:
+    default: false
+  worldguard.region.unlimited:
+    default: false
+  worldguard.region.list:
+    default: false
+  worldguard.region.list.own:
+    default: false
+  worldguard.region.toggle-bypass:
+    default: false
+  worldguard.region.bypass.*:
+    default: false
+  worldguard.region.redefine.*:
+    default: false
+  worldguard.region.remove.*:
+    default: false
+  worldguard.region.setpriority.*:
+    default: false
+  worldguard.region.setparent.*:
+    default: false
+  worldguard.region.select.*:
+    default: false
+  worldguard.region.info.*:
+    default: false
+  worldguard.region.teleport.*:
+    default: false
+  worldguard.region.teleportcenter.*:
+    default: false
+  worldguard.region.locationoverride.*:
+    default: false
+  worldguard.region.flag.regions.*:
+    default: false
+  worldguard.region.flag.flags.*:
+    default: false
+  worldguard.region.addmember.*:
+    default: false
+  worldguard.region.addowner.*:
+    default: false
+  worldguard.region.addowner.unclaimed.*:
+    default: false
+  worldguard.region.removemember.*:
+    default: false
+  worldguard.region.removeowner.*:
+    default: false
+  worldguard.override.*:
+    default: op
+    children:
+      worldguard.override.lighter: true
+  worldguard.override.lighter:
+    default: false

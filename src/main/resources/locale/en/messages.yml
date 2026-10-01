@@ -1,0 +1,1704 @@
+#
+# All player-facing WorldGuard messages pass through this file.
+# mode: message sends lines to chat; actionbar uses one line; title uses title and optional subtitle lines.
+# cooldownMillis suppresses repeated sends to the same player for this message; -1 disables cooldown.
+# Empty message values send nothing. MiniMessage is required.
+#
+messages:
+  permissionDenied:
+    mode: message
+    cooldownMillis: 1000
+    message:
+      - '{prefix} You do not have <#FDBE00>enough <white>permission'
+
+  command:
+    usage:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} {usage}'
+    unknown:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Command <#FDBE00>{command}<white> was not found'
+    failed:
+      mode: message
+      cooldownMillis: 1000
+      message:
+        - '{prefix} An error occurred, <#FDBE00>check<white> the console'
+    unknownFlag:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Unknown command <#FDBE00>flag<white>: <#FDBE00>{flag}'
+    flagValueRequired:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Flag <#FDBE00>{flag}<white> requires a value'
+
+  exception:
+    numberExpectedValue:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} A number was expected, but <#FDBE00>{value}<white> was given'
+    numberExpected:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} A number was expected'
+    invalidComponent:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Message component <#FDBE00>{error}<white> is invalid'
+    regionStorage:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Failed to <#FDBE00>load <white>or <#FDBE00>save<white> regions'
+    taskQueueFull:
+      mode: message
+      cooldownMillis: 1000
+      message:
+        - '{prefix} There are <#FDBE00>too<white> many region tasks queued, <#FDBE00>try<white> again later'
+    taskCancelled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} The task was <#FDBE00>successfully<white> cancelled'
+    taskInterrupted:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Task <#FDBE00>execution<white> was interrupted'
+    worldEdit:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Error <#FDBE00>{error}<white> occurred in <#FDBE00>WorldEdit'
+    unresolvedNames:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Failed to <#FDBE00>resolve<white> some players <#FDBE00>{error}'
+
+  player:
+    expected:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Only a player can <#FDBE00>run<white> this command'
+    argumentExpected:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} <#FDBE00>#player<white> requires an argument'
+
+  world:
+    editMissing:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Plugin <#FDBE00>WorldEdit<white> is not installed'
+    editDisabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Plugin <#FDBE00>WorldEdit<white> is not enabled'
+    editDetectionFailed:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Failed to <#FDBE00>detect<white> WorldEdit'
+
+  configurationReloaded:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Configuration was <#FDBE00>successfully<white> reloaded'
+
+  reloadError:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} An error occurred <#FDBE00>{error}'
+
+  pendingTasks:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} At the <#FDBE00>moment<white>, there are <#FDBE00>unfinished<white> tasks'
+
+  canBuildAllowed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} You <#FDBE00>can<white> build here'
+  canBuildDenied:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} You <#FDBE00>cannot<white> build here'
+
+  'yes':
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Yes'
+
+  'no':
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'No'
+
+  applicableRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Regions <#FDBE00>{regions}<white> are located here'
+
+  noRegionsHere:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} This <#FDBE00>area<white> is not claimed'
+
+  disembarkDenied:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} You cannot <#FDBE00>leave<white> a vehicle here'
+
+  regionDataUnavailable:
+    mode: message
+    cooldownMillis: 1000
+    message:
+      - '{prefix} A region loading <#FDBE00>error<white> occurred'
+
+  entryDenied:
+    mode: message
+    cooldownMillis: 500
+    message:
+      - '{prefix} You cannot <#FDBE00>enter<white> this area'
+
+  exitDenied:
+    mode: message
+    cooldownMillis: 500
+    message:
+      - '{prefix} You cannot <#FDBE00>leave<white> this area'
+
+  protection:
+    denied:
+      placeFire:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>start<white> fires here'
+      useFrostwalker:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>use<white> Frost Walker here'
+      placeBlock:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>place<white> this block here'
+      useDynamite:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>use<white> dynamite here'
+      breakBlock:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>break<white> this block here'
+      use:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>use<white> this here'
+      open:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>open<white> this here'
+      take:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>take<white> this here'
+      sleep:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>sleep'
+      useAnchors:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>use<white> respawn anchors here'
+      useExplosives:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>use<white> explosives here'
+      placeVehicles:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>place<white> vehicles here'
+      dropItems:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>drop<white> items here'
+      dropXp:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>drop<white> experience here'
+      useLingeringPotions:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>use<white> lingering potions here'
+      placeThings:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>place<white> objects here'
+      breakVehicles:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>break<white> vehicles here'
+      pickupItems:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>pick up<white> items here'
+      breakThings:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>break<white> objects here'
+      change:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>change<white> this here'
+      ride:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>ride<white> this here'
+      hit:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>hit<white> this here'
+      pvp:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>fight<white> other players here'
+      damage:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>damage<white> this here'
+      harm:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>harm<white> this here'
+      createPortals:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>create<white> portals here'
+      useCommand:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>use<white> command <#FDBE00>{command}'
+    action:
+      placeFire:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'place fire'
+      useFrostwalker:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'use Frost Walker'
+      placeBlock:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'place that block'
+      useDynamite:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'use dynamite'
+      breakBlock:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'break that block'
+      use:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'use that'
+      open:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'open that'
+      take:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'take that'
+      sleep:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'sleep'
+      useAnchors:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'use respawn anchors'
+      useExplosives:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'use explosives'
+      placeVehicles:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'place vehicles'
+      dropItems:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'drop items'
+      dropXp:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'drop experience'
+      useLingeringPotions:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'use lingering potions'
+      placeThings:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'place things'
+      breakVehicles:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'break vehicles'
+      pickupItems:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'pick up items'
+      breakThings:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'break things'
+      change:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'change that'
+      ride:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'ride that'
+      hit:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'hit that'
+      pvp:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'fight players'
+      damage:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'damage that'
+      harm:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'harm that'
+      createPortals:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'create portals'
+      useCommand:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'use command <#FDBE00>{command}'
+
+  specify:
+    world:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Specify a <#FDBE00>world<white> with -{flag} <gray>(World)'
+    regionName:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Specify a <#FDBE00>name<white> for the region'
+    regionInfo:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Specify a <#FDBE00>region <white>/region info -w <gray>(World) (Region)'
+    regionFlags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Specify a <#FDBE00>region <white>/region flags -w <gray>(World) (Region)'
+
+  region:
+    nameInvalid:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Region name <#FDBE00>{region}<white> contains <#FDBE00>forbidden <white>characters'
+    notFound:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Region <#FDBE00>{region}<white> was not found'
+    alreadyExists:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Region <#FDBE00>{region}<white> already exists, choose a <#FDBE00>different <white>name'
+    alreadyExistsRedefine:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "{prefix} Region <#FDBE00>{region}<white> already exists <click:run_command:'/rg redefine {region}'><hover:show_text:'<white>Click to <#FDBE00>redefine<white> the region'><#FDBE00>[Redefine]</hover></click>"
+    managerMissing:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} World <#FDBE00>{world}<white> has no <#FDBE00>region<white> manager'
+    listScopeRequired:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Specify the list type<gray>: <#FDBE00>/rg list my<white> or <#FDBE00>/rg list global'
+    listScopeInvalid:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Unknown list <#FDBE00>type<white>, use <#FDBE00>my<white> or <#FDBE00>global'
+    listLegacyArguments:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} The old list <#FDBE00>mode<white> only <#FDBE00>accepts<white> a <#FDBE00>page<white> number'
+    heightWarning:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Region <#FDBE00>height<white> is only <#FDBE00>{height}<white> blocks'
+    created:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Region <#FDBE00>{region}<white> was created'
+    updated:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Region <#FDBE00>{region}<white> was updated'
+    overlap:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<#FDBE00>╔'
+        - "<#FDBE00>╠<white> This region <#FDBE00>overlaps<white> another <#FDBE00>player's<white> region"
+        - '<#FDBE00>╠<white> Overlapping region<gray>: <#FDBE00>{region}<white>, owner<gray>: <#FDBE00>{owners}'
+        - '<#FDBE00>╠<white> Intersection point<gray>: <#FDBE00>{x} {y} {z}'
+        - '<#FDBE00>╚'
+    claimed:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Region <#FDBE00>{region}<white> was claimed'
+    orphaned:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} The region <#FDBE00>no longer<white> has an owner'
+    selected:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} The <#FDBE00>{type}<white> region was selected'
+    lookupUuidFailed:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Failed to obtain the <#FDBE00>UUID<white> of player <#FDBE00>{player}'
+    lookupInterrupted:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} The <#FDBE00>UUID<white> lookup for player <#FDBE00>{player}<white> was interrupted'
+
+  notStandingInRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} You are <#FDBE00>not standing<white> in a region'
+
+  current:
+    flags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Current flags<gray>:<#FDBE00> '
+  currentRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Current regions:<#FDBE00> '
+  currentRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<click:run_command:'{command}'><hover:show_text:'<white>Click to <#FDBE00>select<white> this region'><#FDBE00>{region}</hover></click>"
+
+  standingSeveralRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} You are standing in <#FDBE00>multiple<white> regions <gray>(Select one)'
+
+  unsupportedRegionShape:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Only <#FDBE00>cuboids <white>and <#FDBE00>polygons<white> can be <#FDBE00>used<white> for <#FDBE00>regions'
+
+  cannotSelectRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Regions of type <#FDBE00>{type}<white> cannot be selected'
+
+  claim:
+    inside:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} You can create <#FDBE00>claims<white> only <#FDBE00>inside<white> regions owned by <#FDBE00>you <white>or <#FDBE00>your<white> group'
+    regionLimitReached:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} You have <#FDBE00>reached<white> your region limit, delete <#FDBE00>one<white> before <#FDBE00>creating<white> another <gray>({limit} regions)'
+    regionOwnedByOther:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} This <#FDBE00>region<white> already exists and belongs to <#FDBE00>another<white> owner'
+    volumeInvalid:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} The claim <#FDBE00>volume<white> limit exceeds the <#FDBE00>supported<white> maximum of <#FDBE00>{maximum} <white>blocks'
+    tooLarge:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<#FDBE00>╔'
+        - '<#FDBE00>╠<white> This region is <#FDBE00>too <white>large to claim'
+        - '<#FDBE00>╠<white> Your maximum<gray>: <#FDBE00>{maximum} <white>blocks'
+        - '<#FDBE00>╠<white> You selected <#FDBE00>{current}<white> blocks'
+        - '<#FDBE00>╚'
+
+  flag:
+    valueWithEmpty:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} You cannot use <#FDBE00>-e(mpty)<white> with a flag value'
+    set:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Flag <#FDBE00>{flag}<white> for region <#FDBE00>{region}<white> was set to <#FDBE00>{value}'
+    removed:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Flag <#FDBE00>{flag}<white> and its group were <#FDBE00>removed<white> from region <#FDBE00>{region}'
+    groupUnsupported:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Flag <#FDBE00>{flag}<white> does not support <#FDBE00>groups<white> for regions'
+    locationOutside:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} The flag <#FDBE00>location<white> is <#FDBE00>outside<white> the region'
+  groupFlagReset:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} The group for flag <#FDBE00>{flag}<white> was reset to the <#FDBE00>default<white> value'
+
+  groupFlagSet:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} The group for flag <#FDBE00>{flag}<white> was set to <#FDBE00>{group}'
+
+  prioritySet:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Priority of region <#FDBE00>{region}<white> was set to <#FDBE00>{priority}'
+
+  inheritanceSet:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Inheritance of region <#FDBE00>{region}<white> was updated'
+
+  incompatibleParentFlags:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} You cannot <#FDBE00>simultaneously<white> use <#FDBE00>-u<gray> (Unset parent) <white>and <#FDBE00>-f <gray>(Remove child regions)'
+
+  noSpawnPoint:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} The region has <#FDBE00>no<white> spawn point'
+
+  noCenterPoint:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} The region has <#FDBE00>no<white> center point'
+
+  centerSpectatorOnly:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Teleporting to the <#FDBE00>center<white> is only available in <#FDBE00>spectator<white> mode'
+
+  noTeleportPoint:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} The region has <#FDBE00>no<white> teleport point'
+
+  teleportFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Failed to <#FDBE00>teleport<white> to region <#FDBE00>{region}'
+
+  bypass:
+    arguments:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Allowed <#FDBE00>optional<white> arguments<gray>: <white>on, off'
+    enabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} You now <#FDBE00>bypass<white> region protection'
+    disabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} You no longer <#FDBE00>bypass<white> region protection'
+    statusEnabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} You <#FDBE00>bypass<white> region protection, toggle this <#FDBE00>mode<white> with <#FDBE00>/rg bypass'
+    statusDisabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} You do <#FDBE00>not bypass<white> region protection, toggle this <#FDBE00>mode<white> with <#FDBE00>/rg bypass'
+
+  availableFlags:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} All available flags<gray>:<#FDBE00> '
+  availableFlag:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<#FDBE00>Click to set'><#FDBE00>{flag}</hover></click>"
+  unknownFlagFull:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Unknown flag<gray>: <#FDBE00>{flag}'
+
+  flagsCommandHint:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<white>Or open <click:run_command:'/rg flags -w \"{world}\" {region}'><hover:show_text:'<white>Click to open'><#FDBE00>/rg flags {region}</hover></click>"
+
+  none:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'None'
+
+  usingWorldOverride:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Using the world <#FDBE00>selected<white> in WorldEdit<gray>: <#FDBE00>{world}'
+
+  userDoesNotExist:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Player <#FDBE00>{player}<white> does not exist'
+
+  maxRegionsOwned:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} You already <#FDBE00>own<white> the maximum <#FDBE00>allowed<white> number of regions'
+
+  namesToRemove:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Specify <#FDBE00>names<white> to remove or use <#FDBE00>-a<white> to <#FDBE00>remove<white> everyone'
+
+  noNormalWorld:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} No normal world was found'
+
+  noNetherWorld:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} No Nether world was found'
+
+  noEndWorld:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} No End world was found'
+
+  invalidIdentifier:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Invalid identifier<gray>: <#FDBE00>{identifier}'
+
+  noExactWorld:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} No world with that exact name was found'
+
+  noPlayersMatched:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} No players <#FDBE00>matched<white> the query'
+
+  invalidGroup:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Invalid group<gray>: <#FDBE00>{group}'
+
+  multiplePlayers:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} <#FDBE00>Multiple<white> players matched, use an <#FDBE00>exact<white> match with @Name'
+
+  domainPlayer:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<click:copy_to_clipboard:'{uuid}'><hover:show_text:'<white>Last <#FDBE00>known<white> name for UUID<gray>: <#FDBE00>{uuid} <gray>• Click to copy'><#FDBE00>{name}</hover></click>"
+  domainPlayerPlain:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '<#FDBE00>{name}'
+  domainUnknownPlayers:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<click:copy_to_clipboard:'{clipboard}'><hover:show_text:'<white>Failed to <#FDBE00>resolve<white> names<gray>: <#FDBE00>{uuids} <gray>• Click to copy'><white>UUIDs without names<gray>: <#FDBE00>{count}</hover></click>"
+  domainGroup:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<hover:show_text:'<white>Permission group'><white>g<gray>:<#FDBE00>{group}</hover>"
+
+  thirdPartyFlags:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Third-Party Flags'
+
+  help:
+    reload:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Reload WorldGuard configuration'
+    defineRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Defines a region'
+    redefineRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Re-defines the shape of a region'
+    claimRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Claim a region'
+    selectRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Load a region as a WorldEdit selection'
+    regionInfo:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Get information about a region'
+    regionList:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Get a list of regions'
+    setFlags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Set flags'
+    viewFlags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'View region flags'
+    setPriority:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Set the priority of a region'
+    setParent:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Set the parent of a region'
+    removeRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Remove a region'
+    reloadRegions:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Reload regions from file'
+    saveRegions:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Re-save regions to file'
+    teleport:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Teleports you to the location associated with the region'
+    bypass:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Toggle region bypassing, effectively ignoring bypass permissions'
+    addMember:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Add a member to a region'
+    addOwner:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Add an owner to a region'
+    removeOwner:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Remove an owner to a region'
+    removeMember:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Remove a member from a region'
+
+  commandHelp:
+    header:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Available <#FDBE00>commands <white>for /{command}<gray>:'
+    entry:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<click:suggest_command:'{command} '><hover:show_text:'<white>Click to <#FDBE00>insert<white> the command'><#FDBE00>{command}</click> <#FDBE00>{usage} <gray>— <white>{description}"
+
+  flagHelper:
+    nameBuiltin:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<gold>{flag}'
+    nameThirdParty:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<light_purple>{flag}'
+    nameUnknown:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<gray>{flag}'
+    membersMarker:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<hover:show_text:'<white>By default this <#FDBE00>flag<white> uses <#FDBE00>membership<white> in the region'><aqua>*</hover>"
+    buildMarker:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<hover:show_text:'<white>This <#FDBE00>flag<white> affects the <#FDBE00>build'><aqua>*</hover>"
+    padding:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - ' <dark_gray>{padding}'
+    choice:
+      explicit:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<hover:show_text:'<white>Explicitly <#FDBE00>set<white> value'><#FDBE00>{value}</hover> "
+      explicitEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Click to unset'><#FDBE00>{value}</hover></click> "
+      inheritedEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Click to set <gray>• The <#FDBE00>value<white> is currently inherited'><#FDBE00>{value}</hover></click> "
+      availableEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Click to set'><#FDBE00>{value}</hover></click> "
+      danger:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<hover:show_text:'<red>This can have unintended consequences, read the flag documentation before changing it'><dark_red>{value}</hover> "
+    custom:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to <#FDBE00>enter<white> a custom value'><dark_gray>[Custom]</hover></click>"
+    customUnset:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to enter a <#FDBE00>number<white> value'><dark_gray>[Unset]</hover></click>"
+    value:
+      explicit:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '<#FDBE00>{value} '
+      inherited:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<hover:show_text:'<white>Inherited value'><#FDBE00>{value}</hover> "
+      available:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '<gray>{value} '
+      explicitEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to change'><white>{value}</hover></click> "
+      inheritedEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to set'><gray>{value}</hover></click> "
+      availableEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to set'><dark_gray>{value}</hover></click> "
+
+  regionInfo:
+    title:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Region Info'
+    staleNames:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<gray>Names marked with * are last-seen names and may be outdated'
+    basics:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<white>Region<gray>: <click:run_command:'/rg info -w \"{world}\" {region}'><#FDBE00>{region}</click> <gray>(Type: {type}, priority: {priority})"
+    basicsEditable:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<white>Region<gray>: <click:run_command:'/rg info -w \"{world}\" {region}'><#FDBE00>{region}</click> <gray>(Type: <white>{type}, priority: <click:suggest_command:'/rg setpriority -w \"{world}\" {region} '><hover:show_text:'<#FDBE00>Click to change priority'><gold>{priority}</hover></click>)"
+    flagsLabel:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Flags<gray>:<#FDBE00> '
+    noFlags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<red>none'
+    noFlagsPlain:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'none'
+    flag:
+      plain:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{separator}{flag}{group}: {value}'
+      plainEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}{flag}{group}: {value}</hover></click>"
+      danger:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{separator}<dark_red>{flag}{group}: <#FDBE00>{value}'
+      dangerEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<dark_red>{flag}{group}: <#FDBE00>{value}</hover></click>"
+      builtin:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{separator}<gold>{flag}{group}: <#FDBE00>{value}'
+      builtinEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<gold>{flag}{group}: <#FDBE00>{value}</hover></click>"
+      unknown:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{separator}<gray>{flag}{group}: <#FDBE00>{value}'
+      unknownEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<gray>{flag}{group}: <#FDBE00>{value}</hover></click>"
+      thirdParty:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{separator}<light_purple>{flag}{group}: <#FDBE00>{value}'
+      thirdPartyEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<light_purple>{flag}{group}: <#FDBE00>{value}</hover></click>"
+    inheritance:
+      current:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '<green>{indent}{region}'
+      currentClickable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:run_command:'/rg info -w \"{world}\" {region}'><hover:show_text:'<white>Click for information'><green>{indent}{region}</hover></click>"
+      parent:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '<green>{indent}{region} <gray>(parent, priority: {priority})'
+      parentClickable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:run_command:'/rg info -w \"{world}\" {region}'><hover:show_text:'<white>Click for information'><green>{indent}{region}</hover></click> <gray>(parent, priority: {priority})"
+    ownersLabel:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Owners<gray>: <#FDBE00>'
+    membersLabel:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Members<gray>: <#FDBE00>'
+    bounds:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Bounds<gray>: <#FDBE00>{minimum} → {maximum}'
+    boundsGlobal:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Bounds<gray>: <#FDBE00>Entire world'
+    boundsSelectable:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<white>Bounds<gray>: <click:run_command:'/rg select {region}'><hover:show_text:'<white>Click to select'><#FDBE00>{minimum} → {maximum}</hover></click>"
+
+  regionList:
+    title:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Regions'
+    titleFor:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Regions for {owner}'
+    entry:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<light_purple>{number}. <gold>{region}'
+    entryOwner:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<light_purple>{number}. <hover:show_text:'<gold>Region owner'><dark_aqua>+</hover> <gold>{region}"
+    entryMember:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<light_purple>{number}. <hover:show_text:'<gold>Region member'><aqua>-</hover> <gold>{region}"
+
+  button:
+    info:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:run_command:'/rg info -w \"{world}\" {region}'><hover:show_text:'<#FDBE00>Click for info'><gray>[Info]</hover></click>"
+    teleportCenter:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:run_command:'/rg tp -c -w \"{world}\" {region}'><hover:show_text:'<#FDBE00>Click to teleport to the center'><gray>[TP-Center]</hover></click>"
+    unlink:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:suggest_command:'/rg setparent -w \"{world}\" {region}'><hover:show_text:'<#FDBE00>Click to unlink parent'><red>[X]</hover></click>"
+    add:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:suggest_command:'/rg {command} -w \"{world}\" {region} '><hover:show_text:'<#FDBE00>Click to add'><green>[Add]</hover></click>"
+    remove:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:suggest_command:'/rg {command} -w \"{world}\" {region} '><hover:show_text:'<#FDBE00>Click to remove'><red>[Rem]</hover></click>"
+    clear:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:suggest_command:'/rg {command} -w \"{world}\" -a {region}'><hover:show_text:'<#FDBE00>Click to clear'><red>[Clr]</hover></click>"
+    flags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:run_command:'/rg flags -w \"{world}\" {region}'><hover:show_text:'<#FDBE00>Click to set a flag'><green>[Flags]</hover></click>"
+    teleport:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:run_command:'/rg tp -w \"{world}\" {region}'><hover:show_text:'<#FDBE00>Click to teleport <gray>• <white>{x}, {y}, {z}'><gray>[Teleport]</hover></click>"
+
+  usingGlobalRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'You are not standing in any region. Using the global region for this world'
+  regionProtectedHint:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '<gray>The region is protected. To disable protection, use <click:suggest_command:''{command}''><hover:show_text:''<#FDBE00>Click to insert the command<white>''><aqua>{command}</hover></click>'
+  spawnProtectionOverlapWarning:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} <bold>Warning!</bold> The region overlaps server spawn protection. WorldGuard cannot override it; only server operators can interact here'
+  passthroughFlagWarning:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '<red><bold>WARNING:</bold> The passthrough flag overrides build checks and is unrelated to movement through regions'
+      - "<click:open_url:'https://worldguard.enginehub.org/en/latest/regions/flags/#overrides'><hover:show_text:'<gray>Open the documentation'><aqua><underlined>Read about protection overrides</underlined></hover></click>"
+  buildFlagWarning:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '<red><bold>WARNING:</bold> The build flag is not required for region protection'
+      - "<click:open_url:'https://worldguard.enginehub.org/en/latest/regions/flags/#protection-related'><hover:show_text:'<gray>Open the documentation'><aqua><underlined>Read about protection flags</underlined></hover></click>"
+  task:
+    addingRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Adding region {region}'
+    updatingRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Updating region {region}'
+    addingMembers:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Adding members to region {region} in world {world}'
+    addingOwners:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Adding owners to region {region} in world {world}'
+    removingMembers:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Removing members from region {region} in world {world}'
+    removingOwners:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Removing owners from region {region} in world {world}'
+    removingRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Removing region {region} in world {world}'
+    fetchingRegionInfo:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Fetching region information'
+    fetchingRegionList:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Fetching region list'
+    loadingRegionData:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Loading region data for {world}'
+    loadingAllRegions:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Loading regions for all worlds'
+    savingRegionData:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Saving region data for {world}'
+    savingAllRegions:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Saving regions for all worlds'
+
+  waitUpdatingRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Please wait, region <#FDBE00>{region}<white> is being updated'
+  waitLoadingRegionData:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Please wait, regions for world <#FDBE00>{world}<white> are loading'
+  waitSavingRegionData:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Please wait, regions for world <#FDBE00>{world}<white> are saving'
+  waitQueryingPlayers:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Please wait, resolving player UUIDs'
+  waitFetchingRegionInfo:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Please wait, fetching region information'
+  waitFetchingRegionList:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Please wait, fetching region list'
+  waitRemovingRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Please wait, removing region'
+  waitLoadingAllRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Please wait, loading region data for all worlds'
+  waitSavingAllRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Please wait, saving region data for all worlds'
+
+  membersAdded:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Members were added to region <#FDBE00>{region}'
+  ownersAdded:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Owners were added to region <#FDBE00>{region}'
+  offlinePlayerAdditionConfirmation:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Player(s) <#FDBE00>{players} <white>are currently offline'
+      - '{prefix} Check whether the <#FDBE00>player name(s)<white> are correct'
+      - '{prefix} To <#FDBE00>confirm<white>, repeat the command within <#FDBE00>{seconds}<white> seconds'
+  membersRemoved:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Members were <#FDBE00>removed<white> from region <#FDBE00>{region}'
+  ownersRemoved:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Owners were <#FDBE00>removed<white> from region <#FDBE00>{region}'
+  lastOwnerRemovalDenied:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Region <#FDBE00>{region}<white> must retain at least <#FDBE00>one<white> owner'
+  membersAddFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Failed to <#FDBE00>add<white> members'
+  ownersAddFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Failed to <#FDBE00>add<white> owners'
+  membersRemoveFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Failed to <#FDBE00>remove<white> members'
+  ownersRemoveFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Failed to <#FDBE00>remove<white> owners'
+  regionAddFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Failed to <#FDBE00>add<white> region <#FDBE00>{region}'
+  regionUpdateFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Failed to <#FDBE00>update<white> region <#FDBE00>{region}'
+  regionInfoFetchFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Failed to fetch <#FDBE00>information<white> about the region'
+  regionListFetchFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Failed to fetch the <#FDBE00>list<white> of regions'
+  regionFlagsFetchFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Failed to fetch <#FDBE00>flags<white> for the region'
+  regionsRemoved:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Removed regions<gray>: <#FDBE00>{regions}'
+  regionRemoveFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Failed to <#FDBE00>remove<white> the region'
+  regionDataLoaded:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Regions for world <#FDBE00>{world}<white> were loaded'
+  regionDataLoadFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Failed to <#FDBE00>load<white> regions for world <#FDBE00>{world}'
+  allRegionDataLoaded:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Regions for <#FDBE00>all<white> worlds were loaded'
+  allRegionDataLoadFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Failed to <#FDBE00>load<white> regions for all worlds'
+  regionDataSaved:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Regions for world <#FDBE00>{world}<white> were saved'
+  regionDataSaveFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Failed to <#FDBE00>save<white> regions for world <#FDBE00>{world}'
+  allRegionDataSaved:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Regions for <#FDBE00>all<white> worlds were saved'
+  allRegionDataSaveFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Failed to <#FDBE00>save<white> regions for all worlds'
+  circularInheritance:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Region <#FDBE00>{parent}<white> cannot be <#FDBE00>assigned<white> as parent of <#FDBE00>{child} <white>because it would create <#FDBE00>circular<white> inheritance'
+  currentInheritance:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Current inheritance<gray>:<#FDBE00>'
+  regionHasChildren:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Region <#FDBE00>{region}<white> has children. Use -f to remove them or -u to unlink them'
+  selectAreaFirstFull:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Select an area with WorldEdit first. Documentation: https://worldedit.enginehub.org/en/latest/usage/regions/selections/'
+  regionSupportDisabledFull:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Region protection is disabled in this world'
+  regionDataFailedFull:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Region data could not be loaded. Ask a server administrator to check the error log'
+  regionSavingFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Region saving failed for {worlds}. Changes may be lost; check the server error log'
+  flagsFor:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Flags for region <#FDBE00>{region}'
+
+  globalRegionNotAllowed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} The global region <#FDBE00>cannot<white> be used here'
+
+  flagValueInvalid:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Invalid <#FDBE00>value<white> for flag<gray>: <#FDBE00>{error}'
+
+  flagError:
+    boolean:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<#FDBE00>{value}<white> is not a yes/no value'
+    enum:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'unknown value <#FDBE00>{value}<white> for {type}'
+    playerRequired:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'this value <#FDBE00>requires<white> a player'
+    number:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<#FDBE00>{value}<white> is not a number'
+    outsideRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'the location cannot be outside the region'
+    location:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'expected <#FDBE00>here <white>or <#FDBE00>x,y,z'
+    uuid:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<#FDBE00>{value}<white> is not a valid UUID'
+    timestampUnrecognized:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'the time value was not recognized'
+    timestamp:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'expected <#FDBE00>now<white> or a timestamp in <#FDBE00>ISO 8601'
+    state:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'expected <white>none, allow, or deny, not <#FDBE00>{value}'
+    registry:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'unknown <#FDBE00>{registry}<gray>: <#FDBE00>{value}'
+    map:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'expected format <#FDBE00>key:value,key1=value1'
+    pluginMissing:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'the plugin that <#FDBE00>registered <white>this flag is not installed'
+  unsetLocation:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'unset location'
+  unsetString:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'unset string'

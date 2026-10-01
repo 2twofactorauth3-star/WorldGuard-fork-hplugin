@@ -1,0 +1,178 @@
+#
+# Сообщения, которые WorldGuard выводит в консоль сервера.
+# Значение может быть строкой или списком строк. Пустые значения не выводятся.
+#
+
+logs:
+  commandExecutionFailed:
+    message: 'Ошибка выполнения команды: '
+  localeChoiceCreated:
+    message: 'Создан locale.yml. Укажите locale ru или en и перезапустите сервер'
+  localeNotSelected:
+    message: 'Язык не выбран. Укажите в locale.yml значение ru или en и перезапустите сервер'
+  localeUnsupported:
+    message: 'Неподдерживаемый язык. Используйте ru или en: '
+  missingLocaleFile:
+    message: 'Не найден файл локализации '
+  unableSwitchLocaleFile:
+    message: 'Не удалось переключить файл локализации '
+  unableReadLocaleFrom:
+    message: 'Не удалось прочитать язык из файла '
+  unableLoadLogs:
+    message: 'Не удалось загрузить logs.yml'
+  unableLoadMessages:
+    message: 'Не удалось загрузить messages.yml'
+  unableReadBundledMessages:
+    message: 'Не удалось прочитать встроенный messages.yml'
+  unableMigrateBooleanKeys:
+    message: 'Не удалось обновить YAML-ключи сообщений yes/no'
+  unableReadDefaultConfiguration:
+    message: 'Не удалось прочитать конфигурацию по умолчанию: '
+  unableWriteDefaultConfiguration:
+    message: 'Не удалось записать файл конфигурации по умолчанию'
+  failedFoliaCheck:
+    message: 'Не удалось проверить, работает ли сервер на Folia'
+  logText:
+    message: ''''
+  logFailedUuidLookupOf:
+    message: 'Не удалось найти UUID для '''
+  logErrorReadingConfigurationForGlobalConfig:
+    message: 'Ошибка чтения глобальной конфигурации: '
+  logFailedToMarshalFlagValueFor:
+    message: 'Не удалось сериализовать значение флага '
+  logValueIs:
+    message: '; значение: '
+  logFailedToParseFlag:
+    message: 'Не удалось разобрать флаг '''
+  logWithValue:
+    message: ''' со значением '''
+  logFailedToUnmarshalFlagValueFor:
+    message: 'Не удалось десериализовать значение флага '
+  logFailedToReplaceParent:
+    message: 'Не удалось заменить родителя '''
+  logOfChild:
+    message: ''' дочернего региона '''
+  logWithReplacement:
+    message: ''' на '''
+  logFailedToLoadTheRegionData:
+    message: 'Не удалось загрузить данные регионов для '''
+  logPeriodicAttemptsWillBeMadeTo:
+    message: ''' (периодические попытки загрузки продолжатся до успеха)'
+  logFailedToSaveTheRegionData:
+    message: 'Не удалось сохранить данные регионов для '''
+  logWhileUnloadingTheDataForAll:
+    message: ''' при выгрузке данных всех миров'
+  logDuringAPeriodicalSave:
+    message: ''' во время периодического сохранения'
+  logAnExpectedErrorOccurredDuringA:
+    message: 'Во время периодического сохранения произошла ожидаемая ошибка'
+  logRegionDataIsStillFailingTo:
+    message: 'Данные регионов всё ещё не загружаются, как минимум для мира '''
+  logUndefinedRegionTypeForRegion:
+    message: 'Не задан тип региона '''
+  logText7:
+    message: '''!\n'
+  logHereIsWhatTheRegionData:
+    message: 'Данные региона имеют следующий вид:\n\n'
+  logText8:
+    message: '\n'
+  logUnknownRegionTypeForRegion:
+    message: 'Неизвестный тип региона '''
+  logUnexpectedNullpointerexceptionEncounteredDuringParsingFor:
+    message: 'При разборе региона возникло неожиданное NullPointerException: '''
+  logNoteThisRegionWillDisappearAs:
+    message: '\n\nПримечание: в результате этот регион исчезнет!'
+  logFailedToParseUuid:
+    message: 'Не удалось разобрать UUID '''
+  logCircularInheritanceDetectedCanTSet:
+    message: 'Обнаружено циклическое наследование! Нельзя назначить региону '''
+  logToParent:
+    message: ''' родителя '''
+  logUnknownRegionParent:
+    message: 'Неизвестный родитель региона: '
+  logSomeoneIsUnregisteringADefaultWorldguard:
+    message: 'Кто-то удаляет стандартный обработчик WorldGuard: '
+  logThisMayCausePartsOfWorldguard:
+    message: '. Из-за этого часть функций WorldGuard может перестать работать'
+  logErrorLoadingSavingRegions:
+    message: 'Ошибка загрузки/сохранения регионов'
+  logFailedToInitializeSqliteProfileCache:
+    message: 'Не удалось инициализировать SQLite-кеш профилей. Используется только кеш в памяти.'
+  logText9:
+    message: ': '
+  logErrorReadingConfigurationForWorld:
+    message: 'Ошибка чтения конфигурации мира '
+  logErrorParsingConfigurationForWorld:
+    message: 'Ошибка разбора конфигурации мира '
+  logText10:
+    message: '. '
+  logFailedToRestoreConfigurationCommentsIn:
+    message: 'Не удалось восстановить комментарии конфигурации в '
+  classSourceWarning:
+    message: '\nКРИТИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ: другой плагин содержит классы WorldGuard. Смешение версий может нарушить работу WorldGuard. Переопределённые классы:'
+  classSourceUnknown:
+    message: '(неизвестно)'
+  classSourceEntry:
+    message: '\n- Класс '''
+  classSourceEntryOrigin:
+    message: ''' загружен из '''
+  classSourceEntryEnd:
+    message: ''''
+  classSourceReport:
+    message: '\nСообщите об этой проблеме разработчикам перечисленных плагинов.'
+  flagAlreadyRegistered:
+    message: 'Флаг с таким именем уже зарегистрирован: '
+  unableLoadRegionDefaults:
+    message: 'Не удалось загрузить regionDefaults.yml'
+  regionDefaultsUnknownFlag:
+    message: 'Неизвестный флаг в regionDefaults.yml: '''
+  regionDefaultsInvalidFlag:
+    message: 'Недопустимое значение флага в regionDefaults.yml: '''
+  regionDefaultsMissingParent:
+    message: 'Указанный в regionDefaults.yml родительский регион не существует: '''
+  regionDefaultsInvalidParent:
+    message: 'В regionDefaults.yml указан недопустимый родительский регион: '''
+  permissionGroupLookupFailed:
+    message: 'Не удалось проверить группу прав игрока: '
+  permissionGroupsLookupFailed:
+    message: 'Не удалось получить группы прав игрока: '
+  commandSenderWrapFailed:
+    message: 'Не удалось подготовить отправителя команды: '
+  configDuplicateYamlKey:
+    message: 'Повторяющийся или некорректный ключ YAML в '
+  configValidationDetails:
+    message: ': '
+  configInvalidMiniMessage:
+    message: 'Некорректный MiniMessage по пути '
+  configUnknownMiniMessageTag:
+    message: 'неизвестный тег '
+  configInvalidMessageMode:
+    message: 'Некорректный режим сообщения по пути '
+  configInvalidCooldown:
+    message: 'Некорректная задержка сообщения по пути '
+  configActionbarMultipleLinesRejected:
+    message: 'У actionbar несколько строк при включённом режиме отклонения по пути '
+  configInvalidActionbarMultipleLinesMode:
+    message: 'Некорректный settings.messages.actionbarMultipleLinesMode; ожидалось 1 или 2, получено '
+  configTitleRequiresTwoLines:
+    message: 'Сообщение title должно содержать не больше двух строк по пути '
+  configUnknownFlag:
+    message: 'Неизвестный флаг региона '''
+  configInvalidFlagValue:
+    message: 'Некорректное значение флага региона '''
+  configInvalidUuid:
+    message: 'Некорректный UUID '''
+  configDuplicateBlockedCommand:
+    message: 'Команда запрещена сразу в нескольких категориях: '
+  configUnknownLimitGroup:
+    message: 'Группа присутствует только в одной таблице лимитов: '
+  configInvalidMechanicMode:
+    message: 'Некорректный режим механики '
+  configAtPath:
+    message: ''' по пути '
+  configInFile:
+    message: ''' в файле '
+  configForWorld:
+    message: ''' для мира '
+  regionDefaultsInvalidPlayerUuid:
+    message: 'В regionDefaults.yml указан недопустимый UUID игрока: '''

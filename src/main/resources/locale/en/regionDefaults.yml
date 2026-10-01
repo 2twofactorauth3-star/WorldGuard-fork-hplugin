@@ -1,0 +1,327 @@
+#
+# Defaults for new regions and, when explicitly enabled, existing regions.
+# Explicit flags, priority, and parent of existing regions are never overwritten.
+#
+
+# Contains every region default setting.
+settings:
+  # Contains complete rule sets selected by the exact world ID.
+  worlds:
+    # Fallback rules for every world that has no exact key below.
+    "*":
+      # Fills missing settings on regions that existed before plugin startup.
+      applyToExistingRegions: false
+      # Shows /rg info for __global__ when the player is not standing in a regular region.
+      showGlobalRegionInfo: false
+      # Settings applied once to regions created with /rg define or /rg claim.
+      newRegions:
+        # Sets the initial region priority.
+        priority: 1
+        # Assigns an existing region as the parent. Leave empty for no parent.
+        parent: ""
+        # Adds these players and permission groups as owners.
+        owners:
+          # Player UUIDs added as owners.
+          players: []
+          # Permission groups added as owners.
+          groups: []
+        # Adds these players and permission groups as members.
+        members:
+          # Player UUIDs added as members.
+          players: []
+          # Permission groups added as members.
+          groups: []
+        # Sets initial flags.
+        flags:
+          # Allows PvP in newly created regions.
+          pvp: allow
+          # Denies the invincible flag in newly created regions.
+          invincible: deny
+          # Allows pistons to move blocks across region boundaries.
+          pistons: allow
+          # Allows fishing hooks to catch entities inside the region.
+          fishing-hook: allow
+          # Allows players who are not region members to open hopper minecarts.
+          hopper-minecart-access: allow
+          # Prevents other explosions from destroying blocks without disabling entity damage.
+          other-explosion: deny
+        # Contains uniquely named command categories denied to players who are not owners or members of the region.
+        blockedCommands:
+          # Unique category for the personal home command.
+          home:
+            # Commands and subcommands denied by this category.
+            commands:
+              - "/sethome"
+            # Message for this category. Supports a string or a list of strings; leave empty to send nothing.
+            message: "{prefix} You cannot <#FDBE00>set<white> a home in <#FDBE00>another player's<white> region"
+          # Unique category for the clan base command.
+          clanBase:
+            # Commands and subcommands denied by this category.
+            commands:
+              - "/clan setbase"
+            # Message for this category. Supports a string or a list of strings; leave empty to send nothing.
+            message: "{prefix} You cannot <#FDBE00>set<white> a clan base in <#FDBE00>another player's<white> region"
+          # Unique category for the clan home command.
+          clanHome:
+            # Commands and subcommands denied by this category.
+            commands:
+              - "/clan sethome"
+            # Message for this category. Supports a string or a list of strings; leave empty to send nothing.
+            message: "{prefix} You cannot <#FDBE00>set<white> a clan home in <#FDBE00>another player's<white> region"
+
+      # Settings enforced on the main __global__ region of the world.
+      globalRegion:
+        # Sets the global region priority.
+        priority: 0
+        # Sets initial flags on a new __global__ or fills missing flags on an existing one.
+        flags:
+          # Allows PvP in the global region.
+          pvp: allow
+          # Denies the invincible flag in the global region.
+          invincible: deny
+          # Allows pistons to move blocks across region boundaries.
+          pistons: allow
+          # Allows fishing hooks to catch entities inside the region.
+          fishing-hook: allow
+          # Allows players who are not region members to open hopper minecarts.
+          hopper-minecart-access: allow
+          # Prevents other explosions from destroying blocks without disabling entity damage.
+          other-explosion: deny
+        # Removes these flags from the global region on startup and /wg reload.
+        clearFlags: []
+
+    # Complete rules for the world whose exact ID is spawn. This key takes priority over "*".
+    spawn:
+      # Fills missing safe defaults on existing regions and __global__ without overwriting manual values.
+      applyToExistingRegions: true
+      # Shows /rg info for __global__ when the player is not standing in a regular region.
+      showGlobalRegionInfo: true
+      # Settings applied once to regions created with /rg define or /rg claim in spawn.
+      newRegions:
+        # Sets the initial region priority.
+        priority: 1
+        # Assigns an existing region as the parent. Leave empty for no parent.
+        parent: ""
+        # Adds these players and permission groups as owners.
+        owners:
+          # Player UUIDs added as owners.
+          players: []
+          # Permission groups added as owners.
+          groups: []
+        # Adds these players and permission groups as members.
+        members:
+          # Player UUIDs added as members.
+          players: []
+          # Permission groups added as members.
+          groups: []
+        # Sets initial flags.
+        flags:
+          # Prevents every player from changing blocks.
+          build: deny
+          # Prevents block breaking.
+          block-break: deny
+          # Prevents block placement.
+          block-place: deny
+          # Protects animals from player damage.
+          damage-animals: deny
+          # Prevents PvP.
+          pvp: deny
+          # Prevents respawn-anchor explosions.
+          respawn-anchors: deny
+          # Prevents TNT use.
+          tnt: deny
+          # Allows container access.
+          chest-access: allow
+          # Prevents vehicle placement.
+          vehicle-place: deny
+          # Prevents vehicle destruction.
+          vehicle-destroy: deny
+          # Prevents lighter use.
+          lighter: deny
+          # Prevents riding entities and vehicles.
+          ride: deny
+          # Prevents splash potion effects.
+          potion-splash: deny
+          # Prevents block trampling.
+          block-trampling: deny
+          # Prevents firework damage.
+          firework-damage: deny
+          # Prevents wind-charge bursts.
+          wind-charge-burst: deny
+          # Prevents item littering.
+          item-drop: deny
+          # Prevents experience-orb drops.
+          exp-drops: deny
+          # Prevents mob damage to players.
+          mob-damage: deny
+          # Prevents creeper explosions.
+          creeper-explosion: deny
+          # Prevents Ender Dragon block damage.
+          enderdragon-block-damage: deny
+          # Prevents ghast fireballs.
+          ghast-fireball: deny
+          # Prevents other explosions.
+          other-explosion: deny
+          # Prevents breeze-charge explosions.
+          breeze-charge-explosion: deny
+          # Prevents Wither damage.
+          wither-damage: deny
+          # Prevents Enderman griefing.
+          enderman-grief: deny
+          # Prevents ravager griefing.
+          ravager-grief: deny
+          # Protects paintings from entities.
+          entity-painting-destroy: deny
+          # Protects item frames from entities.
+          entity-item-frame-destroy: deny
+          # Prevents mob spawning.
+          mob-spawning: deny
+          # Prevents piston movement.
+          pistons: deny
+          # Prevents fishing hooks from catching entities.
+          fishing-hook: deny
+          # Prevents hopper minecarts from being opened.
+          hopper-minecart-access: deny
+          # Prevents fire spread.
+          fire-spread: deny
+          # Prevents lava from creating fire.
+          lava-fire: deny
+          # Prevents lightning effects.
+          lightning: deny
+          # Prevents water flow.
+          water-flow: deny
+          # Prevents lava flow.
+          lava-flow: deny
+          # Makes players invincible.
+          invincible: allow
+          # Prevents fall damage explicitly.
+          fall-damage: deny
+          # Prevents hunger loss.
+          natural-hunger-drain: deny
+          # Prevents ender-pearl teleportation.
+          enderpearl: deny
+          # Prevents chorus-fruit teleportation.
+          chorus-fruit-teleport: deny
+        # Contains uniquely named command categories denied to players who are not owners or members of the region.
+        blockedCommands:
+          # Unique category for the personal home command.
+          home:
+            # Commands and subcommands denied by this category.
+            commands:
+              - "/sethome"
+            # Message for this category. Supports a string or a list of strings; leave empty to send nothing.
+            message: "{prefix} You cannot <#FDBE00>set<white> a home in <#FDBE00>another player's<white> region"
+          # Unique category for the clan base command.
+          clanBase:
+            # Commands and subcommands denied by this category.
+            commands:
+              - "/clan setbase"
+            # Message for this category. Supports a string or a list of strings; leave empty to send nothing.
+            message: "{prefix} You cannot <#FDBE00>set<white> a clan base in <#FDBE00>another player's<white> region"
+          # Unique category for the clan home command.
+          clanHome:
+            # Commands and subcommands denied by this category.
+            commands:
+              - "/clan sethome"
+            # Message for this category. Supports a string or a list of strings; leave empty to send nothing.
+            message: "{prefix} You cannot <#FDBE00>set<white> a clan home in <#FDBE00>another player's<white> region"
+
+      # Settings enforced on the main __global__ region of spawn.
+      globalRegion:
+        # Sets the global region priority.
+        priority: 0
+        # Sets initial flags on a new __global__ or fills missing flags on an existing one.
+        flags:
+          # Prevents every player from changing blocks.
+          build: deny
+          # Prevents block breaking.
+          block-break: deny
+          # Prevents block placement.
+          block-place: deny
+          # Protects animals from player damage.
+          damage-animals: deny
+          # Prevents PvP.
+          pvp: deny
+          # Prevents respawn-anchor explosions.
+          respawn-anchors: deny
+          # Prevents TNT use.
+          tnt: deny
+          # Allows container access.
+          chest-access: allow
+          # Prevents vehicle placement.
+          vehicle-place: deny
+          # Prevents vehicle destruction.
+          vehicle-destroy: deny
+          # Prevents lighter use.
+          lighter: deny
+          # Prevents riding entities and vehicles.
+          ride: deny
+          # Prevents splash potion effects.
+          potion-splash: deny
+          # Prevents block trampling.
+          block-trampling: deny
+          # Prevents firework damage.
+          firework-damage: deny
+          # Prevents wind-charge bursts.
+          wind-charge-burst: deny
+          # Prevents item littering.
+          item-drop: deny
+          # Prevents experience-orb drops.
+          exp-drops: deny
+          # Prevents mob damage to players.
+          mob-damage: deny
+          # Prevents creeper explosions.
+          creeper-explosion: deny
+          # Prevents Ender Dragon block damage.
+          enderdragon-block-damage: deny
+          # Prevents ghast fireballs.
+          ghast-fireball: deny
+          # Prevents other explosions.
+          other-explosion: deny
+          # Prevents breeze-charge explosions.
+          breeze-charge-explosion: deny
+          # Prevents Wither damage.
+          wither-damage: deny
+          # Prevents Enderman griefing.
+          enderman-grief: deny
+          # Prevents ravager griefing.
+          ravager-grief: deny
+          # Protects paintings from entities.
+          entity-painting-destroy: deny
+          # Protects item frames from entities.
+          entity-item-frame-destroy: deny
+          # Prevents mob spawning.
+          mob-spawning: deny
+          # Prevents piston movement.
+          pistons: deny
+          # Prevents fishing hooks from catching entities.
+          fishing-hook: deny
+          # Prevents hopper minecarts from being opened.
+          hopper-minecart-access: deny
+          # Prevents fire spread.
+          fire-spread: deny
+          # Prevents lava from creating fire.
+          lava-fire: deny
+          # Prevents lightning effects.
+          lightning: deny
+          # Prevents water flow.
+          water-flow: deny
+          # Prevents lava flow.
+          lava-flow: deny
+          # Makes players invincible.
+          invincible: allow
+          # Prevents fall damage explicitly.
+          fall-damage: deny
+          # Prevents hunger loss.
+          natural-hunger-drain: deny
+          # Prevents ender-pearl teleportation.
+          enderpearl: deny
+          # Prevents chorus-fruit teleportation.
+          chorus-fruit-teleport: deny
+        # Removes these flags from the global region on startup and /wg reload.
+        clearFlags: []
+
+    # The arena world inherits the "*" rules and only changes __global__ output in /rg info.
+    arena:
+      # Shows /rg info for __global__ when the player is not standing in a regular region.
+      showGlobalRegionInfo: true

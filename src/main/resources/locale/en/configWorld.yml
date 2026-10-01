@@ -1,0 +1,296 @@
+#
+# WorldGuard per-world configuration (configWorld.yml).
+# All setting names use camelCase.
+#
+
+# Contains all WorldGuard settings.
+settings:
+  # Controls block physics and portal behavior.
+  physics:
+    # Prevents gravel from falling.
+    noPhysicsGravel:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents sand from falling.
+    noPhysicsSand:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Allows portals to be created without region restrictions.
+    allowPortalAnywhere:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Lists blocks protected from water damage.
+    disableWaterDamageBlocks:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+      # Block list used by this mechanic.
+      blocks: []
+
+  # Controls TNT and lighter ignition.
+  ignition:
+    # Completely cancels TNT and TNT minecart explosions.
+    blockTnt:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents TNT explosions from damaging blocks.
+    blockTntBlockDamage:
+      enable: true
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents players from using fire-starting items.
+    blockLighter:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+
+  # Controls fire and lava spreading.
+  fire:
+    # Prevents lava from creating fire.
+    disableLavaFireSpread:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents all fire from spreading.
+    disableAllFireSpread:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Lists blocks from which fire cannot spread.
+    disableFireSpreadBlocks:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+      # Block list used by this mechanic.
+      blocks: []
+    # Lists blocks over which lava may spread.
+    lavaSpreadBlocks:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+      # Block list used by this mechanic.
+      blocks: []
+
+  # Controls mob spawning, griefing, and explosions.
+  mobs:
+    # Cancels creeper explosions.
+    blockCreeperExplosions:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents creeper explosions from damaging blocks.
+    blockCreeperBlockDamage:
+      enable: true
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Cancels wither spawn and death explosions.
+    blockWitherExplosions:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents withers from damaging blocks.
+    blockWitherBlockDamage:
+      enable: true
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Cancels wither skull explosions.
+    blockWitherSkullExplosions:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents wither skulls from damaging blocks.
+    blockWitherSkullBlockDamage:
+      enable: true
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents ender dragons from damaging blocks.
+    blockEnderdragonBlockDamage:
+      enable: true
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents ender dragons from creating exit portals.
+    blockEnderdragonPortalCreation:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Cancels fireball explosions.
+    blockFireballExplosions:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents fireballs from damaging blocks.
+    blockFireballBlockDamage:
+      enable: true
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Cancels wind charge explosions.
+    blockWindchargeExplosions:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents endermen from moving blocks.
+    disableEndermanGriefing:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents snow golems from leaving snow trails.
+    disableSnowmanTrails:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents non-player causes from destroying paintings.
+    blockPaintingDestroy:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents non-player causes from destroying item frames.
+    blockItemFrameDestroy:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents non-player causes from destroying armor stands.
+    blockArmorStandDestroy:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents slimes from spawning above ground.
+    blockAboveGroundSlimes:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Cancels explosions not covered by specific settings.
+    blockOtherExplosions:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents zombies from breaking doors.
+    blockZombieDoorDestruction:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Prevents entities from entering protected vehicles.
+    blockVehicleEntry:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+  # Controls region protection and storage.
+  regions:
+    # Shows a player's UUID when hovering over their name in /rg info.
+    showPlayerUuidsInRegionInfo: false
+    # Uses the separate hopper-minecart-access flag when opening hopper minecarts. An explicit deny blocks access even when true.
+    allowHopperMinecartAccess: true
+    # Enables WorldGuard region protection.
+    enable: true
+    # Removes hostile mobs that attack invincible players.
+    invincibilityRemovesMobs: false
+    # Protects portal creation and destination selection.
+    netherPortalProtection: true
+    # Uses default fade timings for region title flags.
+    titlesAlwaysUseDefaultTimes: true
+    # Makes explosion flags protect entities as well as blocks.
+    explosionFlagsBlockEntityDamage: false
+    # Enables high-frequency checks for movement-related flags.
+    highFrequencyFlags: false
+    # Checks region flags when liquids cross region boundaries.
+    protectAgainstLiquidFlow: false
+    # Selects /rg list behavior: 1 keeps the legacy syntax, 2 requires my or global.
+    listCommandMode: 2
+    # Item used as the region selection wand.
+    wand: "minecraft:leather"
+    # Controls automatic cuboid expansion during /rg claim using the player's remaining volume allowance.
+    claimExpansion:
+      # Expands toward the world's minimum height while volume remains and no foreign region is reached.
+      negativeY: true
+      # Expands toward the world's maximum height while volume remains and no foreign region is reached.
+      positiveY: true
+      # Expands toward decreasing X while volume remains and no foreign region is reached.
+      negativeX: false
+      # Expands toward increasing X while volume remains and no foreign region is reached.
+      positiveX: false
+      # Expands toward decreasing Z while volume remains and no foreign region is reached.
+      negativeZ: false
+      # Expands toward increasing Z while volume remains and no foreign region is reached.
+      positiveZ: false
+    # Sets maximum claim volume by permission group. The highest value among a player's groups is used.
+    maxClaimVolumePerPlayer:
+      default: 1500000
+      kroon: 1700000
+      prince: 1900000
+      phoenix: 2100000
+      overlord: 2300000
+      vlastelin: 2500000
+      paladin: 2700000
+      xozyain: 2900000
+      dadmin: 3100000
+      shulker: 3300000
+      downer: 3500000
+      tiktok: 3500000
+      yt: 3500000
+      helper: 3500000
+      sthelper: 3700000
+      moder: 3900000
+      phantom: 3900000
+      stmoder: 3900000
+      glmoder: 3900000
+      support: 4100000
+      leto: 4300000
+      mladmin: 4300000
+      mediaowner: 4300000
+      zamcurator: 4300000
+      curator: 4300000
+      glcurator: 4300000
+      mladminkp: 4300000
+      admin: 4300000
+      stadmin: 4300000
+      zamgladmin: 4300000
+      gladmin: 4300000
+      developer: 4600000
+      tgk: 5000000
+      techadmin: 5000000
+    # Allows claims only inside regions the player owns.
+    claimOnlyInsideExistingRegions: false
+    # Prevents removing every region owner: at least one player or group must remain.
+    preventLastOwnerRemoval: true
+    # Applies location flags only inside explicit regions.
+    locationFlagsOnlyInsideRegions: false
+    # Sets region-count limits by permission group.
+    maxRegionCountPerPlayer:
+      # Default maximum number of regions a player may own.
+      default: 1
+      kroon: 2
+      prince: 3
+      phoenix: 4
+      overlord: 5
+      vlastelin: 6
+      paladin: 7
+      xozyain: 8
+      dadmin: 9
+      shulker: 10
+      downer: 11
+      tiktok: 11
+      yt: 11
+      helper: 11
+      sthelper: 12
+      moder: 13
+      phantom: 13
+      stmoder: 13
+      glmoder: 13
+      support: 14
+      leto: 15
+      mladmin: 15
+      mediaowner: 15
+      zamcurator: 15
+      curator: 15
+      glcurator: 15
+      mladminkp: 15
+      admin: 15
+      stadmin: 15
+      zamgladmin: 15
+      gladmin: 15
+      developer: 20
+      tgk: 999
+      techadmin: 999

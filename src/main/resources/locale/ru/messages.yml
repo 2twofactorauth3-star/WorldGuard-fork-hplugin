@@ -1,0 +1,1704 @@
+#
+# Все сообщения WorldGuard для игроков проходят через этот файл.
+# mode: message отправляет строки в чат; actionbar использует одну строку; title — title и необязательный subtitle.
+# cooldownMillis подавляет повторную отправку этого сообщения одному игроку; -1 отключает кулдаун.
+# Пустое значение message ничего не отправляет. Используется MiniMessage.
+#
+messages:
+  permissionDenied:
+    mode: message
+    cooldownMillis: 1000
+    message:
+      - '{prefix} У вас <#FDBE00>недостаточно <white>прав'
+
+  command:
+    usage:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} {usage}'
+    unknown:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Команда <#FDBE00>{command}<white> не найдена'
+    failed:
+      mode: message
+      cooldownMillis: 1000
+      message:
+        - '{prefix} Произошла ошибка, <#FDBE00>посмотрите<white> консоль'
+    unknownFlag:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Неизвестный <#FDBE00>флаг<white> команды <#FDBE00>{flag}'
+    flagValueRequired:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Для флага <#FDBE00>{flag}<white> требуется значение'
+
+  exception:
+    numberExpectedValue:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Вместо <#FDBE00>{value}<white> укажите число'
+    numberExpected:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Укажите число'
+    invalidComponent:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Компонент <#FDBE00>{error}<white> неккоректен'
+    regionStorage:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Не удалось <#FDBE00>загрузить <white>или <#FDBE00>сохранить<white> регионы'
+    taskQueueFull:
+      mode: message
+      cooldownMillis: 1000
+      message:
+        - '{prefix} В очереди <#FDBE00>слишком<white> много задач регионов, повторите <#FDBE00>попытку<white> позже'
+    taskCancelled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Задача <#FDBE00>успешно<white> отменена'
+    taskInterrupted:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Выполнение <#FDBE00>задачи <white>прервано'
+    worldEdit:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Произошла ошибка <#FDBE00>{error}<white> в плагине <#FDBE00>WorldEdit'
+    unresolvedNames:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Не удалось <#FDBE00>определить<white> некоторых игроков <#FDBE00>{error}'
+
+  player:
+    expected:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Эту команду может <#FDBE00>выполнить<white> только игрок'
+    argumentExpected:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Для <#FDBE00>#player<white> требуется аргумент'
+
+  world:
+    editMissing:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Плагин <#FDBE00>WorldEdit<white> не установлен'
+    editDisabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Плагин <#FDBE00>WorldEdit<white> не включен'
+    editDetectionFailed:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Не удалось <#FDBE00>обнаружить<white> WorldEdit'
+
+  configurationReloaded:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Конфигурация <#FDBE00>успешно<white> перезагружена'
+
+  reloadError:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Произошла ошибка <#FDBE00>{error}'
+
+  pendingTasks:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} В данный <#FDBE00>момент <white>есть <#FDBE00>незавершённые<white> задачи'
+
+  canBuildAllowed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Здесь <#FDBE00>можно <white>строить'
+  canBuildDenied:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Здесь <#FDBE00>нельзя<white> строить'
+
+  'yes':
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Да'
+
+  'no':
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Нет'
+
+  applicableRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Регионы <#FDBE00>{regions}<white> находятся прямо здесь'
+
+  noRegionsHere:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Эта <#FDBE00>территория<white> не запривачена'
+
+  disembarkDenied:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Здесь нельзя <#FDBE00>покидать<white> транспорт'
+
+  regionDataUnavailable:
+    mode: message
+    cooldownMillis: 1000
+    message:
+      - '{prefix} Произошла <#FDBE00>ошибка<white> загрузки регионов'
+
+  entryDenied:
+    mode: message
+    cooldownMillis: 500
+    message:
+      - '{prefix} Вы не можете <#FDBE00>войти<white> в эту область'
+
+  exitDenied:
+    mode: message
+    cooldownMillis: 500
+    message:
+      - '{prefix} Вы не можете <#FDBE00>покинуть<white> эту область'
+
+  protection:
+    denied:
+      placeFire:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>разводить<white> огонь'
+      useFrostwalker:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>использовать<white> ледоход'
+      placeBlock:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>ставить<white> этот блок'
+      useDynamite:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>использовать<white> динамит'
+      breakBlock:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>ломать<white> этот блок'
+      use:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>использовать<white> это'
+      open:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>открывать<white> это'
+      take:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>забирать<white> это'
+      sleep:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>спать'
+      useAnchors:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>использовать<white> якоря возрождения'
+      useExplosives:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>использовать<white> взрывчатку'
+      placeVehicles:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>ставить<white> транспорт'
+      dropItems:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>выбрасывать<white> предметы'
+      dropXp:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>выбрасывать<white> опыт'
+      useLingeringPotions:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>использовать<white> туманные зелья'
+      placeThings:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>размещать<white> объекты'
+      breakVehicles:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>ломать<white> транспорт'
+      pickupItems:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>подбирать<white> предметы'
+      breakThings:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>ломать<white> объекты'
+      change:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>изменять<white> это'
+      ride:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>садиться<white> на это'
+      hit:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>бить<white> это'
+      pvp:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>сражаться<white> с игроками'
+      damage:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>наносить<white> этому урон'
+      harm:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>причинять<white> этому вред'
+      createPortals:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>создавать<white> порталы'
+      useCommand:
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>использовать<white> команду <#FDBE00>{command}'
+    action:
+      placeFire:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'разводить огонь'
+      useFrostwalker:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'использовать ледоход'
+      placeBlock:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'ставить этот блок'
+      useDynamite:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'использовать динамит'
+      breakBlock:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'ломать этот блок'
+      use:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'использовать это'
+      open:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'открывать это'
+      take:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'забирать это'
+      sleep:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'спать'
+      useAnchors:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'использовать якоря возрождения'
+      useExplosives:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'использовать взрывчатку'
+      placeVehicles:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'ставить транспорт'
+      dropItems:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'выбрасывать предметы'
+      dropXp:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'выбрасывать опыт'
+      useLingeringPotions:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'использовать туманные зелья'
+      placeThings:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'размещать объекты'
+      breakVehicles:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'ломать транспорт'
+      pickupItems:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'подбирать предметы'
+      breakThings:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'ломать объекты'
+      change:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'изменять это'
+      ride:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'садиться на это'
+      hit:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'бить это'
+      pvp:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'сражаться с игроками'
+      damage:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'наносить этому урон'
+      harm:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'причинять этому вред'
+      createPortals:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'создавать порталы'
+      useCommand:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'использовать команду <#FDBE00>{command}'
+
+  specify:
+    world:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Укажите <#FDBE00>мир<white> через -{flag} <gray>(Мир)'
+    regionName:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Укажите <#FDBE00>название<white> региона'
+    regionInfo:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Укажите <#FDBE00>регион <white>/region info -w <gray>(Мир) (Регион)'
+    regionFlags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Укажите <#FDBE00>регион <white>/region flags -w <gray>(Мир) (Регион)'
+
+  region:
+    nameInvalid:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Название региона <#FDBE00>{region}<white> содержит <#FDBE00>запрещённые <white>символы'
+    notFound:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Регион <#FDBE00>{region}<white> не найден'
+    alreadyExists:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Регион <#FDBE00>{region}<white> уже существует, выберите <#FDBE00>другое <white>название'
+    alreadyExistsRedefine:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "{prefix} Регион <#FDBE00>{region}<white> уже существует <click:run_command:'/rg redefine {region}'><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>переопределить<white> регион'><#FDBE00>[Переопределить]</hover></click>"
+    managerMissing:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Для мира <#FDBE00>{world}<white> отсутствует <#FDBE00>менеджер<white> регионов'
+    listScopeRequired:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Укажите тип списка<gray>: <#FDBE00>/rg list my<white> или <#FDBE00>/rg list global'
+    listScopeInvalid:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Неизвестный <#FDBE00>тип<white> списка, используйте <#FDBE00>my<white> или <#FDBE00>global'
+    listLegacyArguments:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} В старом <#FDBE00>режиме<white> списка <#FDBE00>разрешён<white> только <#FDBE00>номер<white> страницы'
+    heightWarning:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Высота <#FDBE00>региона<white> составляет всего <#FDBE00>{height}<white> блоков'
+    created:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Регион <#FDBE00>{region}<white> создан'
+    updated:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Регион <#FDBE00>{region}<white> обновлён'
+    overlap:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<#FDBE00>╔'
+        - '<#FDBE00>╠<white> Этот регион <#FDBE00>пересекается <white>с регионом <#FDBE00>другого<white> игрока'
+        - '<#FDBE00>╠<white> Регион пересечения<gray>: <#FDBE00>{region}<white>, владелец<gray>: <#FDBE00>{owners}'
+        - '<#FDBE00>╠<white> Точка пересечения<gray>: <#FDBE00>{x} {y} {z}'
+        - '<#FDBE00>╚'
+    claimed:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Регион <#FDBE00>{region}<white> запривачен'
+    orphaned:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Регион <#FDBE00>больше<white> не имеет создателя'
+    selected:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Регион типа <#FDBE00>{type}<white> выделен'
+    lookupUuidFailed:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Не удалось получить <#FDBE00>UUID<white> игрока <#FDBE00>{player}'
+    lookupInterrupted:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Получение <#FDBE00>UUID<white> игрока <#FDBE00>{player}<white> было прервано'
+
+  notStandingInRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Вы <#FDBE00>не находитесь <white> в регионе'
+
+  current:
+    flags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Текущие флаги<gray>:<#FDBE00> '
+  currentRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Текущие регионы:<#FDBE00> '
+  currentRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<click:run_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>выбрать<white> этот регион'><#FDBE00>{region}</hover></click>"
+
+  standingSeveralRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Вы находитесь в <#FDBE00>нескольких<white> регионах <gray>(Выберите один)'
+
+  unsupportedRegionShape:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Для <#FDBE00>регионов<white> можно <#FDBE00>использовать <white>только <#FDBE00>кубоиды <white>и <#FDBE00>полигоны'
+
+  cannotSelectRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Регион типа <#FDBE00>{type}<white> нельзя выделить'
+
+  claim:
+    inside:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Создавать <#FDBE00>приваты<white> можно только <#FDBE00>внутри<white> регионов, принадлежащих <#FDBE00>вам <white>или <#FDBE00>вашей<white> группе'
+    regionLimitReached:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Вы <#FDBE00>достигли<white> лимита регионов, удалите <#FDBE00>один<white> из них перед <#FDBE00>созданием <white>нового <gray>({limit} шт)'
+    regionOwnedByOther:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Такой <#FDBE00>регион<white> уже существует и принадлежит <#FDBE00>другому <white>владельцу'
+    volumeInvalid:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Лимит <#FDBE00>объёма<white> привата превышает <#FDBE00>поддерживаемый<white> максимум <#FDBE00>{maximum} <white>блоков'
+    tooLarge:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<#FDBE00>╔'
+        - '<#FDBE00>╠<white> Этот регион <#FDBE00>слишком <white>большой для привата'
+        - '<#FDBE00>╠<white> Ваш максимум<gray>: <#FDBE00>{maximum} <white>блоков'
+        - '<#FDBE00>╠<white> А выделено было целых <#FDBE00>{current}<white> блоков'
+        - '<#FDBE00>╚'
+
+  flag:
+    valueWithEmpty:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Нельзя использовать <#FDBE00>-e(mpty)<white> вместе со значением флага'
+    set:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Флаг <#FDBE00>{flag}<white> региона <#FDBE00>{region}<white> установлен в <#FDBE00>{value}'
+    removed:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Флаг <#FDBE00>{flag}<white> и его группа <#FDBE00>удалены<white> из региона <#FDBE00>{region}'
+    groupUnsupported:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Флаг <#FDBE00>{flag}<white> не поддерживает <#FDBE00>группы<white> региона'
+    locationOutside:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Точка <#FDBE00>флага<white> находится за <#FDBE00>пределами<white> региона'
+  groupFlagReset:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Группа флага <#FDBE00>{flag}<white> сброшена к <#FDBE00>значению<white> по умолчанию'
+
+  groupFlagSet:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Группа флага <#FDBE00>{flag}<white> установлена в <#FDBE00>{group}'
+
+  prioritySet:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Приоритет региона <#FDBE00>{region}<white> установлен в <#FDBE00>{priority}'
+
+  inheritanceSet:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Наследование региона <#FDBE00>{region}<white> обновлено'
+
+  incompatibleParentFlags:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Нельзя <#FDBE00>одновременно<white> использовать <#FDBE00>-u<gray> (Убрать родителя) <white>и <#FDBE00>-f <gray>(Удалить дочерние регионы)'
+
+  noSpawnPoint:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} У региона <#FDBE00>не задана<white> точка возрождения'
+
+  noCenterPoint:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} У региона <#FDBE00>отсутствует<white> центральная точка'
+
+  centerSpectatorOnly:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Телепортация в <#FDBE00>центр<white> доступна только в <#FDBE00>режиме<white> наблюдателя'
+
+  noTeleportPoint:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} У региона <#FDBE00>не задана <white>точка телепортации'
+
+  teleportFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Не удалось <#FDBE00>телепортироваться <white>в регион <#FDBE00>{region}'
+
+  bypass:
+    arguments:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Допустимые <#FDBE00>необязательные<white> аргументы<gray>: <white>on, off'
+    enabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Теперь вы <#FDBE00>обходите <white>защиту регионов'
+    disabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Вы больше <#FDBE00>не обходите<white> защиту регионов'
+    statusEnabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Вы <#FDBE00>обходите<white> защиту регионов, переключить <#FDBE00>режим<white> можно командой <#FDBE00>/rg bypass'
+    statusDisabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Вы <#FDBE00>не обходите<white> защиту регионов, переключить <#FDBE00>режим<white> можно командой <#FDBE00>/rg bypass'
+
+  availableFlags:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Все доступные флаги<gray>:<#FDBE00> '
+  availableFlag:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<#FDBE00>Нажмите, чтобы установить'><#FDBE00>{flag}</hover></click>"
+  unknownFlagFull:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Неизвестный флаг<gray>: <#FDBE00>{flag}'
+
+  flagsCommandHint:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<white>Или откройте <click:run_command:'/rg flags -w \"{world}\" {region}'><hover:show_text:'<white>Нажмите, чтобы открыть'><#FDBE00>/rg flags {region}</hover></click>"
+
+  none:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Нет'
+
+  usingWorldOverride:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Используется мир, <#FDBE00>выбранный <white>в WorldEdit<gray>: <#FDBE00>{world}'
+
+  userDoesNotExist:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Игрок <#FDBE00>{player}<white> не существует'
+
+  maxRegionsOwned:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Вы уже <#FDBE00>владеете<white> максимально <#FDBE00>допустимым<white> количеством регионов'
+
+  namesToRemove:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Укажите <#FDBE00>имена <white>для удаления или используйте <#FDBE00>-a<white>, чтобы <#FDBE00>удалить<white> всех'
+
+  noNormalWorld:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Обычный мир не найден'
+
+  noNetherWorld:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Мир Нижнего мира не найден'
+
+  noEndWorld:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Мир Края не найден'
+
+  invalidIdentifier:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Недопустимый идентификатор<gray>: <#FDBE00>{identifier}'
+
+  noExactWorld:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Мир с таким именем не найден'
+
+  noPlayersMatched:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} По запросу <#FDBE00>не найдено<white> ни одного игрока'
+
+  invalidGroup:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Недопустимая группа<gray>: <#FDBE00>{group}'
+
+  multiplePlayers:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Найдено <#FDBE00>несколько <white>игроков, для точного <#FDBE00>совпадения <white>используйте @Ник'
+
+  domainPlayer:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<click:copy_to_clipboard:'{uuid}'><hover:show_text:'<white>Последнее <#FDBE00>известное<white> имя UUID<gray>: <#FDBE00>{uuid} <gray>• Нажмите, чтобы скопировать'><#FDBE00>{name}</hover></click>"
+  domainPlayerPlain:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '<#FDBE00>{name}'
+  domainUnknownPlayers:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<click:copy_to_clipboard:'{clipboard}'><hover:show_text:'<white>Не удалось <#FDBE00>определить<white> имена<gray>: <#FDBE00>{uuids} <gray>• Нажмите, чтобы скопировать'><white>UUID без имени<gray>: <#FDBE00>{count}</hover></click>"
+  domainGroup:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - "<hover:show_text:'<white>Группа прав'><white>g<gray>:<#FDBE00>{group}</hover>"
+
+  thirdPartyFlags:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Сторонние флаги'
+
+  help:
+    reload:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Перезагрузить конфигурацию'
+    defineRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Создать регион'
+    redefineRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Изменить форму региона'
+    claimRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Заприватить регион'
+    selectRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Загрузить регион как выделение WorldEdit'
+    regionInfo:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Показать информацию о регионе'
+    regionList:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Показать список регионов'
+    setFlags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Установить флаги'
+    viewFlags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Показать флаги региона'
+    setPriority:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Установить приоритет региона'
+    setParent:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Установить родительский регион'
+    removeRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Удалить регион'
+    reloadRegions:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Перезагрузить регионы из файла'
+    saveRegions:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Повторно сохранить регионы в файл'
+    teleport:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Телепортироваться в связанную с регионом точку'
+    bypass:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Переключить обход защиты регионов, фактически игнорируя разрешения обхода'
+    addMember:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Добавить участника региона'
+    addOwner:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Добавить владельца региона'
+    removeOwner:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Удалить владельца региона'
+    removeMember:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Удалить участника региона'
+
+  commandHelp:
+    header:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Доступные <#FDBE00>команды <white>/{command}<gray>:'
+    entry:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<click:suggest_command:'{command} '><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>вставить<white> команду'><#FDBE00>{command}</click> <#FDBE00>{usage} <gray>— <white>{description}"
+
+  flagHelper:
+    nameBuiltin:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<gold>{flag}'
+    nameThirdParty:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<light_purple>{flag}'
+    nameUnknown:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<gray>{flag}'
+    membersMarker:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<hover:show_text:'<white>По умолчанию этот <#FDBE00>флаг<white> учитывает <#FDBE00>участие<white> в регионе'><aqua>*</hover>"
+    buildMarker:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<hover:show_text:'<white>Этот <#FDBE00>флаг<white> влияет на флаг <#FDBE00>build'><aqua>*</hover>"
+    padding:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - ' <dark_gray>{padding}'
+    choice:
+      explicit:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<hover:show_text:'<white>Явно <#FDBE00>заданное <white>значение'><#FDBE00>{value}</hover> "
+      explicitEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы сбросить'><#FDBE00>{value}</hover></click> "
+      inheritedEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить <gray>• Сейчас <#FDBE00>значение <white>унаследовано'><#FDBE00>{value}</hover></click> "
+      availableEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить'><#FDBE00>{value}</hover></click> "
+      danger:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<hover:show_text:'<red>Изменение может привести к неожиданным последствиям, перед изменением прочитайте документацию флага'><dark_red>{value}</hover> "
+    custom:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>ввести<white> своё значение'><dark_gray>[Своё]</hover></click>"
+    customUnset:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>ввести <white>число'><dark_gray>[Не задано]</hover></click>"
+    value:
+      explicit:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '<#FDBE00>{value} '
+      inherited:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<hover:show_text:'<white>Унаследованное значение'><#FDBE00>{value}</hover> "
+      available:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '<gray>{value} '
+      explicitEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы изменить'><white>{value}</hover></click> "
+      inheritedEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить'><gray>{value}</hover></click> "
+      availableEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить'><dark_gray>{value}</hover></click> "
+
+  regionInfo:
+    title:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Информация о регионе'
+    staleNames:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<gray>Имена со знаком * являются последними известными и могут быть устаревшими'
+    basics:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<white>Регион<gray>: <click:run_command:'/rg info -w \"{world}\" {region}'><#FDBE00>{region}</click> <gray>(Тип: {type}, приоритет: {priority})"
+    basicsEditable:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<white>Регион<gray>: <click:run_command:'/rg info -w \"{world}\" {region}'><#FDBE00>{region}</click> <gray>(Тип: <white>{type}, приоритет: <click:suggest_command:'/rg setpriority -w \"{world}\" {region} '><hover:show_text:'<#FDBE00>Нажмите, чтобы изменить приоритет'><gold>{priority}</hover></click>)"
+    flagsLabel:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Флаги<gray>:<#FDBE00> '
+    noFlags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<red>нет'
+    noFlagsPlain:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'нет'
+    flag:
+      plain:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{separator}{flag}{group}: {value}'
+      plainEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>изменить<white> флаг'>{separator}{flag}{group}: {value}</hover></click>"
+      danger:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{separator}<dark_red>{flag}{group}: <#FDBE00>{value}'
+      dangerEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>изменить<white> флаг'>{separator}<dark_red>{flag}{group}: <#FDBE00>{value}</hover></click>"
+      builtin:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{separator}<gold>{flag}{group}: <#FDBE00>{value}'
+      builtinEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>изменить<white> флаг'>{separator}<gold>{flag}{group}: <#FDBE00>{value}</hover></click>"
+      unknown:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{separator}<gray>{flag}{group}: <#FDBE00>{value}'
+      unknownEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>изменить<white> флаг'>{separator}<gray>{flag}{group}: <#FDBE00>{value}</hover></click>"
+      thirdParty:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{separator}<light_purple>{flag}{group}: <#FDBE00>{value}'
+      thirdPartyEditable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Нажмите, чтобы <#FDBE00>изменить<white> флаг'>{separator}<light_purple>{flag}{group}: <#FDBE00>{value}</hover></click>"
+    inheritance:
+      current:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '<green>{indent}{region}'
+      currentClickable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:run_command:'/rg info -w \"{world}\" {region}'><hover:show_text:'<white>Нажмите для информации'><green>{indent}{region}</hover></click>"
+      parent:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '<green>{indent}{region} <gray>(родитель, приоритет: {priority})'
+      parentClickable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "<click:run_command:'/rg info -w \"{world}\" {region}'><hover:show_text:'<white>Нажмите для информации'><green>{indent}{region}</hover></click> <gray>(родитель, приоритет: {priority})"
+    ownersLabel:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Владельцы<gray>: <#FDBE00>'
+    membersLabel:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Участники<gray>: <#FDBE00>'
+    bounds:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Границы<gray>: <#FDBE00>{minimum} → {maximum}'
+    boundsGlobal:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Границы<gray>: <#FDBE00>Весь мир'
+    boundsSelectable:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<white>Границы<gray>: <click:run_command:'/rg select {region}'><hover:show_text:'<white>Нажмите, для выделения'><#FDBE00>{minimum} → {maximum}</hover></click>"
+
+  regionList:
+    title:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Регионы'
+    titleFor:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Регионы игрока {owner}'
+    entry:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<light_purple>{number}. <gold>{region}'
+    entryOwner:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<light_purple>{number}. <hover:show_text:'<gold>Владелец региона'><dark_aqua>+</hover> <gold>{region}"
+    entryMember:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<light_purple>{number}. <hover:show_text:'<gold>Участник региона'><aqua>-</hover> <gold>{region}"
+
+  button:
+    info:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:run_command:'/rg info -w \"{world}\" {region}'><hover:show_text:'<#FDBE00>Нажмите для информации'><gray>[Инфо]</hover></click>"
+    teleportCenter:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:run_command:'/rg tp -c -w \"{world}\" {region}'><hover:show_text:'<#FDBE00>Нажмите, чтобы телепортироваться в центр'><gray>[ТП-Центр]</hover></click>"
+    unlink:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:suggest_command:'/rg setparent -w \"{world}\" {region}'><hover:show_text:'<#FDBE00>Нажмите, чтобы отвязать родителя'><red>[X]</hover></click>"
+    add:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:suggest_command:'/rg {command} -w \"{world}\" {region} '><hover:show_text:'<#FDBE00>Нажмите, чтобы добавить'><green>[Добавить]</hover></click>"
+    remove:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:suggest_command:'/rg {command} -w \"{world}\" {region} '><hover:show_text:'<#FDBE00>Нажмите, чтобы убрать'><red>[Убрать]</hover></click>"
+    clear:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:suggest_command:'/rg {command} -w \"{world}\" -a {region}'><hover:show_text:'<#FDBE00>Нажмите, чтобы очистить'><red>[Очистить]</hover></click>"
+    flags:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:run_command:'/rg flags -w \"{world}\" {region}'><hover:show_text:'<#FDBE00>Нажмите, чтобы настроить флаг'><green>[Флаги]</hover></click>"
+    teleport:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - " <click:run_command:'/rg tp -w \"{world}\" {region}'><hover:show_text:'<#FDBE00>Нажмите, чтобы телепортироваться <gray>• <white>{x}, {y}, {z}'><gray>[Телепорт]</hover></click>"
+
+  usingGlobalRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Вы не стоите ни в одном регионе. Используется глобальный регион этого мира'
+  regionProtectedHint:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '<gray>Регион защищён. Чтобы отключить защиту, используйте <click:suggest_command:''{command}''><hover:show_text:''<#FDBE00>Нажмите, чтобы вставить команду<white>''><aqua>{command}</hover></click>'
+  spawnProtectionOverlapWarning:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} <bold>Внимание!</bold> Регион пересекается с защитой спавна сервера. WorldGuard не может её переопределить; взаимодействовать здесь смогут только операторы'
+  passthroughFlagWarning:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '<red><bold>ВНИМАНИЕ:</bold> Флаг passthrough переопределяет проверки строительства и не относится к перемещению через регионы'
+      - "<click:open_url:'https://worldguard.enginehub.org/en/latest/regions/flags/#overrides'><hover:show_text:'<gray>Открыть документацию'><aqua><underlined>Подробнее о переопределениях защиты</underlined></hover></click>"
+  buildFlagWarning:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '<red><bold>ВНИМАНИЕ:</bold> Флаг build не требуется для обычной защиты региона'
+      - "<click:open_url:'https://worldguard.enginehub.org/en/latest/regions/flags/#protection-related'><hover:show_text:'<gray>Открыть документацию'><aqua><underlined>Подробнее о флагах защиты</underlined></hover></click>"
+  task:
+    addingRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Добавление региона {region}'
+    updatingRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Обновление региона {region}'
+    addingMembers:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Добавление участников в регион {region} мира {world}'
+    addingOwners:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Добавление владельцев в регион {region} мира {world}'
+    removingMembers:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Удаление участников из региона {region} мира {world}'
+    removingOwners:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Удаление владельцев из региона {region} мира {world}'
+    removingRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Удаление региона {region} мира {world}'
+    fetchingRegionInfo:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Получение информации о регионе'
+    fetchingRegionList:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Получение списка регионов'
+    loadingRegionData:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Загрузка регионов мира {world}'
+    loadingAllRegions:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Загрузка регионов всех миров'
+    savingRegionData:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Сохранение регионов мира {world}'
+    savingAllRegions:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Сохранение регионов всех миров'
+
+  waitUpdatingRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Подождите, регион <#FDBE00>{region}<white> обновляется'
+  waitLoadingRegionData:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Подождите, регионы мира <#FDBE00>{world}<white> загружаются'
+  waitSavingRegionData:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Подождите, регионы мира <#FDBE00>{world}<white> сохраняются'
+  waitQueryingPlayers:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Подождите, определяются UUID игроков'
+  waitFetchingRegionInfo:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Подождите, загружается информация о регионе'
+  waitFetchingRegionList:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Подождите, загружается список регионов'
+  waitRemovingRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Подождите, регион удаляется'
+  waitLoadingAllRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Подождите, загружаются регионы всех миров'
+  waitSavingAllRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Подождите, сохраняются регионы всех миров'
+
+  membersAdded:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Участники добавлены в регион <#FDBE00>{region}'
+  ownersAdded:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Владельцы добавлены в регион <#FDBE00>{region}'
+  offlinePlayerAdditionConfirmation:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Игрок(и) <#FDBE00>{players} <white>сейчас не в сети'
+      - '{prefix} Проверьте, <#FDBE00>правильно<white> ли вы указали ник(и)'
+      - '{prefix} Для <#FDBE00>подтверждения<white> в течение <#FDBE00>{seconds}<white> секунд повторите команду'
+  membersRemoved:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Участники <#FDBE00>удалены<white> из региона <#FDBE00>{region}'
+  ownersRemoved:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Владельцы <#FDBE00>удалены<white> из региона <#FDBE00>{region}'
+  lastOwnerRemovalDenied:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} В регионе <#FDBE00>{region}<white> должен остаться хотя бы <#FDBE00>один<white> владелец'
+  membersAddFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось <#FDBE00>добавить<white> участников'
+  ownersAddFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось <#FDBE00>добавить<white> владельцев'
+  membersRemoveFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось <#FDBE00>удалить<white> участников'
+  ownersRemoveFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось <#FDBE00>удалить<white> владельцев'
+  regionAddFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Не удалось <#FDBE00>добавить<white> регион <#FDBE00>{region}'
+  regionUpdateFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Не удалось <#FDBE00>обновить<white> регион <#FDBE00>{region}'
+  regionInfoFetchFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось получить <#FDBE00>информацию<white> о регионе'
+  regionListFetchFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось получить <#FDBE00>список<white> регионов'
+  regionFlagsFetchFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось получить <#FDBE00>флаги<white> региона'
+  regionsRemoved:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Удалены регионы<gray>: <#FDBE00>{regions}'
+  regionRemoveFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось <#FDBE00>удалить<white> регион'
+  regionDataLoaded:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Регионы мира <#FDBE00>{world}<white> загружены'
+  regionDataLoadFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Не удалось <#FDBE00>загрузить<white> регионы мира <#FDBE00>{world}'
+  allRegionDataLoaded:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Регионы всех <#FDBE00>миров<white> загружены'
+  allRegionDataLoadFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось <#FDBE00>загрузить<white> регионы всех миров'
+  regionDataSaved:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Регионы мира <#FDBE00>{world}<white> сохранены'
+  regionDataSaveFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Не удалось <#FDBE00>сохранить<white> регионы мира <#FDBE00>{world}'
+  allRegionDataSaved:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Регионы <#FDBE00>всех<white> миров сохранены'
+  allRegionDataSaveFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось <#FDBE00>сохранить<white> регионы всех миров'
+  circularInheritance:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Регион <#FDBE00>{parent}<white> нельзя <#FDBE00>назначить<white> родителем <#FDBE00>{child} <white>иначе получится <#FDBE00>циклическое<white> наследование'
+  currentInheritance:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Текущее наследование<gray>:<#FDBE00>'
+  regionHasChildren:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} У региона <#FDBE00>{region}<white> есть дочерние регионы. Используйте -f, чтобы удалить их, или -u, чтобы отвязать родителя'
+  selectAreaFirstFull:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Сначала выделите область через WorldEdit. Документация: https://worldedit.enginehub.org/en/latest/usage/regions/selections/'
+  regionSupportDisabledFull:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Защита регионов в этом мире отключена'
+  regionDataFailedFull:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Не удалось загрузить регионы. Попросите администратора проверить журнал ошибок'
+  regionSavingFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Не удалось сохранить регионы миров: {worlds}. Изменения могут быть потеряны; проверьте журнал ошибок сервера'
+  flagsFor:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Флаги региона <#FDBE00>{region}'
+
+  globalRegionNotAllowed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Глобальный регион <#FDBE00>нельзя<white> использовать здесь'
+
+  flagValueInvalid:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '{prefix} Некорректное <#FDBE00>значение<white> флага<gray>: <#FDBE00>{error}'
+
+  flagError:
+    boolean:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<#FDBE00>{value}<white> не является значением да/нет'
+    enum:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'неизвестное значение <#FDBE00>{value}<white> для {type}'
+    playerRequired:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'для этого значения <#FDBE00>требуется<white> игрок'
+    number:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<#FDBE00>{value}<white> не является числом'
+    outsideRegion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'точка не может находиться за границами региона'
+    location:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'ожидалось <#FDBE00>here <white>или <#FDBE00>x,y,z'
+    uuid:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<#FDBE00>{value}<white> не является корректным UUID'
+    timestampUnrecognized:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'значение времени не распознано'
+    timestamp:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'ожидалось <#FDBE00>now<white> или время в формате <#FDBE00>ISO 8601'
+    state:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'ожидалось <white>none, allow или deny, а не <#FDBE00>{value}'
+    registry:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'неизвестное значение <#FDBE00>{registry}<gray>: <#FDBE00>{value}'
+    map:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'ожидался формат <#FDBE00>ключ:значение,ключ1=значение1'
+    pluginMissing:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'плагин, <#FDBE00>зарегистрировавший <white>этот флаг, не установлен'
+  unsetLocation:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'точка не задана'
+  unsetString:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'строка не задана'

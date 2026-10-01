@@ -1,0 +1,178 @@
+#
+# Messages written by WorldGuard to the server console.
+# A value may be a single string or a string list. Empty values are not logged.
+#
+
+logs:
+  commandExecutionFailed:
+    message: 'Command execution failed: '
+  localeChoiceCreated:
+    message: 'Created locale.yml. Set locale to ru or en and restart the server'
+  localeNotSelected:
+    message: 'Locale is not selected. Set locale.yml locale to ru or en and restart the server'
+  localeUnsupported:
+    message: 'Unsupported locale. Use ru or en: '
+  missingLocaleFile:
+    message: 'Missing localized file '
+  unableSwitchLocaleFile:
+    message: 'Unable to switch localized file '
+  unableReadLocaleFrom:
+    message: 'Unable to read locale from '
+  unableLoadLogs:
+    message: 'Unable to load logs.yml'
+  unableLoadMessages:
+    message: 'Unable to load messages.yml'
+  unableReadBundledMessages:
+    message: 'Unable to read bundled messages.yml'
+  unableMigrateBooleanKeys:
+    message: 'Unable to migrate YAML boolean-like message keys'
+  unableReadDefaultConfiguration:
+    message: 'Unable to read default configuration: '
+  unableWriteDefaultConfiguration:
+    message: 'Failed to write default configuration file'
+  failedFoliaCheck:
+    message: 'Failed to check whether the server is running Folia'
+  logText:
+    message: ''''
+  logFailedUuidLookupOf:
+    message: 'Failed UUID lookup of '''
+  logErrorReadingConfigurationForGlobalConfig:
+    message: 'Error reading configuration for global config: '
+  logFailedToMarshalFlagValueFor:
+    message: 'Failed to marshal flag value for '
+  logValueIs:
+    message: '; value is '
+  logFailedToParseFlag:
+    message: 'Failed to parse flag '''
+  logWithValue:
+    message: ''' with value '''
+  logFailedToUnmarshalFlagValueFor:
+    message: 'Failed to unmarshal flag value for '
+  logFailedToReplaceParent:
+    message: 'Failed to replace parent '''
+  logOfChild:
+    message: ''' of child '''
+  logWithReplacement:
+    message: ''' with replacement '''
+  logFailedToLoadTheRegionData:
+    message: 'Failed to load the region data for '''
+  logPeriodicAttemptsWillBeMadeTo:
+    message: ''' (periodic attempts will be made to load the data until success)'
+  logFailedToSaveTheRegionData:
+    message: 'Failed to save the region data for '''
+  logWhileUnloadingTheDataForAll:
+    message: ''' while unloading the data for all worlds'
+  logDuringAPeriodicalSave:
+    message: ''' during a periodical save'
+  logAnExpectedErrorOccurredDuringA:
+    message: 'An expected error occurred during a periodical save'
+  logRegionDataIsStillFailingTo:
+    message: 'Region data is still failing to load, at least for the world named '''
+  logUndefinedRegionTypeForRegion:
+    message: 'Undefined region type for region '''
+  logText7:
+    message: '''!\n'
+  logHereIsWhatTheRegionData:
+    message: 'Here is what the region data looks like:\n\n'
+  logText8:
+    message: '\n'
+  logUnknownRegionTypeForRegion:
+    message: 'Unknown region type for region '''
+  logUnexpectedNullpointerexceptionEncounteredDuringParsingFor:
+    message: 'Unexpected NullPointerException encountered during parsing for the region '''
+  logNoteThisRegionWillDisappearAs:
+    message: '\n\nNote: This region will disappear as a result!'
+  logFailedToParseUuid:
+    message: 'Failed to parse UUID '''
+  logCircularInheritanceDetectedCanTSet:
+    message: 'Circular inheritance detected! Can''t set the parent of '''
+  logToParent:
+    message: ''' to parent '''
+  logUnknownRegionParent:
+    message: 'Unknown region parent: '
+  logSomeoneIsUnregisteringADefaultWorldguard:
+    message: 'Someone is unregistering a default WorldGuard handler: '
+  logThisMayCausePartsOfWorldguard:
+    message: '. This may cause parts of WorldGuard to stop functioning'
+  logErrorLoadingSavingRegions:
+    message: 'Error loading/saving regions'
+  logFailedToInitializeSqliteProfileCache:
+    message: 'Failed to initialize SQLite profile cache. Cache is memory-only.'
+  logText9:
+    message: ': '
+  logErrorReadingConfigurationForWorld:
+    message: 'Error reading configuration for world '
+  logErrorParsingConfigurationForWorld:
+    message: 'Error parsing configuration for world '
+  logText10:
+    message: '. '
+  logFailedToRestoreConfigurationCommentsIn:
+    message: 'Failed to restore configuration comments in '
+  classSourceWarning:
+    message: '\nSEVERE WARNING: another plugin contains WorldGuard classes. The resulting mixture of versions may break WorldGuard. Overridden classes:'
+  classSourceUnknown:
+    message: '(unknown)'
+  classSourceEntry:
+    message: '\n- Class '''
+  classSourceEntryOrigin:
+    message: ''' was loaded from '''
+  classSourceEntryEnd:
+    message: ''''
+  classSourceReport:
+    message: '\nReport this problem to the developers of the listed plugins.'
+  flagAlreadyRegistered:
+    message: 'A flag is already registered with this name: '
+  unableLoadRegionDefaults:
+    message: 'Unable to load regionDefaults.yml'
+  regionDefaultsUnknownFlag:
+    message: 'Unknown flag in regionDefaults.yml: '''
+  regionDefaultsInvalidFlag:
+    message: 'Invalid flag value in regionDefaults.yml for: '''
+  regionDefaultsMissingParent:
+    message: 'Parent region configured in regionDefaults.yml does not exist: '''
+  regionDefaultsInvalidParent:
+    message: 'Invalid parent region configured in regionDefaults.yml: '''
+  permissionGroupLookupFailed:
+    message: 'Failed to check permission group for player: '
+  permissionGroupsLookupFailed:
+    message: 'Failed to obtain permission groups for player: '
+  commandSenderWrapFailed:
+    message: 'Failed to prepare command sender: '
+  regionDefaultsInvalidPlayerUuid:
+    message: 'Invalid player UUID in regionDefaults.yml: '''
+  configDuplicateYamlKey:
+    message: 'Duplicate or invalid YAML key in '
+  configValidationDetails:
+    message: ': '
+  configInvalidMiniMessage:
+    message: 'Invalid MiniMessage at '
+  configUnknownMiniMessageTag:
+    message: 'unknown tag '
+  configInvalidMessageMode:
+    message: 'Invalid message mode at '
+  configInvalidCooldown:
+    message: 'Invalid message cooldown at '
+  configActionbarMultipleLinesRejected:
+    message: 'Action bar message has multiple lines while rejection mode is enabled at '
+  configInvalidActionbarMultipleLinesMode:
+    message: 'Invalid settings.messages.actionbarMultipleLinesMode; expected 1 or 2, got '
+  configTitleRequiresTwoLines:
+    message: 'Title message must contain at most two lines at '
+  configUnknownFlag:
+    message: 'Unknown region flag '''
+  configInvalidFlagValue:
+    message: 'Invalid value for region flag '''
+  configInvalidUuid:
+    message: 'Invalid UUID '''
+  configDuplicateBlockedCommand:
+    message: 'Blocked command is assigned to multiple categories: '
+  configUnknownLimitGroup:
+    message: 'Limit group exists in only one limit table: '
+  configInvalidMechanicMode:
+    message: 'Invalid mechanic mode '
+  configAtPath:
+    message: ''' at '
+  configInFile:
+    message: ''' in '
+  configForWorld:
+    message: ''' for world '

@@ -1,0 +1,35 @@
+[versions]
+worldedit = "7.3.18"
+bstats = "3.2.1"
+
+[libraries]
+
+squirrelid = "org.enginehub:squirrelid:0.3.2"
+
+jsr305 = "com.google.code.findbugs:jsr305:3.0.2"
+
+junit-bom = "org.junit:junit-bom:5.10.2"
+junit-jupiter-api.module = "org.junit.jupiter:junit-jupiter-api"
+junit-jupiter-engine.module = "org.junit.jupiter:junit-jupiter-engine"
+
+paperApi = "io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT"
+
+prtree = "org.khelekore:prtree:1.5.0"
+bstats-bukkit = { module = "org.bstats:bstats-bukkit", version.ref = "bstats" }
+
+
+hamcrest-library = "org.hamcrest:hamcrest-library:2.2"
+
+guava = "com.google.guava:guava:33.5.0-jre!!"
+
+# Paper-provided libraries for the supported 1.21+ platform.
+snakeyaml = "org.yaml:snakeyaml:2.0"
+
+[libraries.worldedit-core]
+module = "com.sk89q.worldedit:worldedit-core"
+version.ref = "worldedit"
+
+[libraries.worldedit-bukkit]
+module = "com.sk89q.worldedit:worldedit-bukkit"
+version.ref = "worldedit"
+
