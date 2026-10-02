@@ -243,6 +243,8 @@ settings:
     explosionFlagsBlockEntityDamage: false
     # Enables high-frequency checks for movement-related flags.
     highFrequencyFlags: false
+    # Uses only the highest-priority source regions when determining non-player associations.
+    useMaxPriorityAssociation: false
     # Checks region flags when liquids cross region boundaries.
     protectAgainstLiquidFlow: false
     # Selects /rg list behavior: 1 keeps the legacy syntax, 2 requires my or global.
@@ -251,18 +253,42 @@ settings:
     wand: "minecraft:leather"
     # Controls automatic cuboid expansion during /rg claim using the player's remaining volume allowance.
     claimExpansion:
-      # Expands toward the world's minimum height while volume remains and no foreign region is reached.
-      negativeY: true
-      # Expands toward the world's maximum height while volume remains and no foreign region is reached.
-      positiveY: true
-      # Expands toward decreasing X while volume remains and no foreign region is reached.
-      negativeX: false
-      # Expands toward increasing X while volume remains and no foreign region is reached.
-      positiveX: false
-      # Expands toward decreasing Z while volume remains and no foreign region is reached.
-      negativeZ: false
-      # Expands toward increasing Z while volume remains and no foreign region is reached.
-      positiveZ: false
+      # Expansion toward the world's minimum height.
+      negativeY:
+        # Enables this direction.
+        enable: true
+        # Maximum expansion in blocks; -1 reaches the world boundary.
+        maxDistance: -1
+      # Expansion toward the world's maximum height.
+      positiveY:
+        # Enables this direction.
+        enable: true
+        # Maximum expansion in blocks; -1 reaches the world boundary.
+        maxDistance: -1
+      # Expansion toward decreasing X.
+      negativeX:
+        # Enables this direction.
+        enable: false
+        # Maximum expansion in blocks; -1 reaches the world boundary.
+        maxDistance: -1
+      # Expansion toward increasing X.
+      positiveX:
+        # Enables this direction.
+        enable: false
+        # Maximum expansion in blocks; -1 reaches the world boundary.
+        maxDistance: -1
+      # Expansion toward decreasing Z.
+      negativeZ:
+        # Enables this direction.
+        enable: false
+        # Maximum expansion in blocks; -1 reaches the world boundary.
+        maxDistance: -1
+      # Expansion toward increasing Z.
+      positiveZ:
+        # Enables this direction.
+        enable: false
+        # Maximum expansion in blocks; -1 reaches the world boundary.
+        maxDistance: -1
     # Sets maximum claim volume by permission group. The highest value among a player's groups is used.
     maxClaimVolumePerPlayer:
       default: 1500000

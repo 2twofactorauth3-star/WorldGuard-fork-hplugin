@@ -30,15 +30,42 @@ public final class ClaimExpansion {
     public final boolean positiveX;
     public final boolean negativeZ;
     public final boolean positiveZ;
+    public final int negativeYMaxDistance;
+    public final int positiveYMaxDistance;
+    public final int negativeXMaxDistance;
+    public final int positiveXMaxDistance;
+    public final int negativeZMaxDistance;
+    public final int positiveZMaxDistance;
 
     public ClaimExpansion(boolean negativeY, boolean positiveY,
                           boolean negativeX, boolean positiveX,
                           boolean negativeZ, boolean positiveZ) {
+        this(negativeY, -1, positiveY, -1,
+                negativeX, -1, positiveX, -1,
+                negativeZ, -1, positiveZ, -1);
+    }
+
+    public ClaimExpansion(boolean negativeY, int negativeYMaxDistance,
+                          boolean positiveY, int positiveYMaxDistance,
+                          boolean negativeX, int negativeXMaxDistance,
+                          boolean positiveX, int positiveXMaxDistance,
+                          boolean negativeZ, int negativeZMaxDistance,
+                          boolean positiveZ, int positiveZMaxDistance) {
         this.negativeY = negativeY;
         this.positiveY = positiveY;
         this.negativeX = negativeX;
         this.positiveX = positiveX;
         this.negativeZ = negativeZ;
         this.positiveZ = positiveZ;
+        this.negativeYMaxDistance = normalizeDistance(negativeYMaxDistance);
+        this.positiveYMaxDistance = normalizeDistance(positiveYMaxDistance);
+        this.negativeXMaxDistance = normalizeDistance(negativeXMaxDistance);
+        this.positiveXMaxDistance = normalizeDistance(positiveXMaxDistance);
+        this.negativeZMaxDistance = normalizeDistance(negativeZMaxDistance);
+        this.positiveZMaxDistance = normalizeDistance(positiveZMaxDistance);
+    }
+
+    private static int normalizeDistance(int distance) {
+        return Math.max(-1, distance);
     }
 }

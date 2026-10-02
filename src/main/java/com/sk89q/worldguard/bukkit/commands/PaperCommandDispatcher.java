@@ -44,7 +44,7 @@ import java.util.logging.Level;
 public final class PaperCommandDispatcher {
 
     private static final Set<String> MUTATING_REGION_COMMANDS = Set.of(
-            "define", "redefine", "claim", "flag", "setpriority", "setparent",
+            "define", "redefine", "claim", "undo-expansion", "flag", "setpriority", "setparent",
             "remove", "load", "addmember", "addowner", "removemember", "removeowner");
 
     private final WorldGuardPlugin plugin;
@@ -141,6 +141,7 @@ public final class PaperCommandDispatcher {
             case "define" -> "helpDefineRegion";
             case "redefine" -> "helpRedefineRegion";
             case "claim" -> "helpClaimRegion";
+            case "undo-expansion" -> "helpUndoClaimExpansion";
             case "select" -> "helpSelectRegion";
             case "info" -> "helpRegionInfo";
             case "list" -> "helpRegionList";
@@ -331,7 +332,7 @@ public final class PaperCommandDispatcher {
     private static boolean isRegionArgument(String command, int index) {
         if (index == 0) {
             return Set.of("redefine", "select", "info", "flag", "flags", "setpriority",
-                    "setparent", "remove", "teleport", "addmember", "addowner",
+                    "setparent", "remove", "teleport", "undo-expansion", "addmember", "addowner",
                     "removemember", "removeowner").contains(command);
         }
         return command.equals("setparent") && index == 1;

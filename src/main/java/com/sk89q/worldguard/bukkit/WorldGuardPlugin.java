@@ -121,6 +121,8 @@ public class WorldGuardPlugin extends JavaPlugin {
                     .add(new String[]{"redefine", "update", "move"},
                             "[-w <world>] <id>", 1, 1, "gw:", region::redefine)
                     .add(new String[]{"claim"}, "<id>", 1, 1, "", region::claim)
+                    .add(new String[]{"undo-expansion", "undoexpand", "unexpand"},
+                            "<id>", 1, 1, "", region::undoClaimExpansion)
                     .add(new String[]{"select", "sel", "s"},
                             "[-w <world>] [id]", 0, 1, "w:", region::select)
                     .add(new String[]{"info", "i"}, "[id]", 0, 1, "usw:", region::info)

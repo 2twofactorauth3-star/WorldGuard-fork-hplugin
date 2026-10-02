@@ -644,6 +644,27 @@ messages:
         - '<#FDBE00>╠<white> Your maximum<gray>: <#FDBE00>{maximum} <white>blocks'
         - '<#FDBE00>╠<white> You selected <#FDBE00>{current}<white> blocks'
         - '<#FDBE00>╚'
+    expansionApplied:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Region <#FDBE00>{region}<white> was automatically expanded from <#FDBE00>{original}<white> to <#FDBE00>{expanded}<white> blocks'
+        - "<click:run_command:'/rg undo-expansion {region}'><hover:show_text:'<#FDBE00>Click to restore the original bounds'><#FDBE00>[Remove automatic expansion]</hover></click>"
+    expansionUndone:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Automatic expansion was removed from region <#FDBE00>{region}'
+    expansionUnavailable:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Region <#FDBE00>{region}<white> has no automatic expansion available to undo'
+    expansionChanged:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Region <#FDBE00>{region}<white> has already changed, so its automatic expansion cannot be undone'
 
   flag:
     valueWithEmpty:
@@ -906,6 +927,11 @@ messages:
       cooldownMillis: -1
       message:
         - 'Claim a region'
+    undoClaimExpansion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Remove automatic expansion from the latest claim'
     selectRegion:
       mode: message
       cooldownMillis: -1

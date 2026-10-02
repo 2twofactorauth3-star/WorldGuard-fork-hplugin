@@ -29,6 +29,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -36,8 +37,39 @@ public abstract class AbstractRegionOverlapAssociation implements RegionAssociab
 
     @Nullable
     protected Set<ProtectedRegion> source;
+    private final boolean useMaxPriorityAssociation;
+    private int maxPriority;
+    private Set<ProtectedRegion> maxPriorityRegions;
+
     protected AbstractRegionOverlapAssociation(@Nullable Set<ProtectedRegion> source) {
+        this(source, false);
+    }
+
+    protected AbstractRegionOverlapAssociation(@Nullable Set<ProtectedRegion> source,
+                                               boolean useMaxPriorityAssociation) {
         this.source = source;
+        this.useMaxPriorityAssociation = useMaxPriorityAssociation;
+    }
+
+    protected void calcMaxPriority() {
+        if (!useMaxPriorityAssociation) {
+            return;
+        }
+        checkNotNull(source);
+        int best = 0;
+        Set<ProtectedRegion> bestRegions = new HashSet<>();
+        for (ProtectedRegion region : source) {
+            int priority = region.getPriority();
+            if (priority > best) {
+                best = priority;
+                bestRegions.clear();
+                bestRegions.add(region);
+            } else if (priority == best) {
+                bestRegions.add(region);
+            }
+        }
+        maxPriority = best;
+        maxPriorityRegions = bestRegions;
     }
 
     private boolean checkNonplayerProtectionDomains(Iterable<? extends ProtectedRegion> source, Collection<?> domains) {
@@ -71,11 +103,14 @@ public abstract class AbstractRegionOverlapAssociation implements RegionAssociab
                 }
 
                 if (source.contains(region)) {
-                    return Association.OWNER;
+                    if (!useMaxPriorityAssociation || region.getPriority() == maxPriority) {
+                        return Association.OWNER;
+                    }
                 }
 
                 // Potential endless recurrence? No, because there is no region group flag.
-                if (checkNonplayerProtectionDomains(source,
+                if (checkNonplayerProtectionDomains(
+                        useMaxPriorityAssociation ? maxPriorityRegions : source,
                         FlagValueCalculator.getEffectiveFlagOf(region, Flags.NONPLAYER_PROTECTION_DOMAINS, this))) {
                     return Association.OWNER;
                 }

@@ -48,7 +48,17 @@ public class DelayedRegionOverlapAssociation extends AbstractRegionOverlapAssoci
      * @param location the location
      */
     public DelayedRegionOverlapAssociation(RegionQuery query, Location location) {
-        super(null);
+        this(query, location, false);
+    }
+
+    /**
+     * Create a new instance.
+     * @param query the query
+     * @param location the location
+     * @param useMaxPriorityAssociation whether to use the max priority from regions to determine association
+     */
+    public DelayedRegionOverlapAssociation(RegionQuery query, Location location, boolean useMaxPriorityAssociation) {
+        super(null, useMaxPriorityAssociation);
         checkNotNull(query);
         checkNotNull(location);
         this.query = query;
@@ -60,6 +70,7 @@ public class DelayedRegionOverlapAssociation extends AbstractRegionOverlapAssoci
         if (source == null) {
             ApplicableRegionSet result = query.getApplicableRegions(location, QueryOption.NONE);
             source = result.getRegions();
+            calcMaxPriority();
         }
 
         return super.getAssociation(regions);

@@ -42,13 +42,16 @@ public final class ClaimRegionExpander {
         }
 
         ProtectedCuboidRegion expanded = expandAxis(original, Axis.Y,
-                settings.negativeY, settings.positiveY,
+                settings.negativeY, settings.negativeYMaxDistance,
+                settings.positiveY, settings.positiveYMaxDistance,
                 worldMinimum.y(), worldMaximum.y(), volumeLimit, permitted);
         expanded = expandAxis(expanded, Axis.X,
-                settings.negativeX, settings.positiveX,
+                settings.negativeX, settings.negativeXMaxDistance,
+                settings.positiveX, settings.positiveXMaxDistance,
                 worldMinimum.x(), worldMaximum.x(), volumeLimit, permitted);
         expanded = expandAxis(expanded, Axis.Z,
-                settings.negativeZ, settings.positiveZ,
+                settings.negativeZ, settings.negativeZMaxDistance,
+                settings.positiveZ, settings.positiveZMaxDistance,
                 worldMinimum.z(), worldMaximum.z(), volumeLimit, permitted);
 
         if (expanded == original) {
@@ -74,12 +77,10 @@ public final class ClaimRegionExpander {
         long footprint = originalVolume / currentHeight;
         long allowedHeight = volumeLimit / footprint;
         long availableByVolume = Math.max(0, allowedHeight - currentHeight);
-        int negativeCapacity = settings.negativeY
-                ? boundedDistance(original.getMinimumPoint().y(), worldMinimum.y())
-                : 0;
-        int positiveCapacity = settings.positiveY
-                ? boundedDistance(worldMaximum.y(), original.getMaximumPoint().y())
-                : 0;
+        int negativeCapacity = capacity(settings.negativeY, settings.negativeYMaxDistance,
+                boundedDistance(original.getMinimumPoint().y(), worldMinimum.y()));
+        int positiveCapacity = capacity(settings.positiveY, settings.positiveYMaxDistance,
+                boundedDistance(worldMaximum.y(), original.getMaximumPoint().y()));
         int total = (int) Math.min(availableByVolume,
                 Math.min(Integer.MAX_VALUE, (long) negativeCapacity + positiveCapacity));
         if (total == 0) {
@@ -170,7 +171,9 @@ public final class ClaimRegionExpander {
     private static ProtectedCuboidRegion expandAxis(ProtectedCuboidRegion region,
                                                      Axis axis,
                                                      boolean negative,
+                                                     int negativeMaxDistance,
                                                      boolean positive,
+                                                     int positiveMaxDistance,
                                                      int worldMinimum,
                                                      int worldMaximum,
                                                      int volumeLimit,
@@ -184,12 +187,10 @@ public final class ClaimRegionExpander {
         long crossSection = volume(region) / axisLength;
         long allowedAxisLength = volumeLimit / crossSection;
         long availableByVolume = Math.max(0, allowedAxisLength - axisLength);
-        int negativeCapacity = negative
-                ? boundedDistance(axis.coordinate(region.getMinimumPoint()), worldMinimum)
-                : 0;
-        int positiveCapacity = positive
-                ? boundedDistance(worldMaximum, axis.coordinate(region.getMaximumPoint()))
-                : 0;
+        int negativeCapacity = capacity(negative, negativeMaxDistance,
+                boundedDistance(axis.coordinate(region.getMinimumPoint()), worldMinimum));
+        int positiveCapacity = capacity(positive, positiveMaxDistance,
+                boundedDistance(worldMaximum, axis.coordinate(region.getMaximumPoint())));
         int total = (int) Math.min(availableByVolume,
                 Math.min(Integer.MAX_VALUE, (long) negativeCapacity + positiveCapacity));
         if (total == 0) {
@@ -269,6 +270,14 @@ public final class ClaimRegionExpander {
 
     private static int boundedDistance(int greater, int lesser) {
         return Math.clamp((long) greater - lesser, 0, Integer.MAX_VALUE);
+    }
+
+    private static int capacity(boolean enabled, int maximumDistance, int worldCapacity) {
+        if (!enabled) {
+            return 0;
+        }
+        return maximumDistance < 0
+                ? worldCapacity : Math.min(worldCapacity, maximumDistance);
     }
 
     private static long volume(ProtectedCuboidRegion region) {

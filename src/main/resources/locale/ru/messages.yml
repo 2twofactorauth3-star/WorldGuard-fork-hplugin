@@ -644,6 +644,27 @@ messages:
         - '<#FDBE00>╠<white> Ваш максимум<gray>: <#FDBE00>{maximum} <white>блоков'
         - '<#FDBE00>╠<white> А выделено было целых <#FDBE00>{current}<white> блоков'
         - '<#FDBE00>╚'
+    expansionApplied:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Регион <#FDBE00>{region}<white> автоматически расширен с <#FDBE00>{original}<white> до <#FDBE00>{expanded}<white> блоков'
+        - "<click:run_command:'/rg undo-expansion {region}'><hover:show_text:'<#FDBE00>Нажмите, чтобы вернуть исходные границы'><#FDBE00>[Убрать авторасширение]</hover></click>"
+    expansionUndone:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Автоматическое расширение региона <#FDBE00>{region}<white> убрано'
+    expansionUnavailable:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Для региона <#FDBE00>{region}<white> нет доступного авторасширения для отмены'
+    expansionChanged:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Границы региона <#FDBE00>{region}<white> уже изменились, поэтому авторасширение нельзя отменить'
 
   flag:
     valueWithEmpty:
@@ -906,6 +927,11 @@ messages:
       cooldownMillis: -1
       message:
         - 'Заприватить регион'
+    undoClaimExpansion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Убрать автоматическое расширение последнего привата'
     selectRegion:
       mode: message
       cooldownMillis: -1

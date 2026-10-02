@@ -158,11 +158,13 @@ class AbstractListener implements Listener {
             if (loc == null || loc.getWorld() == null) {
                 loc = entity.getLocation();
             }
-            return new DelayedRegionOverlapAssociation(query, BukkitAdapter.adapt(loc));
+            return new DelayedRegionOverlapAssociation(query, BukkitAdapter.adapt(loc),
+                    getWorldConfig(loc.getWorld()).useMaxPriorityAssociation);
         } else if (rootCause instanceof Block block) {
             RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
             Location loc = block.getLocation();
-            return new DelayedRegionOverlapAssociation(query, BukkitAdapter.adapt(loc));
+            return new DelayedRegionOverlapAssociation(query, BukkitAdapter.adapt(loc),
+                    getWorldConfig(loc.getWorld()).useMaxPriorityAssociation);
         } else {
             return Associables.constant(Association.NON_MEMBER);
         }

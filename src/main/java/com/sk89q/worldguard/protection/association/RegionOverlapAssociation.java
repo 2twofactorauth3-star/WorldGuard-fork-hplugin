@@ -36,7 +36,19 @@ public class RegionOverlapAssociation extends AbstractRegionOverlapAssociation {
      * @param source set of regions that input regions must be contained within
      */
     public RegionOverlapAssociation(@Nonnull Set<ProtectedRegion> source) {
-        super(source);
+        this(source, false);
+    }
+
+    /**
+     * Create a new instance.
+     *
+     * @param source set of regions that input regions must be contained within
+     * @param useMaxPriorityAssociation whether to use the max priority from regions to determine association
+     */
+    @SuppressWarnings("this-escape")
+    public RegionOverlapAssociation(@Nonnull Set<ProtectedRegion> source, boolean useMaxPriorityAssociation) {
+        super(source, useMaxPriorityAssociation);
+        calcMaxPriority();
     }
 
 }

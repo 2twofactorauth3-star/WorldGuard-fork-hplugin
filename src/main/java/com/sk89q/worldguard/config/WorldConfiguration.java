@@ -84,6 +84,7 @@ public abstract class WorldConfiguration {
     public boolean blockPluginSpawning;
     public boolean highFreqFlags;
     public boolean checkLiquidFlow;
+    public boolean useMaxPriorityAssociation;
     public String regionWand;
     public int regionListCommandMode;
     public int maxClaimVolumePerPlayer;

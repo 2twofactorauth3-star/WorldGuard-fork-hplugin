@@ -74,7 +74,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -84,6 +87,7 @@ import java.util.stream.Collectors;
 public final class RegionCommands extends RegionCommandsBase {
 
     private final WorldGuard worldGuard;
+    private final Map<UUID, ClaimExpansionUndo> claimExpansionUndos = new ConcurrentHashMap<>();
 
     public RegionCommands(WorldGuard worldGuard) {
         checkNotNull(worldGuard);
@@ -236,6 +240,8 @@ public final class RegionCommands extends RegionCommandsBase {
 
         checkRegionDoesNotExist(manager, id, false);
         ProtectedRegion region = checkRegionFromSelection(player, id);
+        ProtectedRegion originalRegion = copyRegionGeometry(region);
+        int originalVolume = region.volume();
         SelectionExpiry selectionExpiry = SelectionExpiry.capture(player, player.getWorld());
 
         WorldConfiguration wcfg = WorldGuard.getInstance().getPlatform().getGlobalStateManager().get(player.getWorld());
@@ -318,7 +324,67 @@ public final class RegionCommands extends RegionCommandsBase {
         region.getOwners().addPlayer(player);
         manager.addRegion(region);
         player.print(TextComponent.of(BukkitMessages.template("regionClaimed", "region", id)));
+        if (!sameRegionGeometry(originalRegion, region)) {
+            claimExpansionUndos.put(player.getUniqueId(), new ClaimExpansionUndo(
+                    id, player.getWorld(), originalRegion, copyRegionGeometry(region)));
+            player.print(TextComponent.of(BukkitMessages.template(
+                    "claimExpansionApplied",
+                    "region", id,
+                    "original", originalVolume,
+                    "expanded", region.volume())));
+        }
         selectionExpiry.schedule();
+    }
+
+    public void undoClaimExpansion(CommandContext args, Actor sender) throws CommandException {
+        warnAboutSaveFailures(sender);
+        LocalPlayer player = worldGuard.checkPlayer(sender);
+        String id = checkRegionId(args.getString(0), false);
+        ClaimExpansionUndo undo = claimExpansionUndos.get(player.getUniqueId());
+        if (undo == null || !undo.regionId.equals(id)) {
+            throw new CommandException(BukkitMessages.template(
+                    "claimExpansionUnavailable", "region", id));
+        }
+
+        RegionManager manager = checkRegionManager(undo.world);
+        ProtectedRegion current = manager.getRegion(id);
+        if (current == null || !current.getOwners().contains(player)
+                || !sameRegionGeometry(current, undo.expanded)) {
+            claimExpansionUndos.remove(player.getUniqueId(), undo);
+            throw new CommandException(BukkitMessages.template(
+                    "claimExpansionChanged", "region", id));
+        }
+
+        ProtectedRegion restored = copyRegionGeometry(undo.original);
+        restored.copyFrom(current);
+        manager.addRegion(restored);
+        claimExpansionUndos.remove(player.getUniqueId(), undo);
+        player.print(TextComponent.of(BukkitMessages.template(
+                "claimExpansionUndone", "region", id)));
+    }
+
+    private static ProtectedRegion copyRegionGeometry(ProtectedRegion region) {
+        if (region instanceof ProtectedCuboidRegion cuboid) {
+            return new ProtectedCuboidRegion(
+                    cuboid.getId(), cuboid.getMinimumPoint(), cuboid.getMaximumPoint());
+        }
+        if (region instanceof ProtectedPolygonalRegion polygon) {
+            return new ProtectedPolygonalRegion(
+                    polygon.getId(), polygon.getPoints(),
+                    polygon.getMinimumPoint().y(), polygon.getMaximumPoint().y());
+        }
+        throw new IllegalArgumentException(region.getClass().getName());
+    }
+
+    private static boolean sameRegionGeometry(ProtectedRegion first, ProtectedRegion second) {
+        return first.getClass() == second.getClass()
+                && first.getMinimumPoint().equals(second.getMinimumPoint())
+                && first.getMaximumPoint().equals(second.getMaximumPoint())
+                && first.getPoints().equals(second.getPoints());
+    }
+
+    private record ClaimExpansionUndo(
+            String regionId, World world, ProtectedRegion original, ProtectedRegion expanded) {
     }
 
     private static ProtectedRegion firstUnownedRegion(ApplicableRegionSet regions, LocalPlayer player) {

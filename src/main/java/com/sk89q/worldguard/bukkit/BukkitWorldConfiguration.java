@@ -138,6 +138,8 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
         explosionFlagCancellation = getBoolean("regions.explosionFlagsBlockEntityDamage", true);
         highFreqFlags = getBoolean("regions.highFrequencyFlags", false);
         checkLiquidFlow = getBoolean("regions.protectAgainstLiquidFlow", false);
+        useMaxPriorityAssociation = getBoolean("regions.useMaxPriorityAssociation",
+                getBoolean("regions.use-max-priority-association", false));
         regionListCommandMode = getInt("regions.listCommandMode", 2);
         if (regionListCommandMode != 1 && regionListCommandMode != 2) {
             regionListCommandMode = 2;
@@ -146,12 +148,18 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
         maxClaimVolumePerPlayer = getInt("regions.maxClaimVolumePerPlayer.default", 1500000);
         maxClaimVolumes = loadGroupLimits("regions.maxClaimVolumePerPlayer", maxClaimVolumePerPlayer);
         claimExpansion = new ClaimExpansion(
-                getBoolean("regions.claimExpansion.negativeY", true),
-                getBoolean("regions.claimExpansion.positiveY", true),
-                getBoolean("regions.claimExpansion.negativeX", false),
-                getBoolean("regions.claimExpansion.positiveX", false),
-                getBoolean("regions.claimExpansion.negativeZ", false),
-                getBoolean("regions.claimExpansion.positiveZ", false));
+                claimExpansionEnabled("regions.claimExpansion.negativeY", true),
+                claimExpansionDistance("regions.claimExpansion.negativeY"),
+                claimExpansionEnabled("regions.claimExpansion.positiveY", true),
+                claimExpansionDistance("regions.claimExpansion.positiveY"),
+                claimExpansionEnabled("regions.claimExpansion.negativeX", false),
+                claimExpansionDistance("regions.claimExpansion.negativeX"),
+                claimExpansionEnabled("regions.claimExpansion.positiveX", false),
+                claimExpansionDistance("regions.claimExpansion.positiveX"),
+                claimExpansionEnabled("regions.claimExpansion.negativeZ", false),
+                claimExpansionDistance("regions.claimExpansion.negativeZ"),
+                claimExpansionEnabled("regions.claimExpansion.positiveZ", false),
+                claimExpansionDistance("regions.claimExpansion.positiveZ"));
         claimOnlyInsideExistingRegions = getBoolean("regions.claimOnlyInsideExistingRegions", false);
         preventLastOwnerRemoval = getBoolean("regions.preventLastOwnerRemoval", true);
         applyRegionDefaultsToExistingRegions =
@@ -183,6 +191,16 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
         return new WorldMechanicSetting(
                 getBoolean(path + ".enable", false),
                 mode);
+    }
+
+    private boolean claimExpansionEnabled(String path, boolean defaultValue) {
+        Object value = getProperty(path);
+        return value instanceof Boolean enabled
+                ? enabled : getBoolean(path + ".enable", defaultValue);
+    }
+
+    private int claimExpansionDistance(String path) {
+        return Math.max(-1, getInt(path + ".maxDistance", -1));
     }
 
     private HashMap<String, Integer> loadGroupLimits(String path, int defaultValue) {
