@@ -625,11 +625,6 @@ messages:
       cooldownMillis: -1
       message:
         - '{prefix} Вы <#FDBE00>достигли<white> лимита регионов, удалите <#FDBE00>один<white> из них перед <#FDBE00>созданием <white>нового <gray>({limit} шт)'
-    regionOwnedByOther:
-      mode: message
-      cooldownMillis: -1
-      message:
-        - '{prefix} Такой <#FDBE00>регион<white> уже существует и принадлежит <#FDBE00>другому <white>владельцу'
     volumeInvalid:
       mode: message
       cooldownMillis: -1

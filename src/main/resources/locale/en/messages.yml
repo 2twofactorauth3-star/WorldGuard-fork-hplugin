@@ -625,11 +625,6 @@ messages:
       cooldownMillis: -1
       message:
         - '{prefix} You have <#FDBE00>reached<white> your region limit, delete <#FDBE00>one<white> before <#FDBE00>creating<white> another <gray>({limit} regions)'
-    regionOwnedByOther:
-      mode: message
-      cooldownMillis: -1
-      message:
-        - '{prefix} This <#FDBE00>region<white> already exists and belongs to <#FDBE00>another<white> owner'
     volumeInvalid:
       mode: message
       cooldownMillis: -1

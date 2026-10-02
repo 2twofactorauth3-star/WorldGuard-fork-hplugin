@@ -228,90 +228,104 @@ public final class RegionCommands extends RegionCommandsBase {
 
         LocalPlayer player = worldGuard.checkPlayer(sender);
         RegionPermissionModel permModel = getPermissionModel(player);
-
-        // Check permissions
-        if (!permModel.mayClaim()) {
-            throw new CommandPermissionsException();
-        }
-
+        checkClaimPermission(permModel);
         String id = checkRegionId(args.getString(0), false);
-
         RegionManager manager = checkRegionManager(player.getWorld());
-
         checkRegionDoesNotExist(manager, id, false);
+
         ProtectedRegion region = checkRegionFromSelection(player, id);
         ProtectedRegion originalRegion = copyRegionGeometry(region);
         int originalVolume = region.volume();
         SelectionExpiry selectionExpiry = SelectionExpiry.capture(player, player.getWorld());
-
         WorldConfiguration wcfg = WorldGuard.getInstance().getPlatform().getGlobalStateManager().get(player.getWorld());
 
-        // Check whether the player has created too many regions
-        if (!permModel.mayClaimRegionsUnbounded()) {
-            int maxRegionCount = wcfg.getMaxRegionCount(player);
-            if (maxRegionCount >= 0
-                    && manager.getRegionCountOfPlayer(player) >= maxRegionCount) {
-                throw new CommandException(BukkitMessages.template(
-                        "claimRegionLimitReached", "limit", maxRegionCount));
-            }
+        checkClaimRegionCount(player, permModel, manager, wcfg);
+        checkClaimOverlap(player, region, manager, wcfg);
+        int maxClaimVolume = wcfg.getMaxClaimVolume(player);
+        if (!checkClaimVolume(player, permModel, region, maxClaimVolume)) {
+            return;
         }
 
-        ProtectedRegion existing = manager.getRegion(id);
-
-        // Check for an existing region
-        if (existing != null) {
-            if (!existing.getOwners().contains(player)) {
-                throw new CommandException("@wg:claimRegionOwnedByOther@");
-            }
+        region = expandClaim(player, region, manager, wcfg, maxClaimVolume);
+        completeClaim(player, id, region, manager, wcfg);
+        if (!sameRegionGeometry(originalRegion, region)) {
+            registerClaimExpansion(player, id, originalRegion, originalVolume, region);
         }
+        selectionExpiry.schedule();
+    }
 
-        // We have to check whether this region violates the space of any other region
+    private static void checkClaimPermission(RegionPermissionModel permModel) throws CommandPermissionsException {
+        if (!permModel.mayClaim()) {
+            throw new CommandPermissionsException();
+        }
+    }
+
+    private static void checkClaimRegionCount(LocalPlayer player, RegionPermissionModel permModel,
+                                              RegionManager manager, WorldConfiguration wcfg)
+            throws CommandException {
+        if (permModel.mayClaimRegionsUnbounded()) {
+            return;
+        }
+        int maxRegionCount = wcfg.getMaxRegionCount(player);
+        if (maxRegionCount >= 0 && manager.getRegionCountOfPlayer(player) >= maxRegionCount) {
+            throw new CommandException(BukkitMessages.template(
+                    "claimRegionLimitReached", "limit", maxRegionCount));
+        }
+    }
+
+    private static void checkClaimOverlap(LocalPlayer player, ProtectedRegion region,
+                                          RegionManager manager, WorldConfiguration wcfg)
+            throws CommandException {
         ApplicableRegionSet regions = manager.getApplicableRegions(region);
-
-        // Check if this region overlaps any other region
-        if (regions.size() > 0) {
-            if (!regions.isOwnerOfAll(player)) {
-                ProtectedRegion conflicting = firstUnownedRegion(regions, player);
-                BlockVector3 intersection = RegionOverlapDetails.findIntersectionPoint(region, conflicting);
-                throw new CommandException(BukkitMessages.template(
-                        "regionOverlap",
-                        "region", conflicting.getId(),
-                        "owners", inheritedOwners(conflicting),
-                        "x", intersection.x(),
-                        "y", intersection.y(),
-                        "z", intersection.z()));
-            }
-        } else {
+        if (regions.size() == 0) {
             if (wcfg.claimOnlyInsideExistingRegions) {
                 throw new CommandException("@wg:claimInside@");
             }
+            return;
         }
+        if (regions.isOwnerOfAll(player)) {
+            return;
+        }
+        ProtectedRegion conflicting = firstUnownedRegion(regions, player);
+        BlockVector3 intersection = RegionOverlapDetails.findIntersectionPoint(region, conflicting);
+        throw new CommandException(BukkitMessages.template(
+                "regionOverlap",
+                "region", conflicting.getId(),
+                "owners", inheritedOwners(conflicting),
+                "x", intersection.x(),
+                "y", intersection.y(),
+                "z", intersection.z()));
+    }
 
-        int maxClaimVolume = wcfg.getMaxClaimVolume(player);
+    private static boolean checkClaimVolume(LocalPlayer player, RegionPermissionModel permModel,
+                                            ProtectedRegion region, int maxClaimVolume)
+            throws CommandException {
         if (maxClaimVolume == Integer.MAX_VALUE) {
             throw new CommandException(BukkitMessages.template(
                     "claimVolumeInvalid", "maximum", Integer.MAX_VALUE));
         }
-
-        // Check claim volume
-        if (!permModel.mayClaimRegionsUnbounded()) {
-            if (region.volume() > maxClaimVolume) {
-                player.printError(TextComponent.of(BukkitMessages.template(
-                        "claimTooLarge", "maximum", maxClaimVolume, "current", region.volume())));
-                return;
-            }
+        if (permModel.mayClaimRegionsUnbounded() || region.volume() <= maxClaimVolume) {
+            return true;
         }
+        player.printError(TextComponent.of(BukkitMessages.template(
+                "claimTooLarge", "maximum", maxClaimVolume, "current", region.volume())));
+        return false;
+    }
 
+    private static ProtectedRegion expandClaim(LocalPlayer player, ProtectedRegion region,
+                                                RegionManager manager, WorldConfiguration wcfg,
+                                                int maxClaimVolume) {
         if (region instanceof ProtectedCuboidRegion cuboidRegion) {
-            region = ClaimRegionExpander.expand(
+            return ClaimRegionExpander.expand(
                     cuboidRegion,
                     player.getWorld().getMinimumPoint(),
                     player.getWorld().getMaximumPoint(),
                     wcfg.claimExpansion,
                     maxClaimVolume,
                     candidate -> manager.getApplicableRegions(candidate).isOwnerOfAll(player));
-        } else if (region instanceof ProtectedPolygonalRegion polygonalRegion) {
-            region = ClaimRegionExpander.expand(
+        }
+        if (region instanceof ProtectedPolygonalRegion polygonalRegion) {
+            return ClaimRegionExpander.expand(
                     polygonalRegion,
                     player.getWorld().getMinimumPoint(),
                     player.getWorld().getMaximumPoint(),
@@ -319,21 +333,26 @@ public final class RegionCommands extends RegionCommandsBase {
                     maxClaimVolume,
                     candidate -> manager.getApplicableRegions(candidate).isOwnerOfAll(player));
         }
+        return region;
+    }
 
+    private static void completeClaim(LocalPlayer player, String id, ProtectedRegion region,
+                                      RegionManager manager, WorldConfiguration wcfg) {
         wcfg.newRegionDefaults.applyToNewRegion(region, manager);
         region.getOwners().addPlayer(player);
         manager.addRegion(region);
         player.print(TextComponent.of(BukkitMessages.template("regionClaimed", "region", id)));
-        if (!sameRegionGeometry(originalRegion, region)) {
-            claimExpansionUndos.put(player.getUniqueId(), new ClaimExpansionUndo(
-                    id, player.getWorld(), originalRegion, copyRegionGeometry(region)));
-            player.print(TextComponent.of(BukkitMessages.template(
-                    "claimExpansionApplied",
-                    "region", id,
-                    "original", originalVolume,
-                    "expanded", region.volume())));
-        }
-        selectionExpiry.schedule();
+    }
+
+    private void registerClaimExpansion(LocalPlayer player, String id, ProtectedRegion originalRegion,
+                                        int originalVolume, ProtectedRegion region) {
+        claimExpansionUndos.put(player.getUniqueId(), new ClaimExpansionUndo(
+                id, player.getWorld(), originalRegion, copyRegionGeometry(region)));
+        player.print(TextComponent.of(BukkitMessages.template(
+                "claimExpansionApplied",
+                "region", id,
+                "original", originalVolume,
+                "expanded", region.volume())));
     }
 
     public void undoClaimExpansion(CommandContext args, Actor sender) throws CommandException {
