@@ -643,8 +643,7 @@ messages:
       mode: message
       cooldownMillis: -1
       message:
-        - '{prefix} Регион <#FDBE00>{region}<white> автоматически расширен с <#FDBE00>{original}<white> до <#FDBE00>{expanded}<white> блоков'
-        - "<click:run_command:'/rg undo-expansion {region}'><hover:show_text:'<#FDBE00>Нажмите, чтобы вернуть исходные границы'><#FDBE00>[Убрать авторасширение]</hover></click>"
+        - "{prefix} Регион <#FDBE00>{region}<white> автоматически расширен с <#FDBE00>{original}<white> до <#FDBE00>{expanded}<white> блоков <click:run_command:'/rg undo-expansion {region}'><hover:show_text:'<#FDBE00>Нажмите, чтобы вернуть исходные границы'><#FDBE00>[Убрать авторасширение]</hover></click>"
     expansionUndone:
       mode: message
       cooldownMillis: -1

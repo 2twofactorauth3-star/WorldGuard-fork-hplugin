@@ -643,8 +643,7 @@ messages:
       mode: message
       cooldownMillis: -1
       message:
-        - '{prefix} Region <#FDBE00>{region}<white> was automatically expanded from <#FDBE00>{original}<white> to <#FDBE00>{expanded}<white> blocks'
-        - "<click:run_command:'/rg undo-expansion {region}'><hover:show_text:'<#FDBE00>Click to restore the original bounds'><#FDBE00>[Remove automatic expansion]</hover></click>"
+        - "{prefix} Region <#FDBE00>{region}<white> was automatically expanded from <#FDBE00>{original}<white> to <#FDBE00>{expanded}<white> blocks <click:run_command:'/rg undo-expansion {region}'><hover:show_text:'<#FDBE00>Click to restore the original bounds'><#FDBE00>[Remove automatic expansion]</hover></click>"
     expansionUndone:
       mode: message
       cooldownMillis: -1
