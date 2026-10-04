@@ -65,6 +65,7 @@ public final class SelectionVisualizer {
     private static final int MAX_POLYGON_VERTICES = 24;
     private static final int MAX_CHUNK_CUBES = 1024;
     private static final long DISCOVERY_PERIOD_TICKS = 20;
+    private static final long NO_WALL = Long.MIN_VALUE;
 
     private final WorldGuardPlugin plugin;
     private final ConfigurationManager settings;
@@ -576,12 +577,18 @@ public final class SelectionVisualizer {
         int maxParticles = particles.maxCount;
         double maxDistanceSquared = particles.maxDistanceSquared;
         Location eye = player.getEyeLocation();
+        long visibleWall = particles.mode == SelectionParticleMode.CHUNK_BORDERS
+                ? nearestWall(lines, eye) : NO_WALL;
         double[] visibility = cached.visibility;
         int visibleCount = 0;
         double totalVisibleLength = 0;
         for (int i = 0; i < lines.size(); i++) {
             Line line = lines.get(i);
             int offset = i * 2;
+            if (visibleWall != NO_WALL && !isOnWall(line, visibleWall)) {
+                visibility[offset] = Double.NaN;
+                continue;
+            }
             if (visiblePart(line, eye, maxDistanceSquared, visibility, offset)) {
                 visibleCount++;
                 totalVisibleLength += line.length
@@ -626,6 +633,49 @@ public final class SelectionVisualizer {
                 return;
             }
         }
+    }
+
+    private static long nearestWall(List<Line> lines, Location eye) {
+        long nearest = NO_WALL;
+        double nearestDistanceSquared = Double.POSITIVE_INFINITY;
+        for (Line line : lines) {
+            boolean xWall = line.startX == line.endX && line.startZ != line.endZ;
+            boolean zWall = line.startZ == line.endZ && line.startX != line.endX;
+            if (!xWall && !zWall) {
+                continue;
+            }
+            double distanceSquared = xWall
+                    ? horizontalDistanceSquared(eye.getX(), eye.getZ(),
+                            line.startX, line.startZ, line.endZ)
+                    : horizontalDistanceSquared(eye.getZ(), eye.getX(),
+                            line.startZ, line.startX, line.endX);
+            if (distanceSquared < nearestDistanceSquared) {
+                nearestDistanceSquared = distanceSquared;
+                nearest = wallKey(xWall, (int) (xWall ? line.startX : line.startZ));
+            }
+        }
+        return nearest;
+    }
+
+    private static long wallKey(boolean xAxis, int coordinate) {
+        return ((long) coordinate << 1) | (xAxis ? 1 : 0);
+    }
+
+    private static boolean isOnWall(Line line, long wall) {
+        double coordinate = (int) (wall >> 1);
+        return (wall & 1) != 0
+                ? line.startX == coordinate && line.endX == coordinate
+                : line.startZ == coordinate && line.endZ == coordinate;
+    }
+
+    private static double horizontalDistanceSquared(
+            double perpendicular, double parallel, double plane, double start, double end) {
+        double perpendicularDistance = perpendicular - plane;
+        double minimum = Math.min(start, end);
+        double maximum = Math.max(start, end);
+        double parallelDistance = parallel < minimum ? parallel - minimum
+                : parallel > maximum ? parallel - maximum : 0;
+        return perpendicularDistance * perpendicularDistance + parallelDistance * parallelDistance;
     }
 
     private static void emitParticle(
