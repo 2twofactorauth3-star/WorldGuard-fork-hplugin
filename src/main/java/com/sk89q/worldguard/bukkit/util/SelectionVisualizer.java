@@ -579,53 +579,70 @@ public final class SelectionVisualizer {
         Location eye = player.getEyeLocation();
         long visibleWall = particles.mode == SelectionParticleMode.CHUNK_BORDERS
                 ? nearestWall(lines, eye) : NO_WALL;
-        double[] visibility = cached.visibility;
-        int visibleCount = 0;
-        double totalVisibleLength = 0;
-        for (int i = 0; i < lines.size(); i++) {
-            Line line = lines.get(i);
-            int offset = i * 2;
-            if (visibleWall != NO_WALL && !isOnWall(line, visibleWall)) {
-                visibility[offset] = Double.NaN;
-                continue;
-            }
-            if (visiblePart(line, eye, maxDistanceSquared, visibility, offset)) {
-                visibleCount++;
-                totalVisibleLength += line.length
-                        * (visibility[offset + 1] - visibility[offset]);
-            }
-        }
+        int visibleCount = updateVisibility(cached, eye, maxDistanceSquared, visibleWall);
         if (visibleCount == 0) {
             return;
         }
-
         if (visibleCount >= maxParticles) {
-            int visibleIndex = 0;
-            int emitted = 0;
-            for (int i = 0; i < lines.size() && emitted < maxParticles; i++) {
-                int offset = i * 2;
-                if (Double.isNaN(visibility[offset])) continue;
-                int target = emitted * visibleCount / maxParticles;
-                if (visibleIndex++ < target) continue;
-                emitParticle(player, particles, lines.get(i),
-                        visibility[offset], visibility[offset + 1], 0.5);
-                emitted++;
-            }
+            emitLineSamples(player, particles, cached, visibleCount, maxParticles);
             return;
         }
+        emitSpacedParticles(player, particles, cached, visibleCount, maxParticles);
+    }
 
+    private static int updateVisibility(CachedSelection cached, Location eye,
+                                        double maxDistanceSquared, long visibleWall) {
+        int visibleCount = 0;
+        double totalVisibleLength = 0;
+        for (int i = 0; i < cached.lines.size(); i++) {
+            Line line = cached.lines.get(i);
+            int offset = i * 2;
+            if (visibleWall != NO_WALL && !isOnWall(line, visibleWall)) {
+                cached.visibility[offset] = Double.NaN;
+                continue;
+            }
+            if (visiblePart(line, eye, maxDistanceSquared, cached.visibility, offset)) {
+                visibleCount++;
+                totalVisibleLength += line.length
+                        * (cached.visibility[offset + 1] - cached.visibility[offset]);
+            }
+        }
+        cached.totalVisibleLength = totalVisibleLength;
+        return visibleCount;
+    }
+
+    private static void emitLineSamples(Player player, ParticleSettings particles,
+                                        CachedSelection cached, int visibleCount, int maxParticles) {
+        int visibleIndex = 0;
+        int emitted = 0;
+        for (int i = 0; i < cached.lines.size() && emitted < maxParticles; i++) {
+            int offset = i * 2;
+            if (Double.isNaN(cached.visibility[offset])) continue;
+            int target = emitted * visibleCount / maxParticles;
+            if (visibleIndex++ < target) continue;
+            emitParticle(player, particles, cached.lines.get(i),
+                    cached.visibility[offset], cached.visibility[offset + 1], 0.5);
+            emitted++;
+        }
+    }
+
+    private static void emitSpacedParticles(Player player, ParticleSettings particles,
+                                            CachedSelection cached, int visibleCount,
+                                            int maxParticles) {
         int extraPointBudget = Math.max(1, maxParticles - visibleCount);
-        double spacing = Math.max(particles.spacing, totalVisibleLength / extraPointBudget);
+        double spacing = Math.max(particles.spacing, cached.totalVisibleLength / extraPointBudget);
         int emitted = 0;
 
-        for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+        for (int lineIndex = 0; lineIndex < cached.lines.size(); lineIndex++) {
             int offset = lineIndex * 2;
-            if (Double.isNaN(visibility[offset])) continue;
-            Line line = lines.get(lineIndex);
-            double visibleLength = line.length * (visibility[offset + 1] - visibility[offset]);
+            if (Double.isNaN(cached.visibility[offset])) continue;
+            Line line = cached.lines.get(lineIndex);
+            double visibleLength = line.length
+                    * (cached.visibility[offset + 1] - cached.visibility[offset]);
             int points = 1 + (int) Math.floor(visibleLength / spacing);
             for (int i = 0; i < points && emitted < maxParticles; i++) {
-                emitParticle(player, particles, line, visibility[offset], visibility[offset + 1],
+                emitParticle(player, particles, line,
+                        cached.visibility[offset], cached.visibility[offset + 1],
                         points == 1 ? 0.5 : (double) i / (points - 1));
                 emitted++;
             }
@@ -820,6 +837,7 @@ public final class SelectionVisualizer {
         public final double[] visibility;
         public final boolean manualExpansionDisabled;
         public final SelectionLimit selectionLimit;
+        public double totalVisibleLength;
 
         private CachedSelection(SelectionShape shape, List<Line> lines, boolean manualExpansionDisabled,
                                 SelectionLimit selectionLimit) {
