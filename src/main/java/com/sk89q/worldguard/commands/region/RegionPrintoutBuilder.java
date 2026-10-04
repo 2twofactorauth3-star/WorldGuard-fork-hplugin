@@ -44,6 +44,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.concurrent.Callable;
 
 import javax.annotation.Nullable;
@@ -357,7 +358,17 @@ public class RegionPrintoutBuilder implements Callable<TextComponent> {
                 "region", region.getId(),
                 "flag", flag.getName(),
                 "group", group == null ? "" : " -g " + group,
+                "valueColor", flagValueColor(value),
                 "value", value)));
+    }
+
+    private static String flagValueColor(Object value) {
+        return switch (String.valueOf(value).toLowerCase(Locale.ROOT)) {
+            case "allow", "true" -> "#55FF88";
+            case "deny", "false" -> "#FF5555";
+            case "none", "unset", "null" -> "#A0A0A0";
+            default -> "#FDBE00";
+        };
     }
 
     private String flagStyle(Flag<?> flag, boolean useColors) {

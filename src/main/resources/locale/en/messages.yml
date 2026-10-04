@@ -1227,42 +1227,42 @@ messages:
         mode: message
         cooldownMillis: -1
         message:
-          - '{separator}<dark_red>{flag}{group}: <#FDBE00>{value}'
+          - '{separator}<dark_red>{flag}{group}: <{valueColor}>{value}'
       dangerEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<dark_red>{flag}{group}: <#FDBE00>{value}</hover></click>"
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<dark_red>{flag}{group}: <{valueColor}>{value}</hover></click>"
       builtin:
         mode: message
         cooldownMillis: -1
         message:
-          - '{separator}<gold>{flag}{group}: <#FDBE00>{value}'
+          - '{separator}<gold>{flag}{group}: <{valueColor}>{value}'
       builtinEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<gold>{flag}{group}: <#FDBE00>{value}</hover></click>"
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<gold>{flag}{group}: <{valueColor}>{value}</hover></click>"
       unknown:
         mode: message
         cooldownMillis: -1
         message:
-          - '{separator}<gray>{flag}{group}: <#FDBE00>{value}'
+          - '{separator}<gray>{flag}{group}: <{valueColor}>{value}'
       unknownEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<gray>{flag}{group}: <#FDBE00>{value}</hover></click>"
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<gray>{flag}{group}: <{valueColor}>{value}</hover></click>"
       thirdParty:
         mode: message
         cooldownMillis: -1
         message:
-          - '{separator}<light_purple>{flag}{group}: <#FDBE00>{value}'
+          - '{separator}<light_purple>{flag}{group}: <{valueColor}>{value}'
       thirdPartyEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<light_purple>{flag}{group}: <#FDBE00>{value}</hover></click>"
+          - "<click:suggest_command:'/rg flag -w \"{world}\" {region} {flag} '><hover:show_text:'<white>Click to <#FDBE00>change<white> the flag'>{separator}<light_purple>{flag}{group}: <{valueColor}>{value}</hover></click>"
     inheritance:
       current:
         mode: message
