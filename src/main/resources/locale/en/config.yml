@@ -22,9 +22,9 @@ settings:
     # Mode outline shows the exact outer frame; chunks shows a grid of cubes inside the selection; chunkBorders shows one outer wall with a flat 16-by-16-block grid.
     mode: chunkBorders
     # Sets particle size. A larger value produces a thicker line; accepted range is 0.1 to 4.0.
-    size: 2.5
+    size: 3.5
     # Sets the desired distance between particles in blocks. A smaller value produces a denser line.
-    spacing: 0.5
+    spacing: 1.0
     # Limits the particles emitted per update for each player. The accepted maximum is 512.
     maxCount: 256
     # Sets the maximum particle viewing distance in blocks. The accepted maximum is 128.

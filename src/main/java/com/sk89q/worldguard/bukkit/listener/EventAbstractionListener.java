@@ -709,126 +709,137 @@ public class EventAbstractionListener extends AbstractListener {
         Player player = event.getPlayer();
         @Nullable ItemStack item = event.getItem();
         Block clicked = event.getClickedBlock();
-        Block placed;
-        boolean modifiesWorld;
         Action action = event.getAction();
-        if (action == Action.PHYSICAL
-                && (clicked == null || event.useInteractedBlock() == Result.DENY)) {
-            return;
-        }
-        if ((action == Action.LEFT_CLICK_AIR || action == Action.RIGHT_CLICK_AIR)
-                && (event.useItemInHand() == Result.DENY || item == null || item.getType().isBlock())) {
-            return;
-        }
-        if ((action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK) && clicked == null) {
-            return;
-        }
-        if ((action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK)
-                && event.useInteractedBlock() == Result.DENY
-                && (event.useItemInHand() == Result.DENY || item == null || item.getType().isBlock())) {
+        if (ignoreInteraction(event, item, clicked, action)) {
             return;
         }
         Cause cause = create(player);
 
-        switch (action) {
-            case PHYSICAL:
-                if (clicked == null) return;
-                if (event.useInteractedBlock() != Result.DENY) {
-                    if (clicked.getType() == Material.FARMLAND ||
-                            clicked.getType() == Material.TURTLE_EGG ||
-                            clicked.getType() == Material.SNIFFER_EGG) {
-                        BreakBlockEvent breakDelagate = new BreakBlockEvent(event, cause, clicked);
-                        breakDelagate.setSilent(true);
-                        breakDelagate.getRelevantFlags().add(Flags.TRAMPLE_BLOCKS);
-                        boolean denied;
-                        if (!(denied = Events.fireToCancel(event, breakDelagate))) {
-                            PlaceBlockEvent placeDelegate = new PlaceBlockEvent(event, cause, clicked.getLocation(),
-                                    clicked.getType() == Material.FARMLAND ? Material.DIRT : clicked.getType());
-                            placeDelegate.setSilent(true);
-                            placeDelegate.getRelevantFlags().add(Flags.TRAMPLE_BLOCKS);
-                            denied = Events.fireToCancel(event, placeDelegate);
-                        }
-                        if (denied) {
-                            playDenyEffect(player, clicked.getLocation());
-                        }
-                        return;
-                    }
-                    DelegateEvent firedEvent = new UseBlockEvent(event, cause, clicked);
-                    if (Tag.REDSTONE_ORES.isTagged(clicked.getType())) {
-                        firedEvent.setSilent(true);
-                    }
-                    if (clicked.getType() == Material.BIG_DRIPLEAF) {
-                        firedEvent.getRelevantFlags().add(Flags.USE_DRIPLEAF);
-                        firedEvent.setSilent(true);
-                    }
-                    interactDebounce.fireToCancel(event, firedEvent, new BlockEntityKey(clicked, event.getPlayer()));
-                    if (event.useInteractedBlock() == Result.DENY && !firedEvent.isSilent()) {
-                        playDenyEffect(player, clicked.getLocation().add(0, 1, 0));
-                    }
-                }
-                break;
+        if (action == Action.PHYSICAL) {
+            handlePhysicalInteraction(event, player, cause, clicked);
+            return;
+        }
+        if (isBlockClick(action)) {
+            if (clicked == null) return;
+            if (action == Action.RIGHT_CLICK_BLOCK && event.useInteractedBlock() != Result.DENY) {
+                handleBlockRightClick(event, cause, item, clicked, clicked.getRelative(event.getBlockFace()));
+            }
+            if (!handleBlockClick(event, cause, item, clicked)) {
+                return;
+            }
+        }
+        handleItemUse(event, cause, player, item);
+    }
 
-            case RIGHT_CLICK_BLOCK:
-                if (clicked == null) return;
-                if (event.useInteractedBlock() != Result.DENY) {
-                    placed = clicked.getRelative(event.getBlockFace());
+    private static boolean ignoreInteraction(PlayerInteractEvent event, @Nullable ItemStack item,
+                                             @Nullable Block clicked, Action action) {
+        if (action == Action.PHYSICAL) {
+            return clicked == null || event.useInteractedBlock() == Result.DENY;
+        }
+        if (isAirClick(action)) {
+            return event.useItemInHand() == Result.DENY || item == null || item.getType().isBlock();
+        }
+        return isBlockClick(action) && (clicked == null
+                || event.useInteractedBlock() == Result.DENY
+                && (event.useItemInHand() == Result.DENY || item == null || item.getType().isBlock()));
+    }
 
-                    // Re-used for dispensers
-                    handleBlockRightClick(event, cause, item, clicked, placed);
-                }
+    private static boolean isAirClick(Action action) {
+        return action == Action.LEFT_CLICK_AIR || action == Action.RIGHT_CLICK_AIR;
+    }
 
-            case LEFT_CLICK_BLOCK:
-                if (clicked == null) return;
-                if (event.useInteractedBlock() != Result.DENY) {
-                    placed = clicked.getRelative(event.getBlockFace());
+    private static boolean isBlockClick(Action action) {
+        return action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK;
+    }
 
-                    // Only fire events for blocks that are modified when right clicked
-                    final boolean hasItemInteraction = item != null && isItemAppliedToBlock(item, clicked)
-                            && event.getAction() == Action.RIGHT_CLICK_BLOCK;
-                    modifiesWorld = hasItemInteraction
-                            || isBlockModifiedOnClick(clicked, event.getAction() == Action.RIGHT_CLICK_BLOCK);
+    private void handlePhysicalInteraction(PlayerInteractEvent event, Player player, Cause cause,
+                                           @Nullable Block clicked) {
+        if (clicked == null) return;
+        Material type = clicked.getType();
+        if (type == Material.FARMLAND || type == Material.TURTLE_EGG || type == Material.SNIFFER_EGG) {
+            handleTrample(event, player, cause, clicked, type);
+            return;
+        }
 
-                    if (Events.fireAndTestCancel(new UseBlockEvent(event, cause, clicked).setAllowed(!modifiesWorld))) {
-                        event.setUseInteractedBlock(Result.DENY);
-                    }
+        DelegateEvent firedEvent = new UseBlockEvent(event, cause, clicked);
+        if (Tag.REDSTONE_ORES.isTagged(type)) {
+            firedEvent.setSilent(true);
+        }
+        if (type == Material.BIG_DRIPLEAF) {
+            firedEvent.getRelevantFlags().add(Flags.USE_DRIPLEAF);
+            firedEvent.setSilent(true);
+        }
+        interactDebounce.fireToCancel(event, firedEvent, new BlockEntityKey(clicked, player));
+        if (event.useInteractedBlock() == Result.DENY && !firedEvent.isSilent()) {
+            playDenyEffect(player, clicked.getLocation().add(0, 1, 0));
+        }
+    }
 
-                    // Handle connected blocks (i.e. beds, chests)
-                    for (Block connected : Blocks.getConnected(clicked)) {
-                        if (Events.fireAndTestCancel(new UseBlockEvent(event, cause, connected).setAllowed(!modifiesWorld))) {
-                            event.setUseInteractedBlock(Result.DENY);
-                            break;
-                        }
-                    }
+    private void handleTrample(PlayerInteractEvent event, Player player, Cause cause,
+                               Block clicked, Material type) {
+        BreakBlockEvent breakDelegate = new BreakBlockEvent(event, cause, clicked);
+        breakDelegate.setSilent(true);
+        breakDelegate.getRelevantFlags().add(Flags.TRAMPLE_BLOCKS);
+        boolean denied = Events.fireToCancel(event, breakDelegate);
+        if (!denied) {
+            PlaceBlockEvent placeDelegate = new PlaceBlockEvent(event, cause, clicked.getLocation(),
+                    type == Material.FARMLAND ? Material.DIRT : type);
+            placeDelegate.setSilent(true);
+            placeDelegate.getRelevantFlags().add(Flags.TRAMPLE_BLOCKS);
+            denied = Events.fireToCancel(event, placeDelegate);
+        }
+        if (denied) {
+            playDenyEffect(player, clicked.getLocation());
+        }
+    }
 
-                    if (hasItemInteraction) {
-                        if (Events.fireAndTestCancel(new PlaceBlockEvent(event, cause, clicked.getLocation(), clicked.getType()))) {
-                            event.setUseItemInHand(Result.DENY);
-                            event.setUseInteractedBlock(Result.DENY);
-                        }
-                    }
+    private boolean handleBlockClick(PlayerInteractEvent event, Cause cause,
+                                     @Nullable ItemStack item, Block clicked) {
+        if (event.useInteractedBlock() == Result.DENY) {
+            return true;
+        }
 
-                    // Special handling of putting out fires
-                    if (event.getAction() == Action.LEFT_CLICK_BLOCK && Materials.isFire(placed.getType())) {
-                        if (Events.fireAndTestCancel(new BreakBlockEvent(event, cause, placed))) {
-                            event.setUseInteractedBlock(Result.DENY);
-                            break;
-                        }
-                    }
+        boolean rightClick = event.getAction() == Action.RIGHT_CLICK_BLOCK;
+        boolean hasItemInteraction = item != null && isItemAppliedToBlock(item, clicked) && rightClick;
+        boolean modifiesWorld = hasItemInteraction || isBlockModifiedOnClick(clicked, rightClick);
+        testBlockUse(event, cause, clicked, modifiesWorld);
+        if (hasItemInteraction && Events.fireAndTestCancel(
+                new PlaceBlockEvent(event, cause, clicked.getLocation(), clicked.getType()))) {
+            event.setUseItemInHand(Result.DENY);
+            event.setUseInteractedBlock(Result.DENY);
+        }
 
-                    if (event.useInteractedBlock() == Result.DENY || event.useItemInHand() == Result.DENY) {
-                        playDenyEffect(event.getPlayer(), clicked.getLocation().add(0.5, 1, 0.5));
-                    }
-                }
+        Block placed = clicked.getRelative(event.getBlockFace());
+        if (!rightClick && Materials.isFire(placed.getType())
+                && Events.fireAndTestCancel(new BreakBlockEvent(event, cause, placed))) {
+            event.setUseInteractedBlock(Result.DENY);
+            return false;
+        }
+        if (event.useInteractedBlock() == Result.DENY || event.useItemInHand() == Result.DENY) {
+            playDenyEffect(event.getPlayer(), clicked.getLocation().add(0.5, 1, 0.5));
+        }
+        return true;
+    }
 
-            case LEFT_CLICK_AIR:
-            case RIGHT_CLICK_AIR:
-                if (event.useItemInHand() != Result.DENY) {
-                    if (item != null && !item.getType().isBlock() && Events.fireAndTestCancel(new UseItemEvent(event, cause, player.getWorld(), item))) {
-                        event.setUseItemInHand(Result.DENY);
-                    }
-                }
+    private static void testBlockUse(PlayerInteractEvent event, Cause cause,
+                                     Block clicked, boolean modifiesWorld) {
+        if (Events.fireAndTestCancel(new UseBlockEvent(event, cause, clicked).setAllowed(!modifiesWorld))) {
+            event.setUseInteractedBlock(Result.DENY);
+        }
+        for (Block connected : Blocks.getConnected(clicked)) {
+            if (Events.fireAndTestCancel(
+                    new UseBlockEvent(event, cause, connected).setAllowed(!modifiesWorld))) {
+                event.setUseInteractedBlock(Result.DENY);
+                return;
+            }
+        }
+    }
 
-                break;
+    private static void handleItemUse(PlayerInteractEvent event, Cause cause,
+                                      Player player, @Nullable ItemStack item) {
+        if (event.useItemInHand() != Result.DENY && item != null && !item.getType().isBlock()
+                && Events.fireAndTestCancel(new UseItemEvent(event, cause, player.getWorld(), item))) {
+            event.setUseItemInHand(Result.DENY);
         }
     }
 
