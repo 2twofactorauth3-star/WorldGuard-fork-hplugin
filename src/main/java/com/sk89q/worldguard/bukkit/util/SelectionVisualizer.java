@@ -34,6 +34,7 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.commands.region.ClaimRegionExpander;
 import com.sk89q.worldguard.config.ConfigurationManager;
+import com.sk89q.worldguard.config.SelectionParticleMode;
 import com.sk89q.worldguard.config.SelectionLimit;
 import com.sk89q.worldguard.config.WorldConfiguration;
 import com.sk89q.worldguard.protection.managers.RegionManager;
@@ -245,9 +246,12 @@ public final class SelectionVisualizer {
                         configuration.getMaxClaimVolume(player),
                         candidate -> manager.getApplicableRegions(candidate).isOwnerOfAll(player));
             }
-            List<Line> lines = particleSettings().chunkCubes
-                    ? createChunkGridOutline(preview.getMinimumPoint(), preview.getMaximumPoint())
-                    : createCuboidOutline(preview.getMinimumPoint(), preview.getMaximumPoint());
+            List<Line> lines = switch (particleSettings().mode) {
+                case OUTLINE -> createCuboidOutline(preview.getMinimumPoint(), preview.getMaximumPoint());
+                case CHUNKS -> createChunkGridOutline(preview.getMinimumPoint(), preview.getMaximumPoint());
+                case CHUNK_BORDERS -> createChunkBorderOutline(
+                        preview.getMinimumPoint(), preview.getMaximumPoint());
+            };
             return new Outline(
                     lines,
                     originalVolume, preview.volume(),
@@ -272,12 +276,14 @@ public final class SelectionVisualizer {
                         configuration.getMaxClaimVolume(player),
                         candidate -> manager.getApplicableRegions(candidate).isOwnerOfAll(player));
             }
-            List<Line> lines = particleSettings().chunkCubes
-                    ? createPolygonChunkOutline(polygon, preview)
-                    : createPolygonOutline(
-                            preview.getPoints(),
-                            preview.getMinimumPoint().y(),
-                            preview.getMaximumPoint().y());
+            List<Line> lines = switch (particleSettings().mode) {
+                case OUTLINE -> createPolygonOutline(
+                        preview.getPoints(),
+                        preview.getMinimumPoint().y(),
+                        preview.getMaximumPoint().y());
+                case CHUNKS -> createPolygonChunkOutline(polygon, preview);
+                case CHUNK_BORDERS -> createPolygonChunkBorderOutline(polygon, preview);
+            };
             return new Outline(
                     lines,
                     originalVolume, preview.volume(),
@@ -366,6 +372,17 @@ public final class SelectionVisualizer {
         return boundaries;
     }
 
+    private static List<Line> createChunkBorderOutline(BlockVector3 minimum, BlockVector3 maximum) {
+        int minimumChunkX = Math.floorDiv(minimum.x(), 16);
+        int maximumChunkX = Math.floorDiv(maximum.x(), 16);
+        int minimumChunkZ = Math.floorDiv(minimum.z(), 16);
+        int maximumChunkZ = Math.floorDiv(maximum.z(), 16);
+        return createCuboidOutline(
+                BlockVector3.at(minimumChunkX << 4, minimum.y(), minimumChunkZ << 4),
+                BlockVector3.at(((maximumChunkX + 1) << 4) - 1, maximum.y(),
+                        ((maximumChunkZ + 1) << 4) - 1));
+    }
+
     private static List<Line> createPolygonChunkOutline(
             Polygonal2DRegion polygon, ProtectedPolygonalRegion preview) {
         BlockVector3 minimum = preview.getMinimumPoint();
@@ -396,6 +413,31 @@ public final class SelectionVisualizer {
         return lines;
     }
 
+    private static List<Line> createPolygonChunkBorderOutline(
+            Polygonal2DRegion polygon, ProtectedPolygonalRegion preview) {
+        BlockVector3 minimum = preview.getMinimumPoint();
+        BlockVector3 maximum = preview.getMaximumPoint();
+        Collection<BlockVector2> chunks = polygon.getChunks();
+        if (chunks.size() > MAX_CHUNK_CUBES) {
+            return createChunkBorderOutline(minimum, maximum);
+        }
+        Set<Edge> edges = new LinkedHashSet<>(Math.max(16, chunks.size() * 8));
+        int minimumY = minimum.y();
+        int maximumY = maximum.y() + 1;
+        for (BlockVector2 chunk : chunks) {
+            int minimumX = chunk.x() << 4;
+            int minimumZ = chunk.z() << 4;
+            toggleCuboidEdges(edges, minimumX, minimumY, minimumZ,
+                    minimumX + 16, maximumY, minimumZ + 16);
+        }
+        List<Line> lines = new ArrayList<>(edges.size());
+        for (Edge edge : edges) {
+            addLine(lines, edge.startX, edge.startY, edge.startZ,
+                    edge.endX, edge.endY, edge.endZ);
+        }
+        return lines;
+    }
+
     private static void addCuboidEdges(Set<Edge> edges,
                                        int minX, int minY, int minZ,
                                        int maxX, int maxY, int maxZ) {
@@ -411,6 +453,29 @@ public final class SelectionVisualizer {
         edges.add(new Edge(maxX, minY, minZ, maxX, maxY, minZ));
         edges.add(new Edge(minX, minY, maxZ, minX, maxY, maxZ));
         edges.add(new Edge(maxX, minY, maxZ, maxX, maxY, maxZ));
+    }
+
+    private static void toggleCuboidEdges(Set<Edge> edges,
+                                          int minX, int minY, int minZ,
+                                          int maxX, int maxY, int maxZ) {
+        toggleEdge(edges, new Edge(minX, minY, minZ, maxX, minY, minZ));
+        toggleEdge(edges, new Edge(minX, minY, maxZ, maxX, minY, maxZ));
+        toggleEdge(edges, new Edge(minX, maxY, minZ, maxX, maxY, minZ));
+        toggleEdge(edges, new Edge(minX, maxY, maxZ, maxX, maxY, maxZ));
+        toggleEdge(edges, new Edge(minX, minY, minZ, minX, minY, maxZ));
+        toggleEdge(edges, new Edge(maxX, minY, minZ, maxX, minY, maxZ));
+        toggleEdge(edges, new Edge(minX, maxY, minZ, minX, maxY, maxZ));
+        toggleEdge(edges, new Edge(maxX, maxY, minZ, maxX, maxY, maxZ));
+        toggleEdge(edges, new Edge(minX, minY, minZ, minX, maxY, minZ));
+        toggleEdge(edges, new Edge(maxX, minY, minZ, maxX, maxY, minZ));
+        toggleEdge(edges, new Edge(minX, minY, maxZ, minX, maxY, maxZ));
+        toggleEdge(edges, new Edge(maxX, minY, maxZ, maxX, maxY, maxZ));
+    }
+
+    private static void toggleEdge(Set<Edge> edges, Edge edge) {
+        if (!edges.add(edge)) {
+            edges.remove(edge);
+        }
     }
 
     private static List<Line> createPolygonOutline(
@@ -534,7 +599,7 @@ public final class SelectionVisualizer {
         if (!cached.matches(settings)) {
             ParticleSettings replacement = ParticleSettings.from(settings);
             particleSettings = replacement;
-            if (cached.chunkCubes != replacement.chunkCubes) {
+            if (cached.mode != replacement.mode) {
                 activeSelections.clear();
             }
         }
@@ -738,11 +803,11 @@ public final class SelectionVisualizer {
         public final int red;
         public final int green;
         public final int blue;
-        public final boolean chunkCubes;
+        public final SelectionParticleMode mode;
         public final Particle.DustOptions data;
 
         private ParticleSettings(float size, double spacing, int maxCount, double viewDistance,
-                                 int red, int green, int blue, boolean chunkCubes) {
+                                 int red, int green, int blue, SelectionParticleMode mode) {
             this.size = size;
             this.spacing = spacing;
             this.maxCount = maxCount;
@@ -751,7 +816,7 @@ public final class SelectionVisualizer {
             this.red = red;
             this.green = green;
             this.blue = blue;
-            this.chunkCubes = chunkCubes;
+            this.mode = mode;
             this.data = new Particle.DustOptions(Color.fromRGB(red, green, blue), size);
         }
 
@@ -764,7 +829,7 @@ public final class SelectionVisualizer {
                     settings.selectionParticleRed,
                     settings.selectionParticleGreen,
                     settings.selectionParticleBlue,
-                    settings.selectionParticleChunkCubes);
+                    settings.selectionParticleMode);
         }
 
         boolean matches(ConfigurationManager settings) {
@@ -775,7 +840,7 @@ public final class SelectionVisualizer {
                     && red == settings.selectionParticleRed
                     && green == settings.selectionParticleGreen
                     && blue == settings.selectionParticleBlue
-                    && chunkCubes == settings.selectionParticleChunkCubes;
+                    && mode == settings.selectionParticleMode;
         }
     }
 }

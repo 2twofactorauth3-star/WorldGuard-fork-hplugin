@@ -61,6 +61,7 @@ public abstract class ConfigurationManager {
     public boolean particleEffects;
     public boolean showSelectionBorders;
     public boolean selectionParticleChunkCubes;
+    public SelectionParticleMode selectionParticleMode;
     public float selectionParticleSize;
     public double selectionParticleSpacing;
     public int selectionParticleMaxCount;
