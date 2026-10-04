@@ -37,12 +37,12 @@ import java.util.logging.Logger;
 
 public final class EssentialsXIntegration {
 
-    private final EssentialsStateHandler.Factory vanishFactory;
-    private final EssentialsStateHandler.Factory godFactory;
+    private final VanishStateHandler.Factory vanishFactory;
+    private final GodStateHandler.Factory godFactory;
 
     private EssentialsXIntegration(IEssentials essentials, StateFlag vanishFlag, StateFlag godFlag) {
-        vanishFactory = new EssentialsStateHandler.Factory(essentials, vanishFlag, Property.VANISH);
-        godFactory = new EssentialsStateHandler.Factory(essentials, godFlag, Property.GOD);
+        vanishFactory = new VanishStateHandler.Factory(essentials, vanishFlag);
+        godFactory = new GodStateHandler.Factory(essentials, godFlag);
     }
 
     @Nullable
@@ -86,7 +86,7 @@ public final class EssentialsXIntegration {
         GOD
     }
 
-    private static final class EssentialsStateHandler extends FlagValueChangeHandler<State> {
+    private abstract static class EssentialsStateHandler extends FlagValueChangeHandler<State> {
 
         private final IEssentials essentials;
         private final Property property;
@@ -164,21 +164,50 @@ public final class EssentialsXIntegration {
             return true;
         }
 
-        private static final class Factory extends Handler.Factory<EssentialsStateHandler> {
+    }
+
+    private static final class VanishStateHandler extends EssentialsStateHandler {
+
+        private VanishStateHandler(Session session, IEssentials essentials, StateFlag flag) {
+            super(session, essentials, flag, Property.VANISH);
+        }
+
+        private static final class Factory extends Handler.Factory<VanishStateHandler> {
 
             private final IEssentials essentials;
             private final StateFlag flag;
-            private final Property property;
 
-            private Factory(IEssentials essentials, StateFlag flag, Property property) {
+            private Factory(IEssentials essentials, StateFlag flag) {
                 this.essentials = essentials;
                 this.flag = flag;
-                this.property = property;
             }
 
             @Override
-            public EssentialsStateHandler create(Session session) {
-                return new EssentialsStateHandler(session, essentials, flag, property);
+            public VanishStateHandler create(Session session) {
+                return new VanishStateHandler(session, essentials, flag);
+            }
+        }
+    }
+
+    private static final class GodStateHandler extends EssentialsStateHandler {
+
+        private GodStateHandler(Session session, IEssentials essentials, StateFlag flag) {
+            super(session, essentials, flag, Property.GOD);
+        }
+
+        private static final class Factory extends Handler.Factory<GodStateHandler> {
+
+            private final IEssentials essentials;
+            private final StateFlag flag;
+
+            private Factory(IEssentials essentials, StateFlag flag) {
+                this.essentials = essentials;
+                this.flag = flag;
+            }
+
+            @Override
+            public GodStateHandler create(Session session) {
+                return new GodStateHandler(session, essentials, flag);
             }
         }
     }
