@@ -49,6 +49,7 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -377,10 +378,35 @@ public final class SelectionVisualizer {
         int maximumChunkX = Math.floorDiv(maximum.x(), 16);
         int minimumChunkZ = Math.floorDiv(minimum.z(), 16);
         int maximumChunkZ = Math.floorDiv(maximum.z(), 16);
-        return createCuboidOutline(
-                BlockVector3.at(minimumChunkX << 4, minimum.y(), minimumChunkZ << 4),
-                BlockVector3.at(((maximumChunkX + 1) << 4) - 1, maximum.y(),
-                        ((maximumChunkZ + 1) << 4) - 1));
+        long chunkCount = ((long) maximumChunkX - minimumChunkX + 1)
+                * ((long) maximumChunkZ - minimumChunkZ + 1);
+        if (chunkCount > MAX_CHUNK_CUBES) {
+            return createCuboidOutline(
+                    BlockVector3.at(minimumChunkX << 4, minimum.y(), minimumChunkZ << 4),
+                    BlockVector3.at(((maximumChunkX + 1) << 4) - 1, maximum.y(),
+                            ((maximumChunkZ + 1) << 4) - 1));
+        }
+
+        int chunkWidth = maximumChunkX - minimumChunkX + 1;
+        int chunkLength = maximumChunkZ - minimumChunkZ + 1;
+        int perimeterChunks = chunkWidth == 1 ? chunkLength
+                : chunkLength == 1 ? chunkWidth : 2 * chunkWidth + 2 * chunkLength - 4;
+        Set<Edge> edges = new LinkedHashSet<>(Math.max(16, perimeterChunks * 8));
+        int minimumY = minimum.y();
+        int maximumY = maximum.y() + 1;
+        for (int chunkX = minimumChunkX; chunkX <= maximumChunkX; chunkX++) {
+            for (int chunkZ = minimumChunkZ; chunkZ <= maximumChunkZ; chunkZ++) {
+                if (chunkX != minimumChunkX && chunkX != maximumChunkX
+                        && chunkZ != minimumChunkZ && chunkZ != maximumChunkZ) {
+                    continue;
+                }
+                int minimumX = chunkX << 4;
+                int minimumZ = chunkZ << 4;
+                addCuboidEdges(edges, minimumX, minimumY, minimumZ,
+                        minimumX + 16, maximumY, minimumZ + 16);
+            }
+        }
+        return linesFromEdges(edges);
     }
 
     private static List<Line> createPolygonChunkOutline(
@@ -405,12 +431,7 @@ public final class SelectionVisualizer {
             addCuboidEdges(edges, minimumX, minimumY, minimumZ,
                     minimumX + 16, maximumY, minimumZ + 16);
         }
-        List<Line> lines = new ArrayList<>(edges.size());
-        for (Edge edge : edges) {
-            addLine(lines, edge.startX, edge.startY, edge.startZ,
-                    edge.endX, edge.endY, edge.endZ);
-        }
-        return lines;
+        return linesFromEdges(edges);
     }
 
     private static List<Line> createPolygonChunkBorderOutline(
@@ -421,15 +442,28 @@ public final class SelectionVisualizer {
         if (chunks.size() > MAX_CHUNK_CUBES) {
             return createChunkBorderOutline(minimum, maximum);
         }
+        Set<BlockVector2> chunkSet = new HashSet<>(chunks);
         Set<Edge> edges = new LinkedHashSet<>(Math.max(16, chunks.size() * 8));
         int minimumY = minimum.y();
         int maximumY = maximum.y() + 1;
         for (BlockVector2 chunk : chunks) {
+            int chunkX = chunk.x();
+            int chunkZ = chunk.z();
+            if (chunkSet.contains(BlockVector2.at(chunkX - 1, chunkZ))
+                    && chunkSet.contains(BlockVector2.at(chunkX + 1, chunkZ))
+                    && chunkSet.contains(BlockVector2.at(chunkX, chunkZ - 1))
+                    && chunkSet.contains(BlockVector2.at(chunkX, chunkZ + 1))) {
+                continue;
+            }
             int minimumX = chunk.x() << 4;
             int minimumZ = chunk.z() << 4;
-            toggleCuboidEdges(edges, minimumX, minimumY, minimumZ,
+            addCuboidEdges(edges, minimumX, minimumY, minimumZ,
                     minimumX + 16, maximumY, minimumZ + 16);
         }
+        return linesFromEdges(edges);
+    }
+
+    private static List<Line> linesFromEdges(Set<Edge> edges) {
         List<Line> lines = new ArrayList<>(edges.size());
         for (Edge edge : edges) {
             addLine(lines, edge.startX, edge.startY, edge.startZ,
@@ -453,29 +487,6 @@ public final class SelectionVisualizer {
         edges.add(new Edge(maxX, minY, minZ, maxX, maxY, minZ));
         edges.add(new Edge(minX, minY, maxZ, minX, maxY, maxZ));
         edges.add(new Edge(maxX, minY, maxZ, maxX, maxY, maxZ));
-    }
-
-    private static void toggleCuboidEdges(Set<Edge> edges,
-                                          int minX, int minY, int minZ,
-                                          int maxX, int maxY, int maxZ) {
-        toggleEdge(edges, new Edge(minX, minY, minZ, maxX, minY, minZ));
-        toggleEdge(edges, new Edge(minX, minY, maxZ, maxX, minY, maxZ));
-        toggleEdge(edges, new Edge(minX, maxY, minZ, maxX, maxY, minZ));
-        toggleEdge(edges, new Edge(minX, maxY, maxZ, maxX, maxY, maxZ));
-        toggleEdge(edges, new Edge(minX, minY, minZ, minX, minY, maxZ));
-        toggleEdge(edges, new Edge(maxX, minY, minZ, maxX, minY, maxZ));
-        toggleEdge(edges, new Edge(minX, maxY, minZ, minX, maxY, maxZ));
-        toggleEdge(edges, new Edge(maxX, maxY, minZ, maxX, maxY, maxZ));
-        toggleEdge(edges, new Edge(minX, minY, minZ, minX, maxY, minZ));
-        toggleEdge(edges, new Edge(maxX, minY, minZ, maxX, maxY, minZ));
-        toggleEdge(edges, new Edge(minX, minY, maxZ, minX, maxY, maxZ));
-        toggleEdge(edges, new Edge(maxX, minY, maxZ, maxX, maxY, maxZ));
-    }
-
-    private static void toggleEdge(Set<Edge> edges, Edge edge) {
-        if (!edges.add(edge)) {
-            edges.remove(edge);
-        }
     }
 
     private static List<Line> createPolygonOutline(
