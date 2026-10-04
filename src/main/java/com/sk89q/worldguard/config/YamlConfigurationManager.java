@@ -54,7 +54,7 @@ public abstract class YamlConfigurationManager extends ConfigurationManager {
         particleEffects = getBoolean("useParticleEffects", true);
         showSelectionBorders = getBoolean("selectionParticles.enable", true);
         selectionParticleMode = SelectionParticleMode.parse(config.getString(
-                settingsPath("selectionParticles.mode"), "chunks"));
+                settingsPath("selectionParticles.mode"), "chunkBorders"));
         selectionParticleChunkCubes = selectionParticleMode != SelectionParticleMode.OUTLINE;
         selectionParticleSize = (float) clamp(getNumber("selectionParticles.size", 2.5), 0.1, 4.0);
         selectionParticleSpacing = clamp(getNumber("selectionParticles.spacing", 0.5), 0.1, 16.0);

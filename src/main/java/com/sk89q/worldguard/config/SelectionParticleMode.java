@@ -29,8 +29,9 @@ public enum SelectionParticleMode {
     public static SelectionParticleMode parse(String value) {
         return switch (value.replace("-", "").replace("_", "").toLowerCase(Locale.ROOT)) {
             case "outline" -> OUTLINE;
+            case "chunks" -> CHUNKS;
             case "chunkborders" -> CHUNK_BORDERS;
-            default -> CHUNKS;
+            default -> CHUNK_BORDERS;
         };
     }
 }

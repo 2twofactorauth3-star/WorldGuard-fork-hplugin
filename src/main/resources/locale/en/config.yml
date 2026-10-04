@@ -20,7 +20,7 @@ settings:
     # Shows the selection border to its player with particles.
     enable: true
     # Mode outline shows the exact outer frame; chunks shows a grid of cubes inside the selection; chunkBorders shows only the outer boundary of covered chunks, snapped to real chunk borders.
-    mode: chunks
+    mode: chunkBorders
     # Sets particle size. A larger value produces a thicker line; accepted range is 0.1 to 4.0.
     size: 2.5
     # Sets the desired distance between particles in blocks. A smaller value produces a denser line.

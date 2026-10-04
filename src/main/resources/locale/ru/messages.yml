@@ -1313,7 +1313,7 @@ messages:
       mode: message
       cooldownMillis: -1
       message:
-        - '<white>Блоков<gray>: <#FDBE00>{blocks}'
+        - '<white>Занимает<gray>: <#FDBE00>{blocks} <white>блоков'
 
   regionList:
     title:
