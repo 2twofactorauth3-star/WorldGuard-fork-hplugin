@@ -387,24 +387,33 @@ public final class SelectionVisualizer {
                             ((maximumChunkZ + 1) << 4) - 1));
         }
 
-        int chunkWidth = maximumChunkX - minimumChunkX + 1;
-        int chunkLength = maximumChunkZ - minimumChunkZ + 1;
-        int perimeterChunks = chunkWidth == 1 ? chunkLength
-                : chunkLength == 1 ? chunkWidth : 2 * chunkWidth + 2 * chunkLength - 4;
-        Set<Edge> edges = new LinkedHashSet<>(Math.max(16, perimeterChunks * 8));
+        int minimumX = minimumChunkX << 4;
+        int maximumX = (maximumChunkX + 1) << 4;
+        int minimumZ = minimumChunkZ << 4;
+        int maximumZ = (maximumChunkZ + 1) << 4;
         int minimumY = minimum.y();
         int maximumY = maximum.y() + 1;
-        for (int chunkX = minimumChunkX; chunkX <= maximumChunkX; chunkX++) {
-            for (int chunkZ = minimumChunkZ; chunkZ <= maximumChunkZ; chunkZ++) {
-                if (chunkX != minimumChunkX && chunkX != maximumChunkX
-                        && chunkZ != minimumChunkZ && chunkZ != maximumChunkZ) {
-                    continue;
-                }
-                int minimumX = chunkX << 4;
-                int minimumZ = chunkZ << 4;
-                addCuboidEdges(edges, minimumX, minimumY, minimumZ,
-                        minimumX + 16, maximumY, minimumZ + 16);
-            }
+        List<Integer> yBoundaries = chunkBoundaries(
+                minimumY, maximum.y(), Math.floorDiv(minimumY, 16), Math.floorDiv(maximum.y(), 16));
+        Set<Edge> edges = new LinkedHashSet<>(
+                Math.max(16, 2 * (maximumChunkX - minimumChunkX + maximumChunkZ - minimumChunkZ + 4)
+                        + yBoundaries.size() * 4));
+
+        for (int y : yBoundaries) {
+            edges.add(new Edge(minimumX, y, minimumZ, maximumX, y, minimumZ));
+            edges.add(new Edge(minimumX, y, maximumZ, maximumX, y, maximumZ));
+            edges.add(new Edge(minimumX, y, minimumZ, minimumX, y, maximumZ));
+            edges.add(new Edge(maximumX, y, minimumZ, maximumX, y, maximumZ));
+        }
+        for (int chunkX = minimumChunkX; chunkX <= maximumChunkX + 1; chunkX++) {
+            int x = chunkX << 4;
+            edges.add(new Edge(x, minimumY, minimumZ, x, maximumY, minimumZ));
+            edges.add(new Edge(x, minimumY, maximumZ, x, maximumY, maximumZ));
+        }
+        for (int chunkZ = minimumChunkZ; chunkZ <= maximumChunkZ + 1; chunkZ++) {
+            int z = chunkZ << 4;
+            edges.add(new Edge(minimumX, minimumY, z, minimumX, maximumY, z));
+            edges.add(new Edge(maximumX, minimumY, z, maximumX, maximumY, z));
         }
         return linesFromEdges(edges);
     }
@@ -446,21 +455,49 @@ public final class SelectionVisualizer {
         Set<Edge> edges = new LinkedHashSet<>(Math.max(16, chunks.size() * 8));
         int minimumY = minimum.y();
         int maximumY = maximum.y() + 1;
+        List<Integer> yBoundaries = chunkBoundaries(
+                minimumY, maximum.y(), Math.floorDiv(minimumY, 16), Math.floorDiv(maximum.y(), 16));
         for (BlockVector2 chunk : chunks) {
             int chunkX = chunk.x();
             int chunkZ = chunk.z();
-            if (chunkSet.contains(BlockVector2.at(chunkX - 1, chunkZ))
-                    && chunkSet.contains(BlockVector2.at(chunkX + 1, chunkZ))
-                    && chunkSet.contains(BlockVector2.at(chunkX, chunkZ - 1))
-                    && chunkSet.contains(BlockVector2.at(chunkX, chunkZ + 1))) {
-                continue;
+            int minimumX = chunkX << 4;
+            int minimumZ = chunkZ << 4;
+            if (!chunkSet.contains(BlockVector2.at(chunkX - 1, chunkZ))) {
+                addXWallGrid(edges, minimumX, minimumY, maximumY,
+                        minimumZ, minimumZ + 16, yBoundaries);
             }
-            int minimumX = chunk.x() << 4;
-            int minimumZ = chunk.z() << 4;
-            addCuboidEdges(edges, minimumX, minimumY, minimumZ,
-                    minimumX + 16, maximumY, minimumZ + 16);
+            if (!chunkSet.contains(BlockVector2.at(chunkX + 1, chunkZ))) {
+                addXWallGrid(edges, minimumX + 16, minimumY, maximumY,
+                        minimumZ, minimumZ + 16, yBoundaries);
+            }
+            if (!chunkSet.contains(BlockVector2.at(chunkX, chunkZ - 1))) {
+                addZWallGrid(edges, minimumZ, minimumY, maximumY,
+                        minimumX, minimumX + 16, yBoundaries);
+            }
+            if (!chunkSet.contains(BlockVector2.at(chunkX, chunkZ + 1))) {
+                addZWallGrid(edges, minimumZ + 16, minimumY, maximumY,
+                        minimumX, minimumX + 16, yBoundaries);
+            }
         }
         return linesFromEdges(edges);
+    }
+
+    private static void addXWallGrid(Set<Edge> edges, int x, int minimumY, int maximumY,
+                                     int minimumZ, int maximumZ, List<Integer> yBoundaries) {
+        edges.add(new Edge(x, minimumY, minimumZ, x, maximumY, minimumZ));
+        edges.add(new Edge(x, minimumY, maximumZ, x, maximumY, maximumZ));
+        for (int y : yBoundaries) {
+            edges.add(new Edge(x, y, minimumZ, x, y, maximumZ));
+        }
+    }
+
+    private static void addZWallGrid(Set<Edge> edges, int z, int minimumY, int maximumY,
+                                     int minimumX, int maximumX, List<Integer> yBoundaries) {
+        edges.add(new Edge(minimumX, minimumY, z, minimumX, maximumY, z));
+        edges.add(new Edge(maximumX, minimumY, z, maximumX, maximumY, z));
+        for (int y : yBoundaries) {
+            edges.add(new Edge(minimumX, y, z, maximumX, y, z));
+        }
     }
 
     private static List<Line> linesFromEdges(Set<Edge> edges) {
