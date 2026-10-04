@@ -41,6 +41,9 @@ import com.sk89q.worldguard.bukkit.util.Entities;
 import com.sk89q.worldguard.bukkit.util.Events;
 import com.sk89q.worldguard.bukkit.util.Materials;
 import com.sk89q.worldguard.config.WorldConfiguration;
+import com.sk89q.worldguard.config.WorldMechanicSetting;
+import com.sk89q.worldguard.protection.association.DelayedRegionOverlapAssociation;
+import com.sk89q.worldguard.protection.association.RegionAssociable;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
@@ -142,8 +145,10 @@ import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.projectiles.ProjectileSource;
@@ -153,7 +158,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class EventAbstractionListener extends AbstractListener {
 
@@ -168,11 +172,15 @@ public class EventAbstractionListener extends AbstractListener {
         public final Block block;
         public final Material blockMaterial;
         public final Entity entity;
+        public final int hashCode;
 
         private BlockEntityKey(Block block, Entity entity) {
             this.block = block;
             this.blockMaterial = block.getType();
             this.entity = entity;
+            int hash = block.hashCode();
+            hash = 31 * hash + blockMaterial.hashCode();
+            this.hashCode = 31 * hash + entity.hashCode();
         }
 
         @Override
@@ -186,17 +194,19 @@ public class EventAbstractionListener extends AbstractListener {
 
         @Override
         public int hashCode() {
-            return Objects.hash(block, blockMaterial, entity);
+            return hashCode;
         }
     }
 
     private static final class EntityEntityKey {
         public final Entity source;
         public final Entity target;
+        public final int hashCode;
 
         private EntityEntityKey(Entity source, Entity target) {
             this.source = source;
             this.target = target;
+            this.hashCode = 31 * source.hashCode() + target.hashCode();
         }
 
         @Override
@@ -208,7 +218,7 @@ public class EventAbstractionListener extends AbstractListener {
 
         @Override
         public int hashCode() {
-            return Objects.hash(source, target);
+            return hashCode;
         }
     }
 
@@ -216,11 +226,23 @@ public class EventAbstractionListener extends AbstractListener {
         public final Object cause;
         public final Object source;
         public final Object target;
+        public final int hashCode;
 
-        private InventoryMoveItemKey(InventoryHolder cause, InventoryHolder source, InventoryHolder target) {
-            this.cause = normalizeHolder(cause);
-            this.source = normalizeHolder(source);
-            this.target = normalizeHolder(target);
+        private InventoryMoveItemKey(Inventory cause, Inventory source, Inventory target) {
+            this.cause = normalizeInventory(cause);
+            this.source = source == cause ? this.cause : normalizeInventory(source);
+            this.target = target == cause ? this.cause
+                    : target == source ? this.source : normalizeInventory(target);
+            int hash = Objects.hashCode(this.cause);
+            hash = 31 * hash + Objects.hashCode(this.source);
+            this.hashCode = 31 * hash + Objects.hashCode(this.target);
+        }
+
+        private static Object normalizeInventory(Inventory inventory) {
+            Location location = inventory.getLocation();
+            return location == null
+                    ? normalizeHolder(inventory.getHolder(false))
+                    : new InventoryLocationKey(location, inventory.getType());
         }
 
         private static Object normalizeHolder(InventoryHolder holder) {
@@ -228,8 +250,8 @@ public class EventAbstractionListener extends AbstractListener {
                 return new BlockMaterialKey(blockState);
             }
             if (holder instanceof DoubleChest doubleChest) {
-                InventoryHolder left = doubleChest.getLeftSide(false);
-                if (left instanceof Chest chest) return new BlockMaterialKey(chest);
+                Location location = doubleChest.getLocation();
+                if (location != null) return new BlockMaterialKey(location, Material.CHEST);
             }
             return holder;
         }
@@ -245,41 +267,101 @@ public class EventAbstractionListener extends AbstractListener {
 
         @Override
         public int hashCode() {
-            int result = Objects.hashCode(cause);
-            result = 31 * result + Objects.hashCode(source);
-            return 31 * result + Objects.hashCode(target);
+            return hashCode;
+        }
+    }
+
+    private static final class InventoryLocationKey {
+        public final World world;
+        public final long x;
+        public final long y;
+        public final long z;
+        public final InventoryType type;
+        public final int hashCode;
+
+        private InventoryLocationKey(Location location, InventoryType type) {
+            world = location.getWorld();
+            x = Double.doubleToLongBits(location.getX());
+            y = Double.doubleToLongBits(location.getY());
+            z = Double.doubleToLongBits(location.getZ());
+            this.type = type;
+            int hash = world.hashCode();
+            hash = 31 * hash + Long.hashCode(x);
+            hash = 31 * hash + Long.hashCode(y);
+            hash = 31 * hash + Long.hashCode(z);
+            hashCode = 31 * hash + type.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) return true;
+            if (!(other instanceof InventoryLocationKey key)) return false;
+            return world == key.world && x == key.x && y == key.y && z == key.z && type == key.type;
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
         }
     }
 
     private static final class BlockMaterialKey {
-        public final Block block;
+        public final World world;
+        public final int x;
+        public final int y;
+        public final int z;
         public final Material material;
+        public final int hashCode;
 
         private BlockMaterialKey(BlockState state) {
-            block = state.getBlock();
+            world = state.getWorld();
+            x = state.getX();
+            y = state.getY();
+            z = state.getZ();
             material = state.getType();
+            hashCode = calculateHashCode();
+        }
+
+        private BlockMaterialKey(Location location, Material material) {
+            world = location.getWorld();
+            x = location.getBlockX();
+            y = location.getBlockY();
+            z = location.getBlockZ();
+            this.material = material;
+            hashCode = calculateHashCode();
+        }
+
+        private int calculateHashCode() {
+            int hash = world.hashCode();
+            hash = 31 * hash + x;
+            hash = 31 * hash + y;
+            hash = 31 * hash + z;
+            return 31 * hash + material.hashCode();
         }
 
         @Override
         public boolean equals(Object other) {
             if (this == other) return true;
             if (!(other instanceof BlockMaterialKey key)) return false;
-            return block.equals(key.block) && material == key.material;
+            return world == key.world && x == key.x && y == key.y && z == key.z
+                    && material == key.material;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(block, material);
+            return hashCode;
         }
     }
 
     private static final class PistonKey {
         public final Block piston;
         public final List<Block> blocks;
+        public final int hashCode;
 
         private PistonKey(Block piston, List<Block> blocks) {
             this.piston = piston;
             this.blocks = List.copyOf(blocks);
+            this.hashCode = 31 * piston.hashCode() + this.blocks.hashCode();
         }
 
         @Override
@@ -291,7 +373,7 @@ public class EventAbstractionListener extends AbstractListener {
 
         @Override
         public int hashCode() {
-            return Objects.hash(piston, blocks);
+            return hashCode;
         }
     }
 
@@ -341,7 +423,11 @@ public class EventAbstractionListener extends AbstractListener {
         if (isExemptBlock(event.getBlockPlaced().getType())) {
             return;
         }
-        List<Block> placed = event.getReplacedBlockStates().stream().map(BlockState::getBlock).collect(Collectors.toList());
+        List<BlockState> replaced = event.getReplacedBlockStates();
+        List<Block> placed = new ArrayList<>(replaced.size());
+        for (BlockState state : replaced) {
+            placed.add(state.getBlock());
+        }
         int origAmt = placed.size();
         PlaceBlockEvent delegateEvent = new PlaceBlockEvent(event, create(event.getPlayer()), event.getBlock().getWorld(),
                 placed, event.getBlockPlaced().getType());
@@ -354,20 +440,21 @@ public class EventAbstractionListener extends AbstractListener {
     @EventHandler(ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
         if (event instanceof BlockMultiPlaceEvent) return;
+        Cause cause = create(event.getPlayer());
         BlockState previousState = event.getBlockReplacedState();
 
         // Some blocks, like tall grass and fire, get replaced
         if (previousState.getType() != Material.AIR && previousState.getType() != event.getBlockReplacedState().getType()) {
-            Events.fireToCancel(event, new BreakBlockEvent(event, create(event.getPlayer()), previousState.getLocation(), previousState.getType()));
+            Events.fireToCancel(event, new BreakBlockEvent(event, cause, previousState.getLocation(), previousState.getType()));
         }
 
         ItemStack itemStack = event.getItemInHand();
         if (!event.isCancelled() && itemStack.getType() != Material.AIR) {
-            Events.fireToCancel(event, new UseItemEvent(event, create(event.getPlayer()), event.getPlayer().getWorld(), itemStack));
+            Events.fireToCancel(event, new UseItemEvent(event, cause, event.getPlayer().getWorld(), itemStack));
         }
 
         if (!event.isCancelled()) {
-            Events.fireToCancel(event, new PlaceBlockEvent(event, create(event.getPlayer()), event.getBlock()));
+            Events.fireToCancel(event, new PlaceBlockEvent(event, cause, event.getBlock()));
         }
 
         if (event.isCancelled()) {
@@ -534,6 +621,13 @@ public class EventAbstractionListener extends AbstractListener {
                 BlockFace direction = event.getDirection();
 
                 ArrayList<Block> blocks = new ArrayList<>(event.getBlocks());
+                WorldConfiguration configuration = getWorldConfig(piston.getWorld());
+                if (blocksPistonMovement(configuration, piston, blocks, direction, false)) {
+                    event.setCancelled(true);
+                    entry.setCancelled(true);
+                    playDenyEffect(piston.getLocation().add(0.5, 1, 0.5));
+                    return;
+                }
                 int originalSize = blocks.size();
                 Events.fireBulkEventToCancel(event, new BreakBlockEvent(event, cause, event.getBlock().getWorld(), blocks, Material.AIR));
                 if (originalSize != blocks.size()) {
@@ -559,8 +653,17 @@ public class EventAbstractionListener extends AbstractListener {
         EventDebounce.Entry entry = pistonExtendDebounce.getIfNotPresent(
                 new PistonKey(event.getBlock(), event.getBlocks()), event);
         if (entry != null) {
-            Cause cause = create(event.getBlock());
+            Block piston = event.getBlock();
+            Cause cause = create(piston);
             List<Block> blocks = new ArrayList<>(event.getBlocks());
+            WorldConfiguration configuration = getWorldConfig(piston.getWorld());
+            if (blocksPistonMovement(
+                    configuration, piston, blocks, event.getDirection(), true)) {
+                event.setCancelled(true);
+                entry.setCancelled(true);
+                playDenyEffect(piston.getLocation().add(0.5, 1, 0.5));
+                return;
+            }
             int originalLength = blocks.size();
             Events.fireBulkEventToCancel(event, new BreakBlockEvent(event, cause, event.getBlock().getWorld(), blocks, Material.AIR));
             if (originalLength != blocks.size()) {
@@ -570,9 +673,7 @@ public class EventAbstractionListener extends AbstractListener {
             BlockFace dir = event.getDirection();
             for (int i = 0; i < blocks.size(); i++) {
                 Block existing = blocks.get(i);
-                if (existing.getPistonMoveReaction() == PistonMoveReaction.MOVE
-                    || existing.getPistonMoveReaction() == PistonMoveReaction.PUSH_ONLY
-                    || existing.getType() == Material.PISTON || existing.getType() == Material.STICKY_PISTON) {
+                if (movesWithPiston(existing)) {
                     blocks.set(i, existing.getRelative(dir));
                 }
             }
@@ -610,9 +711,26 @@ public class EventAbstractionListener extends AbstractListener {
         Block clicked = event.getClickedBlock();
         Block placed;
         boolean modifiesWorld;
+        Action action = event.getAction();
+        if (action == Action.PHYSICAL
+                && (clicked == null || event.useInteractedBlock() == Result.DENY)) {
+            return;
+        }
+        if ((action == Action.LEFT_CLICK_AIR || action == Action.RIGHT_CLICK_AIR)
+                && (event.useItemInHand() == Result.DENY || item == null || item.getType().isBlock())) {
+            return;
+        }
+        if ((action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK) && clicked == null) {
+            return;
+        }
+        if ((action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK)
+                && event.useInteractedBlock() == Result.DENY
+                && (event.useItemInHand() == Result.DENY || item == null || item.getType().isBlock())) {
+            return;
+        }
         Cause cause = create(player);
 
-        switch (event.getAction()) {
+        switch (action) {
             case PHYSICAL:
                 if (clicked == null) return;
                 if (event.useInteractedBlock() != Result.DENY) {
@@ -656,7 +774,7 @@ public class EventAbstractionListener extends AbstractListener {
                     placed = clicked.getRelative(event.getBlockFace());
 
                     // Re-used for dispensers
-                    handleBlockRightClick(event, create(event.getPlayer()), item, clicked, placed);
+                    handleBlockRightClick(event, cause, item, clicked, placed);
                 }
 
             case LEFT_CLICK_BLOCK:
@@ -676,7 +794,7 @@ public class EventAbstractionListener extends AbstractListener {
 
                     // Handle connected blocks (i.e. beds, chests)
                     for (Block connected : Blocks.getConnected(clicked)) {
-                        if (Events.fireAndTestCancel(new UseBlockEvent(event, create(event.getPlayer()), connected).setAllowed(!modifiesWorld))) {
+                        if (Events.fireAndTestCancel(new UseBlockEvent(event, cause, connected).setAllowed(!modifiesWorld))) {
                             event.setUseInteractedBlock(Result.DENY);
                             break;
                         }
@@ -691,7 +809,7 @@ public class EventAbstractionListener extends AbstractListener {
 
                     // Special handling of putting out fires
                     if (event.getAction() == Action.LEFT_CLICK_BLOCK && Materials.isFire(placed.getType())) {
-                        if (Events.fireAndTestCancel(new BreakBlockEvent(event, create(event.getPlayer()), placed))) {
+                        if (Events.fireAndTestCancel(new BreakBlockEvent(event, cause, placed))) {
                             event.setUseInteractedBlock(Result.DENY);
                             break;
                         }
@@ -784,8 +902,9 @@ public class EventAbstractionListener extends AbstractListener {
 
         ItemStack item = new ItemStack(event.getBucket(), 1);
         Material blockMaterial = Materials.getBucketBlockMaterial(event.getBucket());
-        Events.fireToCancel(event, new PlaceBlockEvent(event, create(player), blockAffected.getLocation(), blockMaterial).setAllowed(allowed));
-        Events.fireToCancel(event, new UseItemEvent(event, create(player), player.getWorld(), item).setAllowed(allowed));
+        Cause cause = create(player);
+        Events.fireToCancel(event, new PlaceBlockEvent(event, cause, blockAffected.getLocation(), blockMaterial).setAllowed(allowed));
+        Events.fireToCancel(event, new UseItemEvent(event, cause, player.getWorld(), item).setAllowed(allowed));
 
         if (event.isCancelled()) {
             playDenyEffect(event.getPlayer(), blockAffected.getLocation().add(0.5, 0.5, 0.5));
@@ -801,8 +920,9 @@ public class EventAbstractionListener extends AbstractListener {
                 && event.getItemStack().getType() == Material.MILK_BUCKET;
 
         ItemStack item = new ItemStack(event.getBucket(), 1);
-        Events.fireToCancel(event, new BreakBlockEvent(event, create(player), blockAffected).setAllowed(allowed));
-        Events.fireToCancel(event, new UseItemEvent(event, create(player), player.getWorld(), item).setAllowed(allowed));
+        Cause cause = create(player);
+        Events.fireToCancel(event, new BreakBlockEvent(event, cause, blockAffected).setAllowed(allowed));
+        Events.fireToCancel(event, new UseItemEvent(event, cause, player.getWorld(), item).setAllowed(allowed));
 
         if (event.isCancelled()) {
             playDenyEffect(event.getPlayer(), blockAffected.getLocation().add(0.5, 0.5, 0.5));
@@ -913,6 +1033,44 @@ public class EventAbstractionListener extends AbstractListener {
         }
     }
 
+    private boolean blocksPistonMovement(WorldConfiguration configuration, Block piston,
+                                         List<Block> blocks, BlockFace direction,
+                                         boolean checkMoveReaction) {
+        WorldMechanicSetting setting = configuration.blockPistons;
+        if (!setting.enable) {
+            return false;
+        }
+        if (setting.mode == WorldMechanicSetting.Mode.EVERYWHERE) {
+            return true;
+        }
+
+        RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
+        RegionAssociable source = new DelayedRegionOverlapAssociation(
+                query, BukkitAdapter.adapt(piston.getLocation()),
+                configuration.useMaxPriorityAssociation);
+        if (blocksMechanic(setting, piston.getLocation(), source)) {
+            return true;
+        }
+        for (Block block : blocks) {
+            if (blocksMechanic(setting, block.getLocation(), source)) {
+                return true;
+            }
+            if ((!checkMoveReaction || movesWithPiston(block))
+                    && blocksMechanic(setting, block.getRelative(direction).getLocation(), source)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean movesWithPiston(Block block) {
+        PistonMoveReaction reaction = block.getPistonMoveReaction();
+        return reaction == PistonMoveReaction.MOVE
+                || reaction == PistonMoveReaction.PUSH_ONLY
+                || block.getType() == Material.PISTON
+                || block.getType() == Material.STICKY_PISTON;
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onProjectileHit(ProjectileHitEvent event) {
         if (event.getEntity() instanceof FishHook hook
@@ -962,11 +1120,12 @@ public class EventAbstractionListener extends AbstractListener {
         ItemStack item = event.getHand() == EquipmentSlot.OFF_HAND
                 ? player.getInventory().getItemInOffHand() : player.getInventory().getItemInMainHand();
         Entity entity = event.getRightClicked();
+        Cause cause = create(player);
 
-        if (Events.fireToCancel(event, new UseItemEvent(event, create(player), world, item))) {
+        if (Events.fireToCancel(event, new UseItemEvent(event, cause, world, item))) {
             return;
         }
-        Events.fireToCancel(event, new UseEntityEvent(event, create(player), entity));
+        Events.fireToCancel(event, new UseEntityEvent(event, cause, entity));
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -982,7 +1141,8 @@ public class EventAbstractionListener extends AbstractListener {
 
         } else if (event instanceof EntityDamageByEntityEvent entityEvent) {
             Entity damager = entityEvent.getDamager();
-            final DamageEntityEvent eventToFire = new DamageEntityEvent(event, create(damager), event.getEntity());
+            Cause cause = create(damager);
+            final DamageEntityEvent eventToFire = new DamageEntityEvent(event, cause, event.getEntity());
             if (damager instanceof Firework) {
                 eventToFire.getRelevantFlags().add(Flags.FIREWORK_DAMAGE);
             } else if (damager instanceof Creeper) {
@@ -1000,7 +1160,7 @@ public class EventAbstractionListener extends AbstractListener {
                 ItemStack item = ((Player) damager).getInventory().getItemInMainHand();
 
                 if (item.getType() != Material.AIR) {
-                    Events.fireToCancel(event, new UseItemEvent(event, create(damager), event.getEntity().getWorld(), item));
+                    Events.fireToCancel(event, new UseItemEvent(event, cause, event.getEntity().getWorld(), item));
                 }
             }
         }
@@ -1087,14 +1247,20 @@ public class EventAbstractionListener extends AbstractListener {
 
     @EventHandler(ignoreCancelled = true)
     public void onInventoryMoveItem(InventoryMoveItemEvent event) {
-        InventoryHolder causeHolder = event.getInitiator().getHolder(false);
-        InventoryHolder sourceHolder = event.getSource().getHolder(false);
-        InventoryHolder targetHolder = event.getDestination().getHolder(false);
+        Inventory initiator = event.getInitiator();
+        Inventory source = event.getSource();
+        Inventory destination = event.getDestination();
 
         EventDebounce.Entry entry;
 
         if ((entry = moveItemDebounce.getIfNotPresent(
-                new InventoryMoveItemKey(causeHolder, sourceHolder, targetHolder), event)) != null) {
+                new InventoryMoveItemKey(initiator, source, destination), event)) != null) {
+            InventoryHolder causeHolder = initiator.getHolder(false);
+            InventoryHolder sourceHolder = source == initiator
+                    ? causeHolder : source.getHolder(false);
+            InventoryHolder targetHolder = destination == initiator
+                    ? causeHolder : destination == source
+                            ? sourceHolder : destination.getHolder(false);
             Cause cause;
 
             if (causeHolder instanceof Entity) {

@@ -68,6 +68,7 @@ public final class RegionManager {
     private ConcurrentRegionIndex index;
     private final AtomicLong queryRevision = new AtomicLong();
     private volatile long observedFlagRevision = -1;
+    private volatile long observedFlagUsageQueryRevision = -1;
     private volatile Map<Flag<?>, Integer> flagUsage = Collections.emptyMap();
     private volatile long resultCacheQueryRevision = -1;
     private volatile long resultCacheStructureRevision = -1;
@@ -331,12 +332,13 @@ public final class RegionManager {
 
     private Map<Flag<?>, Integer> currentFlagUsage() {
         long revision = ProtectedRegion.flagRevision();
+        long currentQueryRevision = queryRevision.get();
         Map<Flag<?>, Integer> current = flagUsage;
-        if (observedFlagRevision == revision) {
+        if (observedFlagRevision == revision && observedFlagUsageQueryRevision == currentQueryRevision) {
             return current;
         }
         synchronized (this) {
-            if (observedFlagRevision == revision) {
+            if (observedFlagRevision == revision && observedFlagUsageQueryRevision == currentQueryRevision) {
                 return flagUsage;
             }
             Map<Flag<?>, Integer> rebuilt = new HashMap<>();
@@ -353,6 +355,7 @@ public final class RegionManager {
             }
             flagUsage = Collections.unmodifiableMap(rebuilt);
             observedFlagRevision = revision;
+            observedFlagUsageQueryRevision = currentQueryRevision;
             return flagUsage;
         }
     }

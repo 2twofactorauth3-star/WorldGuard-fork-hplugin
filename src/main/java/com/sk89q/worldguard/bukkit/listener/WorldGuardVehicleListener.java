@@ -29,13 +29,12 @@ import com.sk89q.worldguard.config.WorldConfiguration;
 import com.sk89q.worldguard.session.MoveType;
 import com.sk89q.worldguard.util.Locations;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.util.Vector;
-
-import java.util.List;
 
 public class WorldGuardVehicleListener extends AbstractListener {
 
@@ -46,45 +45,40 @@ public class WorldGuardVehicleListener extends AbstractListener {
     @EventHandler
     public void onVehicleMove(VehicleMoveEvent event) {
         Vehicle vehicle = event.getVehicle();
-        if (vehicle.getPassengers().isEmpty()) return;
-        List<Player> playerPassengers = vehicle.getPassengers().stream()
-                .filter(Player.class::isInstance)
-                .map(Player.class::cast)
-                .toList();
-        if (playerPassengers.isEmpty()) {
+        org.bukkit.Location from = event.getFrom();
+        org.bukkit.Location to = event.getTo();
+        if (from.getBlockX() == to.getBlockX()
+                && from.getBlockY() == to.getBlockY()
+                && from.getBlockZ() == to.getBlockZ()) {
             return;
         }
         World world = vehicle.getWorld();
         WorldConfiguration wcfg = getWorldConfig(world);
-        org.bukkit.Location from = event.getFrom();
-        org.bukkit.Location to = event.getTo();
-        if (wcfg.useRegions) {
-            // Did we move a block?
-            if (Locations.isDifferentBlock(BukkitAdapter.adapt(from), BukkitAdapter.adapt(to))) {
-                for (Player player : playerPassengers) {
-                    if (Entities.isNPC(player)) continue;
-                    LocalPlayer localPlayer = getPlugin().wrapPlayer(player);
-                    Location lastValid;
-                    if ((lastValid = WorldGuard.getInstance().getPlatform().getSessionManager().get(localPlayer)
-                            .testMoveTo(localPlayer, BukkitAdapter.adapt(to), MoveType.RIDE)) != null) {
-                        vehicle.setVelocity(new Vector(0, 0, 0));
-                        if (getPlugin().isFolia()) {
-                            vehicle.teleportAsync(from);
-                        } else {
-                            vehicle.teleport(from);
-                        }
-                        if (Locations.isDifferentBlock(lastValid, BukkitAdapter.adapt(from))) {
-                            Vector dir = player.getLocation().getDirection();
-                            org.bukkit.Location playerTeleportLocation = BukkitAdapter.adapt(lastValid).setDirection(dir);
-                            if (getPlugin().isFolia()) {
-                                player.teleportAsync(playerTeleportLocation);
-                            } else {
-                                player.teleport(playerTeleportLocation);
-                            }
-                        }
-                        return;
+        if (!wcfg.useRegions) return;
+        Location adaptedTo = BukkitAdapter.adapt(to);
+        for (Entity passenger : vehicle.getPassengers()) {
+            if (!(passenger instanceof Player player) || Entities.isNPC(player)) continue;
+            LocalPlayer localPlayer = getPlugin().wrapPlayer(player);
+            Location lastValid = WorldGuard.getInstance().getPlatform().getSessionManager().get(localPlayer)
+                    .testMoveTo(localPlayer, adaptedTo, MoveType.RIDE);
+            if (lastValid != null) {
+                vehicle.setVelocity(new Vector());
+                if (getPlugin().isFolia()) {
+                    vehicle.teleportAsync(from);
+                } else {
+                    vehicle.teleport(from);
+                }
+                Location adaptedFrom = BukkitAdapter.adapt(from);
+                if (Locations.isDifferentBlock(lastValid, adaptedFrom)) {
+                    Vector dir = player.getLocation().getDirection();
+                    org.bukkit.Location playerTeleportLocation = BukkitAdapter.adapt(lastValid).setDirection(dir);
+                    if (getPlugin().isFolia()) {
+                        player.teleportAsync(playerTeleportLocation);
+                    } else {
+                        player.teleport(playerTeleportLocation);
                     }
                 }
+                return;
             }
         }
     }

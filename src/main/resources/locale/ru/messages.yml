@@ -644,6 +644,21 @@ messages:
       cooldownMillis: -1
       message:
         - "{prefix} Регион <#FDBE00>{region}<white> автоматически расширен с <#FDBE00>{original}<white> до <#FDBE00>{expanded}<white> блоков <click:run_command:'/rg undo-expansion {region}'><hover:show_text:'<#FDBE00>Нажмите, чтобы вернуть исходные границы'><#FDBE00>[Убрать авторасширение]</hover></click>"
+    expansionSelection:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "{prefix} Выделение будет автоматически расширено с <#FDBE00>{original}<white> до <#FDBE00>{expanded}<white> блоков <click:run_command:'/rg toggle-expansion'><hover:show_text:'<#FDBE00>Нажмите, чтобы создать регион без расширения'><#FDBE00>[Убрать авторасширение]</hover></click>"
+    expansionDisabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "{prefix} Авторасширение следующего региона <#FDBE00>выключено <click:run_command:'/rg toggle-expansion'><hover:show_text:'<#FDBE00>Нажмите, чтобы вернуть расширение'><#FDBE00>[Включить]</hover></click>"
+    expansionEnabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Авторасширение следующего региона <#FDBE00>включено'
     expansionUndone:
       mode: message
       cooldownMillis: -1
@@ -659,6 +674,39 @@ messages:
       cooldownMillis: -1
       message:
         - '{prefix} Границы региона <#FDBE00>{region}<white> уже изменились, поэтому авторасширение нельзя отменить'
+
+  selection:
+    limit:
+      exceeded:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{prefix} Выделение содержит <#FDBE00>{current}<white> блоков, а допустимый максимум — <#FDBE00>{maximum}'
+      confirmationRequired:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "{prefix} Выделение содержит <#FDBE00>{current}<white> блоков и превышает лимит <#FDBE00>{maximum}<white> <click:run_command:'/rg confirm-selection'><hover:show_text:'<#FDBE00>Подтвердить именно это выделение'><#FDBE00>[Подтвердить риск]</hover></click>"
+      confirmed:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{prefix} Большое выделение <#55FF88>подтверждено'
+      bypassUnavailable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{prefix} Вы не можете обойти лимит объёма выделения'
+      confirmationNotRequired:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{prefix} Это выделение не требует подтверждения'
+      expansionSkipped:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{prefix} Авторасширение создало бы <#FDBE00>{expanded}<white> блоков и превысило лимит <#FDBE00>{maximum}<white>, поэтому приват будет создан без расширения'
 
   flag:
     valueWithEmpty:
@@ -926,6 +974,16 @@ messages:
       cooldownMillis: -1
       message:
         - 'Убрать автоматическое расширение последнего привата'
+    toggleClaimExpansion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Включить или выключить авторасширение следующего привата'
+    confirmSelection:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Подтвердить точное большое выделение перед использованием'
     selectRegion:
       mode: message
       cooldownMillis: -1
@@ -1055,27 +1113,27 @@ messages:
         mode: message
         cooldownMillis: -1
         message:
-          - "<hover:show_text:'<white>Явно <#FDBE00>заданное <white>значение'><#FDBE00>{value}</hover> "
+          - "<hover:show_text:'<white>Явно <#FDBE00>заданное <white>значение'><{valueColor}>{value}</hover> "
       explicitEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:run_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы сбросить'><#FDBE00>{value}</hover></click> "
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы сбросить'><{valueColor}>{value}</hover></click> "
       inheritedEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:run_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить <gray>• Сейчас <#FDBE00>значение <white>унаследовано'><#FDBE00>{value}</hover></click> "
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить <gray>• Сейчас <#FDBE00>значение <white>унаследовано'><{valueColor}>{value}</hover></click> "
       availableEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:run_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить'><#FDBE00>{value}</hover></click> "
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить'><{valueColor}>{value}</hover></click> "
       danger:
         mode: message
         cooldownMillis: -1
         message:
-          - "<hover:show_text:'<red>Изменение может привести к неожиданным последствиям, перед изменением прочитайте документацию флага'><dark_red>{value}</hover> "
+          - "<hover:show_text:'<red>Изменение может привести к неожиданным последствиям, перед изменением прочитайте документацию флага'><{valueColor}>{value}</hover> "
     custom:
       mode: message
       cooldownMillis: -1
@@ -1091,32 +1149,32 @@ messages:
         mode: message
         cooldownMillis: -1
         message:
-          - '<#FDBE00>{value} '
+          - '<{valueColor}>{value} '
       inherited:
         mode: message
         cooldownMillis: -1
         message:
-          - "<hover:show_text:'<white>Унаследованное значение'><#FDBE00>{value}</hover> "
+          - "<hover:show_text:'<white>Унаследованное значение'><{valueColor}>{value}</hover> "
       available:
         mode: message
         cooldownMillis: -1
         message:
-          - '<gray>{value} '
+          - "<hover:show_text:'<white>Доступное значение'><{valueColor}>{value}</hover> "
       explicitEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы изменить'><white>{value}</hover></click> "
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы изменить'><{valueColor}>{value}</hover></click> "
       inheritedEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить'><gray>{value}</hover></click> "
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить <gray>• Значение сейчас унаследовано'><{valueColor}>{value}</hover></click> "
       availableEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить'><dark_gray>{value}</hover></click> "
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Нажмите, чтобы установить'><{valueColor}>{value}</hover></click> "
 
   regionInfo:
     title:
@@ -1251,6 +1309,11 @@ messages:
       cooldownMillis: -1
       message:
         - "<white>Границы<gray>: <click:run_command:'/rg select {region}'><hover:show_text:'<white>Нажмите, для выделения'><#FDBE00>{minimum} → {maximum}</hover></click>"
+    blockCount:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Блоков<gray>: <#FDBE00>{blocks}'
 
   regionList:
     title:

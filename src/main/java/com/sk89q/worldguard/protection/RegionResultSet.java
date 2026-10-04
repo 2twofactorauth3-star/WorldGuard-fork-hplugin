@@ -69,7 +69,11 @@ public class RegionResultSet extends AbstractRegionSet {
      */
     public RegionResultSet(Set<ProtectedRegion> applicable, @Nullable ProtectedRegion globalRegion) {
         this(NormativeOrders.fromSet(applicable), globalRegion, true);
-        this.regionSet = ImmutableSet.copyOf(applicable);
+        this.regionSet = switch (applicable.size()) {
+            case 0 -> Collections.emptySet();
+            case 1 -> Collections.singleton(applicable.iterator().next());
+            default -> ImmutableSet.copyOf(applicable);
+        };
     }
 
     /**

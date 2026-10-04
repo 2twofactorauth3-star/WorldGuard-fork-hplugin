@@ -78,6 +78,15 @@ public interface ApplicableRegionSet extends Iterable<ProtectedRegion> {
      */
     boolean testState(@Nullable RegionAssociable subject, StateFlag... flags);
 
+    default boolean testState(@Nullable RegionAssociable subject, StateFlag flag) {
+        return StateFlag.test(queryState(subject, flag));
+    }
+
+    default boolean testState(
+            @Nullable RegionAssociable subject, StateFlag first, StateFlag second) {
+        return StateFlag.test(queryState(subject, first, second));
+    }
+
     /**
      * Get the (effective) value for a list of state flags. The rules of
      * states is observed here; that is, {@code DENY} overrides {@code ALLOW},
@@ -95,6 +104,17 @@ public interface ApplicableRegionSet extends Iterable<ProtectedRegion> {
      */
     @Nullable
     State queryState(@Nullable RegionAssociable subject, StateFlag... flags);
+
+    @Nullable
+    default State queryState(@Nullable RegionAssociable subject, StateFlag flag) {
+        return queryValue(subject, flag);
+    }
+
+    @Nullable
+    default State queryState(
+            @Nullable RegionAssociable subject, StateFlag first, StateFlag second) {
+        return StateFlag.combine(queryValue(subject, first), queryValue(subject, second));
+    }
 
     /**
      * Get the effective value for a flag. If there are multiple values

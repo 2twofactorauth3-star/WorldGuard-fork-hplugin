@@ -199,6 +199,27 @@ public class RegionQuery {
                 queryState(location, associable, flag)));
     }
 
+    public boolean testBuild(Location location, @Nullable RegionAssociable associable) {
+        return getApplicableRegions(location).testState(associable, Flags.BUILD);
+    }
+
+    public boolean testBuild(
+            Location location, @Nullable RegionAssociable associable, StateFlag flag) {
+        ApplicableRegionSet regions = getApplicableRegions(location);
+        return StateFlag.test(StateFlag.combine(
+                StateFlag.denyToNone(regions.queryState(associable, Flags.BUILD)),
+                regions.queryState(associable, flag)));
+    }
+
+    public boolean testBuild(
+            Location location, @Nullable RegionAssociable associable,
+            StateFlag first, StateFlag second) {
+        ApplicableRegionSet regions = getApplicableRegions(location);
+        return StateFlag.test(StateFlag.combine(
+                StateFlag.denyToNone(regions.queryState(associable, Flags.BUILD)),
+                regions.queryState(associable, first, second)));
+    }
+
     /**
      * Returns true if the BUILD flag allows the action in the location, but it
      * can be overridden by a list of other flags. The BUILD flag will not
@@ -272,6 +293,10 @@ public class RegionQuery {
         return StateFlag.test(queryState(location, player, flag));
     }
 
+    public boolean testState(Location location, @Nullable LocalPlayer player, StateFlag flag) {
+        return getApplicableRegions(location).testState(player, flag);
+    }
+
     /**
      * Test whether the (effective) value for a list of state flags equals
      * {@code ALLOW}.
@@ -293,6 +318,16 @@ public class RegionQuery {
      */
     public boolean testState(Location location, @Nullable RegionAssociable associable, StateFlag... flag) {
         return StateFlag.test(queryState(location, associable, flag));
+    }
+
+    public boolean testState(Location location, @Nullable RegionAssociable associable, StateFlag flag) {
+        return getApplicableRegions(location).testState(associable, flag);
+    }
+
+    public boolean testState(
+            Location location, @Nullable RegionAssociable associable,
+            StateFlag first, StateFlag second) {
+        return getApplicableRegions(location).testState(associable, first, second);
     }
 
     /**
@@ -317,6 +352,11 @@ public class RegionQuery {
         return getApplicableRegions(location).queryState(player, flags);
     }
 
+    @Nullable
+    public State queryState(Location location, @Nullable LocalPlayer player, StateFlag flag) {
+        return getApplicableRegions(location).queryState(player, flag);
+    }
+
     /**
      * Get the (effective) value for a list of state flags. The rules of
      * states is observed here; that is, {@code DENY} overrides {@code ALLOW},
@@ -337,6 +377,18 @@ public class RegionQuery {
     @Nullable
     public State queryState(Location location, @Nullable RegionAssociable associable, StateFlag... flags) {
         return getApplicableRegions(location).queryState(associable, flags);
+    }
+
+    @Nullable
+    public State queryState(Location location, @Nullable RegionAssociable associable, StateFlag flag) {
+        return getApplicableRegions(location).queryState(associable, flag);
+    }
+
+    @Nullable
+    public State queryState(
+            Location location, @Nullable RegionAssociable associable,
+            StateFlag first, StateFlag second) {
+        return getApplicableRegions(location).queryState(associable, first, second);
     }
 
     /**

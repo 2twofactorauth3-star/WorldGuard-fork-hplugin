@@ -48,6 +48,7 @@ import javax.annotation.Nullable;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
@@ -191,6 +192,7 @@ class FlagHelperBox extends PaginationBox {
             builder.append(TextComponent.of(BukkitMessages.template(
                     choiceMessageKey(maySet, isExplicitSet, isInherited, dangerous),
                     "value", capitalize(String.valueOf(choice)),
+                    "valueColor", valueColor(choice),
                     "command", makeCommand(flag, isExplicitSet ? "" : choice),
                     "default", Objects.equals(choice, defVal))));
         }
@@ -235,7 +237,18 @@ class FlagHelperBox extends PaginationBox {
                     : inherited ? "flagHelperValueInherited" : "flagHelperValueAvailable";
         }
         builder.append(TextComponent.of(BukkitMessages.template(
-                key, "value", display, "command", makeCommand(flag, ""))));
+                key, "value", display, "valueColor", "#FDBE00",
+                "command", makeCommand(flag, ""))));
+    }
+
+    private static String valueColor(Object value) {
+        String normalized = String.valueOf(value).toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "allow", "true" -> "#55FF88";
+            case "deny", "false" -> "#FF5555";
+            case "none", "unset", "null" -> "#A0A0A0";
+            default -> "#FDBE00";
+        };
     }
 
     private String makeCommand(Flag<?> flag, Object choice) {

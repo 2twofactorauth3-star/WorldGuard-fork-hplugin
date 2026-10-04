@@ -100,6 +100,10 @@ public final class SelectionExpiry {
         }
     }
 
+    public void clear() {
+        clearIfUnchanged();
+    }
+
     private void clearIfUnchanged() {
         if (!isCurrentSelection()) {
             return;

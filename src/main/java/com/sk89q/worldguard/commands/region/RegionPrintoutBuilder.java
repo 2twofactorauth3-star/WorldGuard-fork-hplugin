@@ -61,6 +61,8 @@ public class RegionPrintoutBuilder implements Callable<TextComponent> {
     private final TextComponentProducer builder = new TextComponentProducer();
     private final RegionPermissionModel perms;
     private final boolean showPlayerUuids;
+    private final boolean showBlockCount;
+    private final String numberGroupingSeparator;
 
     /**
      * Create a new instance with a region to report on.
@@ -74,11 +76,19 @@ public class RegionPrintoutBuilder implements Callable<TextComponent> {
 
     public RegionPrintoutBuilder(String world, ProtectedRegion region, @Nullable ProfileCache cache,
                                  @Nullable Actor actor, boolean showPlayerUuids) {
+        this(world, region, cache, actor, showPlayerUuids, false, "");
+    }
+
+    public RegionPrintoutBuilder(String world, ProtectedRegion region, @Nullable ProfileCache cache,
+                                 @Nullable Actor actor, boolean showPlayerUuids,
+                                 boolean showBlockCount, String numberGroupingSeparator) {
         this.world = world;
         this.region = region;
         this.cache = cache;
         this.perms = actor != null && actor.isPlayer() ? new RegionPermissionModel(actor) : null;
         this.showPlayerUuids = showPlayerUuids;
+        this.showBlockCount = showBlockCount;
+        this.numberGroupingSeparator = numberGroupingSeparator == null ? "" : numberGroupingSeparator;
     }
 
     /**
@@ -290,12 +300,40 @@ public class RegionPrintoutBuilder implements Callable<TextComponent> {
         return "(" + point.x() + ", " + point.y() + ", " + point.z() + ")";
     }
 
+    private void appendBlockCount() {
+        if (!showBlockCount || !region.isPhysicalArea()) {
+            return;
+        }
+        builder.append(TextComponent.of(BukkitMessages.template(
+                "regionInfoBlockCount", "blocks", formatNumber(region.volume()))));
+        newline();
+    }
+
+    private String formatNumber(long value) {
+        String digits = Long.toString(value);
+        if (numberGroupingSeparator.isEmpty() || digits.length() <= 3) {
+            return digits;
+        }
+        int firstGroup = digits.length() % 3;
+        if (firstGroup == 0) {
+            firstGroup = 3;
+        }
+        StringBuilder formatted = new StringBuilder(
+                digits.length() + numberGroupingSeparator.length() * (digits.length() / 3));
+        formatted.append(digits, 0, firstGroup);
+        for (int index = firstGroup; index < digits.length(); index += 3) {
+            formatted.append(numberGroupingSeparator).append(digits, index, index + 3);
+        }
+        return formatted.toString();
+    }
+
     private void appendRegionInformation() {
         appendBasics();
         appendFlags();
         appendParents();
         appendDomain();
         appendBounds();
+        appendBlockCount();
 
         if (cache != null && perms == null) {
             builder.append(SubtleFormat.wrap("@wg:regionInfoStaleNames@"));

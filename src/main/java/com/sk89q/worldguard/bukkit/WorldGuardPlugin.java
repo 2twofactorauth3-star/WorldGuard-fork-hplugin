@@ -30,6 +30,7 @@ import com.sk89q.worldedit.util.concurrency.LazyReference;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.event.player.ProcessPlayerEvent;
+import com.sk89q.worldguard.bukkit.integration.EssentialsXIntegration;
 import com.sk89q.worldguard.bukkit.listener.EventAbstractionListener;
 import com.sk89q.worldguard.bukkit.listener.InvincibilityListener;
 import com.sk89q.worldguard.bukkit.listener.PlayerMoveListener;
@@ -48,6 +49,7 @@ import com.sk89q.worldguard.bukkit.util.Entities;
 import com.sk89q.worldguard.bukkit.util.Events;
 import com.sk89q.worldguard.bukkit.util.MMSupport;
 import com.sk89q.worldguard.bukkit.util.SelectionVisualizer;
+import com.sk89q.worldguard.bukkit.util.SelectionLimitTracker;
 import com.sk89q.worldguard.commands.WorldGuardCommands;
 import com.sk89q.worldguard.bukkit.commands.PaperCommandDispatcher;
 import com.sk89q.worldguard.commands.region.MemberCommands;
@@ -74,6 +76,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -98,7 +101,10 @@ public class WorldGuardPlugin extends JavaPlugin {
     private BukkitLocaleManager localeManager;
     private BukkitRegionDefaults regionDefaults;
     private final ConcurrentMap<UUID, BukkitPlayer> playerWrappers = new ConcurrentHashMap<>();
+    private final Set<UUID> claimExpansionDisabled = ConcurrentHashMap.newKeySet();
+    private SelectionLimitTracker selectionLimitTracker;
     private Metrics metrics;
+    private EssentialsXIntegration essentialsIntegration;
     private boolean runtimeStarted;
     private boolean localeSelected;
 
@@ -123,6 +129,10 @@ public class WorldGuardPlugin extends JavaPlugin {
                     .add(new String[]{"claim"}, "<id>", 1, 1, "", region::claim)
                     .add(new String[]{"undo-expansion", "undoexpand", "unexpand"},
                             "<id>", 1, 1, "", region::undoClaimExpansion)
+                    .add(new String[]{"toggle-expansion", "toggleexpand"},
+                            "", 0, 0, "", region::toggleClaimExpansion)
+                    .add(new String[]{"confirm-selection", "confirmselection"},
+                            "", 0, 0, "", region::confirmSelection)
                     .add(new String[]{"select", "sel", "s"},
                             "[-w <world>] [id]", 0, 1, "w:", region::select)
                     .add(new String[]{"info", "i"}, "[id]", 0, 1, "usw:", region::info)
@@ -181,6 +191,7 @@ public class WorldGuardPlugin extends JavaPlugin {
      */
     @Override
     public void onEnable() {
+        selectionLimitTracker = new SelectionLimitTracker(this);
         BukkitLogs.installBundledDefaults(this, "en");
         configureLogger();
 
@@ -202,6 +213,10 @@ public class WorldGuardPlugin extends JavaPlugin {
         PermissionsResolverManager.initialize(this);
 
         WorldGuard.getInstance().setPlatform(platform = new BukkitWorldGuardPlatform()); // Initialise WorldGuard
+        if (getServer().getPluginManager().isPluginEnabled("Essentials")) {
+            essentialsIntegration = EssentialsXIntegration.create(
+                    this, WorldGuard.getInstance().getFlagRegistry(), getLogger());
+        }
         WorldGuard.getInstance().setup();
         runtimeStarted = true;
         metrics = new Metrics(this, BSTATS_SERVICE_ID);
@@ -214,6 +229,9 @@ public class WorldGuardPlugin extends JavaPlugin {
         }
 
         BukkitSessionManager sessionManager = (BukkitSessionManager) platform.getSessionManager();
+        if (essentialsIntegration != null) {
+            essentialsIntegration.registerHandlers(sessionManager);
+        }
 
         if (this.isFolia()) {
             getServer().getGlobalRegionScheduler().runAtFixedRate(
@@ -278,6 +296,12 @@ public class WorldGuardPlugin extends JavaPlugin {
         }
         WorldGuard.getInstance().disable();
         playerWrappers.clear();
+        claimExpansionDisabled.clear();
+        if (selectionLimitTracker != null) {
+            selectionLimitTracker.clear();
+            selectionLimitTracker = null;
+        }
+        essentialsIntegration = null;
         if (this.isFolia()) {
             this.getServer().getGlobalRegionScheduler().cancelTasks(this);
             this.getServer().getAsyncScheduler().cancelTasks(this);
@@ -399,6 +423,9 @@ public class WorldGuardPlugin extends JavaPlugin {
 
     public void forgetPlayer(Player player) {
         playerWrappers.remove(player.getUniqueId());
+        if (selectionLimitTracker != null) {
+            selectionLimitTracker.forget(player.getUniqueId());
+        }
     }
 
     public Actor wrapCommandSender(CommandSender sender) {
@@ -447,6 +474,26 @@ public class WorldGuardPlugin extends JavaPlugin {
 
     public BukkitMessages getMessages() {
         return messages;
+    }
+
+    public boolean isClaimExpansionDisabled(UUID playerId) {
+        return claimExpansionDisabled.contains(playerId);
+    }
+
+    public boolean toggleClaimExpansion(UUID playerId) {
+        if (claimExpansionDisabled.remove(playerId)) {
+            return false;
+        }
+        claimExpansionDisabled.add(playerId);
+        return true;
+    }
+
+    public void clearClaimExpansionPreference(UUID playerId) {
+        claimExpansionDisabled.remove(playerId);
+    }
+
+    public SelectionLimitTracker getSelectionLimitTracker() {
+        return selectionLimitTracker;
     }
 
     public boolean isOperational() {

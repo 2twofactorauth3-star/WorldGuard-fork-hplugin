@@ -21,6 +21,7 @@ package com.sk89q.worldguard.bukkit;
 
 import com.sk89q.util.yaml.YAMLProcessor;
 import com.sk89q.worldguard.config.ClaimExpansion;
+import com.sk89q.worldguard.config.ClaimExpansionOfferMode;
 import com.sk89q.worldguard.config.WorldMechanicSetting;
 import com.sk89q.worldguard.config.YamlWorldConfiguration;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -91,6 +92,7 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
         noPhysicsGravel = mechanic("physics.noPhysicsGravel");
         noPhysicsSand = mechanic("physics.noPhysicsSand");
         allowPortalAnywhere = mechanic("physics.allowPortalAnywhere");
+        blockPistons = mechanic("physics.blockPistons");
         preventWaterDamageSetting = mechanic("physics.disableWaterDamageBlocks");
         preventWaterDamage = Set.copyOf(
                 getStringList("physics.disableWaterDamageBlocks.blocks", List.of()));
@@ -160,12 +162,20 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
                 claimExpansionDistance("regions.claimExpansion.negativeZ"),
                 claimExpansionEnabled("regions.claimExpansion.positiveZ", false),
                 claimExpansionDistance("regions.claimExpansion.positiveZ"));
+        claimExpansionOfferMode = ClaimExpansionOfferMode.fromConfigValue(
+                getInt("regions.claimExpansion.offerRemovalMode", ClaimExpansionOfferMode.BOTH.configValue));
         claimOnlyInsideExistingRegions = getBoolean("regions.claimOnlyInsideExistingRegions", false);
         preventLastOwnerRemoval = getBoolean("regions.preventLastOwnerRemoval", true);
         applyRegionDefaultsToExistingRegions =
                 plugin.getRegionDefaults().applyToExistingRegions(worldName);
         showGlobalRegionInfo = plugin.getRegionDefaults().showGlobalRegionInfo(worldName);
         showPlayerUuidsInRegionInfo = getBoolean("regions.showPlayerUuidsInRegionInfo", false);
+        showRegionBlockCountInInfo = getBoolean("regions.regionInfo.showBlockCount", true);
+        regionInfoNumberGroupingEnabled = getBoolean(
+                "regions.regionInfo.numberGrouping.enable", true);
+        regionInfoNumberGroupingSeparator = getString(
+                "regions.regionInfo.numberGrouping.separator",
+                getString("regions.regionInfo.numberGroupingSeparator", "."));
         allowHopperMinecartAccess = getBoolean("regions.allowHopperMinecartAccess", true);
         newRegionDefaults = plugin.getRegionDefaults().newRegions(worldName);
         globalRegionDefaults = plugin.getRegionDefaults().globalRegion(worldName);

@@ -48,6 +48,7 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
 
     @Override
     public void load() {
+        plugin.getSelectionLimitTracker().clear();
         plugin.getLocaleManager().invalidateConfigValues();
         plugin.getLogs().load();
         BukkitConfigValidator.validateNoDuplicateKeys(

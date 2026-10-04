@@ -58,6 +58,9 @@ dependencies {
     implementation(libs.bstats.bukkit)
 
     compileOnlyApi(libs.jsr305)
+    compileOnly(libs.essentialsx) {
+        isTransitive = false
+    }
     compileOnly(libs.paperApi) {
         exclude("org.slf4j", "slf4j-api")
         exclude("junit", "junit")

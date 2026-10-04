@@ -22,6 +22,11 @@ settings:
       enable: false
       # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
       mode: 3
+    # Blocks piston movement. With enable: false, pistons work everywhere except in regions with an explicit pistons: deny.
+    blockPistons:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only when crossing into a foreign region; 3 — everywhere.
+      mode: 3
     # Lists blocks protected from water damage.
     disableWaterDamageBlocks:
       enable: false
@@ -183,6 +188,16 @@ settings:
   regions:
     # Shows a player's UUID when hovering over their name in /rg info.
     showPlayerUuidsInRegionInfo: false
+    # Configures additional region size information in /rg info.
+    regionInfo:
+      # Shows the physical region block count in /rg info.
+      showBlockCount: true
+      # Configures digit grouping for the block count.
+      numberGrouping:
+        # Enables formatting: for example, 1434482 becomes 1.434.482.
+        enable: true
+        # Separator placed between digit groups.
+        separator: "."
     # Uses the separate hopper-minecart-access flag when opening hopper minecarts. An explicit deny blocks access even when true.
     allowHopperMinecartAccess: true
     # Enables WorldGuard region protection.
@@ -207,6 +222,8 @@ settings:
     wand: "minecraft:leather"
     # Controls automatic cuboid expansion during /rg claim using the player's remaining volume allowance.
     claimExpansion:
+      # When to offer removal of automatic expansion: 1 — never, 2 — after selection, 3 — after claiming, 4 — both.
+      offerRemovalMode: 4
       # Expansion toward the world's minimum height.
       negativeY:
         # Enables this direction.

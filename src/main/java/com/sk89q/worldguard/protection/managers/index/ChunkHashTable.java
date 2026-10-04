@@ -114,6 +114,14 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
         return state;
     }
 
+    @Nullable
+    private ChunkState get(int chunkX, int chunkZ) {
+        synchronized (lock) {
+            ChunkState state = states.get(chunkX, chunkZ);
+            return state != null ? state : recentStates.get(chunkKey(chunkX, chunkZ));
+        }
+    }
+
     /**
      * Get a state at the given position or create a new entry if one does
      * not exist.
@@ -262,7 +270,7 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
         ChunkState state = cached.state;
 
         if (cached.generation != generation || cached.chunkX != chunkX || cached.chunkZ != chunkZ) {
-            state = get(BlockVector2.at(chunkX, chunkZ), false);
+            state = get(chunkX, chunkZ);
             cached.generation = generation;
             cached.chunkX = chunkX;
             cached.chunkZ = chunkZ;

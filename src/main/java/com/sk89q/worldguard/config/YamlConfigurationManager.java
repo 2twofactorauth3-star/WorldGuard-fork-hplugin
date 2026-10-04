@@ -25,6 +25,7 @@ import com.sk89q.worldguard.protection.managers.storage.file.DirectoryYamlDriver
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public abstract class YamlConfigurationManager extends ConfigurationManager {
 
@@ -52,13 +53,15 @@ public abstract class YamlConfigurationManager extends ConfigurationManager {
 
         particleEffects = getBoolean("useParticleEffects", true);
         showSelectionBorders = getBoolean("selectionParticles.enable", true);
+        selectionParticleChunkCubes = !"outline".equalsIgnoreCase(config.getString(
+                settingsPath("selectionParticles.mode"), "chunks"));
         selectionParticleSize = (float) clamp(getNumber("selectionParticles.size", 2.5), 0.1, 4.0);
         selectionParticleSpacing = clamp(getNumber("selectionParticles.spacing", 0.5), 0.1, 16.0);
-        selectionParticleMaxCount = (int) clamp(getNumber("selectionParticles.maxCount", 512), 12, 5000);
-        selectionParticleViewDistance = clamp(getNumber("selectionParticles.viewDistance", 128), 1, 512);
+        selectionParticleMaxCount = (int) clamp(getNumber("selectionParticles.maxCount", 256), 12, 512);
+        selectionParticleViewDistance = clamp(getNumber("selectionParticles.viewDistance", 64), 1, 128);
         selectionParticleUpdatePeriodTicks = (long) clamp(
-                getNumber("selectionParticles.updatePeriodTicks", 10), 1, 1200);
-        double clearDelaySeconds = getNumber("selectionParticles.clearAfterSuccessfulActionSeconds", 30);
+                getNumber("selectionParticles.updatePeriodTicks", 20), 20, 1200);
+        double clearDelaySeconds = getNumber("selectionParticles.clearAfterSuccessfulActionSeconds", 15);
         selectionClearAfterSuccessfulActionSeconds = clearDelaySeconds < 0
                 ? -1 : (int) clamp(clearDelaySeconds, 0, 86400);
         double maximumLifetimeSeconds = getNumber("selectionParticles.maximumLifetimeSeconds", 180);
@@ -67,6 +70,16 @@ public abstract class YamlConfigurationManager extends ConfigurationManager {
         selectionParticleRed = (int) clamp(getNumber("selectionParticles.color.red", 253), 0, 255);
         selectionParticleGreen = (int) clamp(getNumber("selectionParticles.color.green", 190), 0, 255);
         selectionParticleBlue = (int) clamp(getNumber("selectionParticles.color.blue", 0), 0, 255);
+        selectionLimit = new SelectionLimit(
+                getBoolean("selectionLimit.enable", true),
+                (int) clamp(getNumber("selectionLimit.maximumVolume", 5000000), 1, Integer.MAX_VALUE),
+                getBoolean("selectionLimit.includeClaimExpansion", true),
+                getBoolean("selectionLimit.bypass.permission.enable", false),
+                config.getStringList(settingsPath("selectionLimit.bypass.permission.list"),
+                        List.of("worldguard.selection.limit.bypass")),
+                config.getStringList(settingsPath("selectionLimit.bypass.players"),
+                        List.of("13w_", "He3Hauka")),
+                getBoolean("selectionLimit.bypass.requireConfirmation", true));
         confirmOfflinePlayerAdditions = getBoolean("confirmOfflinePlayerAdditions", true);
 
         this.selectedRegionStoreDriver = new DirectoryYamlDriver(getWorldsDataFolder(), "regions.yml");

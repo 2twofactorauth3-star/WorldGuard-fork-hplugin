@@ -52,6 +52,7 @@ public abstract class WorldConfiguration {
     public WorldMechanicSetting noPhysicsGravel;
     public WorldMechanicSetting noPhysicsSand;
     public WorldMechanicSetting allowPortalAnywhere;
+    public WorldMechanicSetting blockPistons;
     public WorldMechanicSetting preventWaterDamageSetting;
     public Set<String> preventWaterDamage;
     public WorldMechanicSetting blockLighter;
@@ -89,11 +90,15 @@ public abstract class WorldConfiguration {
     public int regionListCommandMode;
     public int maxClaimVolumePerPlayer;
     public ClaimExpansion claimExpansion;
+    public ClaimExpansionOfferMode claimExpansionOfferMode;
     public boolean claimOnlyInsideExistingRegions;
     public boolean preventLastOwnerRemoval;
     public boolean applyRegionDefaultsToExistingRegions;
     public boolean showGlobalRegionInfo;
     public boolean showPlayerUuidsInRegionInfo;
+    public boolean showRegionBlockCountInInfo;
+    public boolean regionInfoNumberGroupingEnabled;
+    public String regionInfoNumberGroupingSeparator;
     public boolean allowHopperMinecartAccess;
     public RegionDefaults newRegionDefaults;
     public RegionDefaults globalRegionDefaults;

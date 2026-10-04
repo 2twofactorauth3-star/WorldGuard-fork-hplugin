@@ -54,6 +54,13 @@ settings:
               - "/sethome"
             # Message for this category. Supports a string or a list of strings; leave empty to send nothing.
             message: "{prefix} You cannot <#FDBE00>set<white> a home in <#FDBE00>another player's<white> region"
+          # Unique category for the warp creation command.
+          warp:
+            # Commands and subcommands denied by this category.
+            commands:
+              - "/setwarp"
+            # Message for this category. Supports a string or a list of strings; leave empty to send nothing.
+            message: "{prefix} You cannot <#FDBE00>set<white> a warp in <#FDBE00>another player's<white> region"
           # Unique category for the clan base command.
           clanBase:
             # Commands and subcommands denied by this category.
@@ -211,6 +218,13 @@ settings:
               - "/sethome"
             # Message for this category. Supports a string or a list of strings; leave empty to send nothing.
             message: "{prefix} You cannot <#FDBE00>set<white> a home in <#FDBE00>another player's<white> region"
+          # Unique category for the warp creation command.
+          warp:
+            # Commands and subcommands denied by this category.
+            commands:
+              - "/setwarp"
+            # Message for this category. Supports a string or a list of strings; leave empty to send nothing.
+            message: "{prefix} You cannot <#FDBE00>set<white> a warp in <#FDBE00>another player's<white> region"
           # Unique category for the clan base command.
           clanBase:
             # Commands and subcommands denied by this category.

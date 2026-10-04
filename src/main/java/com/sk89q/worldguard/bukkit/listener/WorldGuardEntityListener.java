@@ -263,7 +263,7 @@ public class WorldGuardEntityListener extends AbstractListener {
                 if (wcfg.useRegions) {
                     ApplicableRegionSet set = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery().getApplicableRegions(localPlayer.getLocation());
 
-                    if (!set.testState(getPlugin().wrapPlayer(player), Flags.MOB_DAMAGE)) {
+                    if (!set.testState(localPlayer, Flags.MOB_DAMAGE)) {
                         event.setCancelled(true);
                         return;
                     }

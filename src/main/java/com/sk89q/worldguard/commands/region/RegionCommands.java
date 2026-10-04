@@ -41,7 +41,9 @@ import com.sk89q.worldedit.world.gamemode.GameModes;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.BukkitMessages;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.util.SelectionExpiry;
+import com.sk89q.worldguard.bukkit.util.SelectionLimitTracker;
 import com.sk89q.worldguard.commands.task.RegionAdder;
 import com.sk89q.worldguard.commands.task.RegionLister;
 import com.sk89q.worldguard.commands.task.RegionManagerLoader;
@@ -125,6 +127,9 @@ public final class RegionCommands extends RegionCommandsBase {
             region = new GlobalProtectedRegion(id);
         } else {
             region = checkRegionFromSelection(sender, id);
+            if (sender instanceof LocalPlayer player) {
+                enforceSelectionLimit(player, world, region, region.volume(), true);
+            }
         }
         SelectionExpiry selectionExpiry = args.hasFlag('g')
                 ? null : SelectionExpiry.capture(sender, world);
@@ -183,6 +188,9 @@ public final class RegionCommands extends RegionCommandsBase {
             region = new GlobalProtectedRegion(id);
         } else {
             region = checkRegionFromSelection(sender, id);
+            if (sender instanceof LocalPlayer player) {
+                enforceSelectionLimit(player, world, region, region.volume(), true);
+            }
         }
         SelectionExpiry selectionExpiry = args.hasFlag('g')
                 ? null : SelectionExpiry.capture(sender, world);
@@ -239,6 +247,7 @@ public final class RegionCommands extends RegionCommandsBase {
         SelectionExpiry selectionExpiry = SelectionExpiry.capture(player, player.getWorld());
         WorldConfiguration wcfg = WorldGuard.getInstance().getPlatform().getGlobalStateManager().get(player.getWorld());
 
+        enforceSelectionLimit(player, player.getWorld(), originalRegion, originalVolume, true);
         checkClaimRegionCount(player, permModel, manager, wcfg);
         checkClaimOverlap(player, region, manager, wcfg);
         int maxClaimVolume = wcfg.getMaxClaimVolume(player);
@@ -246,12 +255,52 @@ public final class RegionCommands extends RegionCommandsBase {
             return;
         }
 
-        region = expandClaim(player, region, manager, wcfg, maxClaimVolume);
+        if (!WorldGuardPlugin.inst().isClaimExpansionDisabled(player.getUniqueId())) {
+            region = expandClaim(player, region, manager, wcfg, maxClaimVolume);
+            SelectionLimitTracker.Decision decision = enforceSelectionLimit(
+                    player, player.getWorld(), originalRegion, region.volume(), false);
+            if (decision == SelectionLimitTracker.Decision.WITHOUT_EXPANSION) {
+                player.print(TextComponent.of(BukkitMessages.template(
+                        "selectionLimitExpansionSkipped",
+                        "maximum", WorldGuardPlugin.inst().getConfigManager()
+                                .selectionLimit.maximumVolume,
+                        "expanded", region.volume())));
+                region = originalRegion;
+            }
+        }
         completeClaim(player, id, region, manager, wcfg);
         if (!sameRegionGeometry(originalRegion, region)) {
-            registerClaimExpansion(player, id, originalRegion, originalVolume, region);
+            registerClaimExpansion(player, id, originalRegion, originalVolume, region,
+                    wcfg.claimExpansionOfferMode.claim);
         }
+        WorldGuardPlugin.inst().clearClaimExpansionPreference(player.getUniqueId());
+        WorldGuardPlugin.inst().getSelectionLimitTracker().forget(player.getUniqueId());
         selectionExpiry.schedule();
+    }
+
+    private static SelectionLimitTracker.Decision enforceSelectionLimit(
+            LocalPlayer player, World world, ProtectedRegion original,
+            int expandedVolume, boolean clearDenied) throws CommandException {
+        WorldGuardPlugin plugin = WorldGuardPlugin.inst();
+        SelectionLimitTracker tracker = plugin.getSelectionLimitTracker();
+        SelectionLimitTracker.Decision decision = tracker.evaluate(
+                player, world, original, expandedVolume);
+        if (decision == SelectionLimitTracker.Decision.DENY) {
+            if (clearDenied) {
+                SelectionExpiry.capture(player, world).clear();
+            }
+            throw new CommandException(BukkitMessages.template(
+                    "selectionLimitExceeded",
+                    "maximum", plugin.getConfigManager().selectionLimit.maximumVolume,
+                    "current", original.volume()));
+        }
+        if (decision == SelectionLimitTracker.Decision.CONFIRM) {
+            throw new CommandException(BukkitMessages.template(
+                    "selectionLimitConfirmationRequired",
+                    "maximum", plugin.getConfigManager().selectionLimit.maximumVolume,
+                    "current", original.volume()));
+        }
+        return decision;
     }
 
     private static void checkClaimPermission(RegionPermissionModel permModel) throws CommandPermissionsException {
@@ -345,14 +394,39 @@ public final class RegionCommands extends RegionCommandsBase {
     }
 
     private void registerClaimExpansion(LocalPlayer player, String id, ProtectedRegion originalRegion,
-                                        int originalVolume, ProtectedRegion region) {
+                                        int originalVolume, ProtectedRegion region, boolean sendOffer) {
         claimExpansionUndos.put(player.getUniqueId(), new ClaimExpansionUndo(
                 id, player.getWorld(), originalRegion, copyRegionGeometry(region)));
+        if (sendOffer) {
+            player.print(TextComponent.of(BukkitMessages.template(
+                    "claimExpansionApplied",
+                    "region", id,
+                    "original", originalVolume,
+                    "expanded", region.volume())));
+        }
+    }
+
+    public void toggleClaimExpansion(CommandContext args, Actor sender) throws CommandException {
+        LocalPlayer player = worldGuard.checkPlayer(sender);
+        checkClaimPermission(getPermissionModel(player));
+        checkRegionFromSelection(player, "selection_preview");
+        boolean disabled = WorldGuardPlugin.inst().toggleClaimExpansion(player.getUniqueId());
         player.print(TextComponent.of(BukkitMessages.template(
-                "claimExpansionApplied",
-                "region", id,
-                "original", originalVolume,
-                "expanded", region.volume())));
+                disabled ? "claimExpansionDisabled" : "claimExpansionEnabled")));
+    }
+
+    public void confirmSelection(CommandContext args, Actor sender) throws CommandException {
+        LocalPlayer player = worldGuard.checkPlayer(sender);
+        World world = player.getWorld();
+        ProtectedRegion selection = checkRegionFromSelection(player, "selection_confirmation");
+        SelectionLimitTracker.ConfirmationResult result = WorldGuardPlugin.inst()
+                .getSelectionLimitTracker().confirm(player, world, selection);
+        String message = switch (result) {
+            case CONFIRMED -> "selectionLimitConfirmed";
+            case NOT_ALLOWED -> "selectionLimitBypassUnavailable";
+            case NOT_REQUIRED -> "selectionLimitConfirmationNotRequired";
+        };
+        player.print(TextComponent.of(BukkitMessages.template(message)));
     }
 
     public void undoClaimExpansion(CommandContext args, Actor sender) throws CommandException {
@@ -518,7 +592,9 @@ public final class RegionCommands extends RegionCommandsBase {
         // Print region information
         RegionPrintoutBuilder printout = new RegionPrintoutBuilder(world.getName(), existing,
                 args.hasFlag('u') ? null : WorldGuard.getInstance().getProfileCache(), sender,
-                wcfg.showPlayerUuidsInRegionInfo);
+                wcfg.showPlayerUuidsInRegionInfo, wcfg.showRegionBlockCountInInfo,
+                wcfg.regionInfoNumberGroupingEnabled
+                        ? wcfg.regionInfoNumberGroupingSeparator : "");
 
         AsyncCommandBuilder.wrap(printout, sender)
                 .registerWithSupervisor(WorldGuard.getInstance().getSupervisor(), "@wg:taskFetchingRegionInfo@")

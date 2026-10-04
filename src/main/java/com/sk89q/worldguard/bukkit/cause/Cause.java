@@ -20,7 +20,6 @@
 package com.sk89q.worldguard.bukkit.cause;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
 import com.sk89q.worldguard.bukkit.internal.WGMetadata;
 import com.sk89q.worldguard.bukkit.util.Entities;
 import org.bukkit.Bukkit;
@@ -46,7 +45,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -217,6 +215,15 @@ public final class Cause {
         }
     }
 
+    public static Cause create(@Nullable Object cause) {
+        if (cause == null) {
+            return UNKNOWN;
+        }
+        Builder builder = new Builder(1);
+        builder.add(cause);
+        return builder.build();
+    }
+
     /**
      * Create a new instance that indicates that the cause is not known.
      *
@@ -260,7 +267,8 @@ public final class Cause {
      */
     private static final class Builder {
         private final List<Object> causes;
-        private final Set<Object> seen = Sets.newHashSet();
+        private Object firstSeen;
+        private List<Object> additionalSeen;
         private boolean indirect;
 
         private Builder(int expectedSize) {
@@ -272,23 +280,45 @@ public final class Cause {
                 return;
             }
             for (Object o : element) {
-                if (o == null || !seen.add(o)) {
-                    continue;
-                }
-
-                addRelatedCauses(o);
-                addTrackedParentCauses(o);
-                causes.add(o);
+                add(o);
             }
+        }
+
+        private void add(@Nullable Object source) {
+            if (source == null || !markSeen(source)) {
+                return;
+            }
+            addRelatedCauses(source);
+            addTrackedParentCauses(source);
+            causes.add(source);
+        }
+
+        private boolean markSeen(Object source) {
+            if (firstSeen == null) {
+                firstSeen = source;
+                return true;
+            }
+            if (firstSeen.equals(source)) {
+                return false;
+            }
+            if (additionalSeen == null) {
+                additionalSeen = new ArrayList<>(2);
+            } else if (additionalSeen.contains(source)) {
+                return false;
+            }
+            additionalSeen.add(source);
+            return true;
         }
 
         private void addRelatedCauses(Object source) {
             if (source instanceof TNTPrimed tnt) {
-                addAll(tnt.getSource());
+                add(tnt.getSource());
             } else if (source instanceof Projectile projectile) {
                 addProjectileSource(projectile);
             } else if (source instanceof Vehicle vehicle) {
-                vehicle.getPassengers().forEach(this::addAll);
+                for (Entity passenger : vehicle.getPassengers()) {
+                    add(passenger);
+                }
             } else if (source instanceof AreaEffectCloud cloud) {
                 addIndirect(cloud.getSource());
             } else if (source instanceof Tameable tameable) {
@@ -298,7 +328,7 @@ public final class Cause {
             } else if (source instanceof Creature creature) {
                 addIndirect(creature.getTarget());
             } else if (source instanceof BlockProjectileSource blockSource) {
-                addAll(blockSource.getBlock());
+                add(blockSource.getBlock());
             } else if (source instanceof LightningStrike lightning) {
                 addLightningSource(lightning);
             } else if (source instanceof FallingBlock fallingBlock) {
@@ -308,7 +338,7 @@ public final class Cause {
 
         private void addProjectileSource(Projectile projectile) {
             ProjectileSource shooter = projectile.getShooter();
-            addAll(shooter);
+            add(shooter);
             if (shooter == null && projectile instanceof Firework firework) {
                 addFireworkSpawner(firework);
             }
@@ -317,7 +347,7 @@ public final class Cause {
         private void addFireworkSpawner(Firework firework) {
             UUID spawningUuid = firework.getSpawningEntity();
             if (spawningUuid != null) {
-                addAll(Bukkit.getEntity(spawningUuid));
+                add(Bukkit.getEntity(spawningUuid));
             }
         }
 
@@ -343,20 +373,27 @@ public final class Cause {
             addAll(sources);
         }
 
+        private void addIndirect(@Nullable Object source) {
+            indirect = true;
+            add(source);
+        }
+
         private void addTrackedParentCauses(Object original) {
             Object source = original;
             int index = causes.size();
             while (source instanceof Metadatable && !(source instanceof Block)) {
                 source = WGMetadata.getIfPresent((Metadatable) source, CAUSE_KEY, Object.class);
                 if (source != null) {
+                    if (!markSeen(source)) {
+                        break;
+                    }
                     causes.add(index, source);
-                    seen.add(source);
                 }
             }
         }
 
         public Cause build() {
-            return new Cause(causes, indirect);
+            return causes.isEmpty() && !indirect ? UNKNOWN : new Cause(causes, indirect);
         }
     }
 

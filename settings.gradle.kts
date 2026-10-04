@@ -19,6 +19,10 @@ dependencyResolutionManagement {
             name = "EngineHub"
             url = uri("https://maven.enginehub.org/repo/")
         }
+        maven {
+            name = "EssentialsX"
+            url = uri("https://repo.essentialsx.net/releases/")
+        }
         mavenCentral()
     }
 }

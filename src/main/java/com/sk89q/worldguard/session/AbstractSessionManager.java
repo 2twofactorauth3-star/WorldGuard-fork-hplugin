@@ -84,8 +84,21 @@ public abstract class AbstractSessionManager implements SessionManager {
 
     @Override
     public boolean registerHandler(Handler.Factory<? extends Handler> factory, @Nullable Handler.Factory<? extends Handler> after) {
+        return registerHandler(factory, after, true);
+    }
+
+    public void registerTrackedHandler(Handler.Factory<? extends Handler> factory,
+                                       @Nullable Handler.Factory<? extends Handler> after) {
+        registerHandler(factory, after, false);
+    }
+
+    private boolean registerHandler(Handler.Factory<? extends Handler> factory,
+                                    @Nullable Handler.Factory<? extends Handler> after,
+                                    boolean custom) {
         if (factory == null) return false;
-        hasCustom = true;
+        if (custom) {
+            hasCustom = true;
+        }
         if (after == null) {
             handlers.add(factory);
         } else {

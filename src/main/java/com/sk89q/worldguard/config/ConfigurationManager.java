@@ -60,6 +60,7 @@ public abstract class ConfigurationManager {
     public boolean useRegionsCreatureSpawnEvent;
     public boolean particleEffects;
     public boolean showSelectionBorders;
+    public boolean selectionParticleChunkCubes;
     public float selectionParticleSize;
     public double selectionParticleSpacing;
     public int selectionParticleMaxCount;
@@ -70,6 +71,7 @@ public abstract class ConfigurationManager {
     public int selectionParticleRed;
     public int selectionParticleGreen;
     public int selectionParticleBlue;
+    public SelectionLimit selectionLimit;
     public boolean confirmOfflinePlayerAdditions;
     public boolean showBlockedCommandMessagesInRegionInfo;
     public boolean disableDefaultBypass;

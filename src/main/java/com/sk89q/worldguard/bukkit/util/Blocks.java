@@ -19,14 +19,14 @@
 
 package com.sk89q.worldguard.bukkit.util;
 
+import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.util.Vector;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -45,21 +45,25 @@ public final class Blocks {
      * @return a list of connected blocks, not including the given block
      */
     public static List<Block> getConnected(Block block) {
-        BlockState state = block.getState(false);
-        BlockData data = state.getBlockData();
+        Material type = block.getType();
+        if (type != Material.CHEST && type != Material.TRAPPED_CHEST && !Tag.BEDS.isTagged(type)) {
+            return List.of();
+        }
+        BlockData data = block.getBlockData();
 
         if (data instanceof Bed bed) {
-            return Collections.singletonList(block.getRelative(bed.getPart() == Bed.Part.FOOT
+            return List.of(block.getRelative(bed.getPart() == Bed.Part.FOOT
                     ? bed.getFacing() : bed.getFacing().getOppositeFace()));
         } else if (data instanceof Chest chest) {
-            Chest.Type type = chest.getType();
-            if (type == Chest.Type.SINGLE) {
-                return Collections.emptyList();
+            Chest.Type chestType = chest.getType();
+            if (chestType == Chest.Type.SINGLE) {
+                return List.of();
             }
-            Vector offset = chest.getFacing().getDirection().rotateAroundY(Math.PI / 2 * (type == Chest.Type.LEFT ? -1 : 1));
-            return Collections.singletonList(block.getRelative((int) Math.round(offset.getX()), 0, (int) Math.round(offset.getZ())));
+            Vector offset = chest.getFacing().getDirection().rotateAroundY(
+                    Math.PI / 2 * (chestType == Chest.Type.LEFT ? -1 : 1));
+            return List.of(block.getRelative((int) Math.round(offset.getX()), 0, (int) Math.round(offset.getZ())));
         } else {
-            return Collections.emptyList();
+            return List.of();
         }
     }
 

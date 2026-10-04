@@ -22,6 +22,7 @@ package com.sk89q.worldguard.bukkit.util;
 import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
@@ -33,10 +34,12 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.commands.region.ClaimRegionExpander;
 import com.sk89q.worldguard.config.ConfigurationManager;
+import com.sk89q.worldguard.config.SelectionLimit;
 import com.sk89q.worldguard.config.WorldConfiguration;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedPolygonalRegion;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -44,7 +47,10 @@ import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -55,6 +61,7 @@ import java.util.concurrent.ConcurrentMap;
 public final class SelectionVisualizer {
 
     private static final int MAX_POLYGON_VERTICES = 24;
+    private static final int MAX_CHUNK_CUBES = 1024;
     private static final long DISCOVERY_PERIOD_TICKS = 20;
 
     private final WorldGuardPlugin plugin;
@@ -120,7 +127,16 @@ public final class SelectionVisualizer {
     }
 
     private boolean shouldProcessSelections() {
-        return settings.showSelectionBorders || settings.selectionMaximumLifetimeSeconds >= 0;
+        if (settings.showSelectionBorders || settings.selectionMaximumLifetimeSeconds >= 0
+                || settings.selectionLimit != null && settings.selectionLimit.enabled) {
+            return true;
+        }
+        for (org.bukkit.World world : Bukkit.getWorlds()) {
+            if (settings.get(BukkitAdapter.adapt(world)).claimExpansionOfferMode.selection) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void discover(Player player) {
@@ -146,13 +162,52 @@ public final class SelectionVisualizer {
             Region selection = session.getRegionSelector(selectionWorld).getRegion();
             SelectionShape shape = SelectionShape.capture(selectionWorld, selection);
             CachedSelection cached = activeSelections.get(player.getUniqueId());
-            if (cached != null && cached.shape.equals(shape)) {
+            boolean manualExpansionDisabled = plugin.isClaimExpansionDisabled(player.getUniqueId());
+            boolean expansionDisabled = manualExpansionDisabled;
+            if (cached != null && cached.shape.equals(shape)
+                    && cached.manualExpansionDisabled == manualExpansionDisabled
+                    && cached.selectionLimit == settings.selectionLimit) {
                 return;
             }
+            boolean newSelection = cached == null || !cached.shape.equals(shape);
             SelectionExpiry expiry = SelectionExpiry.capture(actor, selectionWorld);
             expiry.schedule(settings.selectionMaximumLifetimeSeconds);
+            Outline outline = createOutline(actor, selectionWorld, selection, expansionDisabled);
+            SelectionLimitTracker.Decision limitDecision = plugin.getSelectionLimitTracker()
+                    .evaluate(actor, selectionWorld, outline.originalRegion, outline.expandedVolume);
+            if (limitDecision == SelectionLimitTracker.Decision.DENY) {
+                expiry.clear();
+                activeSelections.remove(player.getUniqueId());
+                plugin.getSelectionLimitTracker().forget(player.getUniqueId());
+                plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
+                        "selectionLimitExceeded",
+                        "maximum", settings.selectionLimit.maximumVolume,
+                        "current", outline.originalVolume));
+                return;
+            }
+            if (limitDecision == SelectionLimitTracker.Decision.WITHOUT_EXPANSION) {
+                expansionDisabled = true;
+                plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
+                        "selectionLimitExpansionSkipped",
+                        "maximum", settings.selectionLimit.maximumVolume,
+                        "expanded", outline.expandedVolume));
+                outline = createOutline(actor, selectionWorld, selection, true);
+            } else if (limitDecision == SelectionLimitTracker.Decision.CONFIRM
+                    && plugin.getSelectionLimitTracker().markPrompted(
+                            actor, selectionWorld, outline.originalRegion)) {
+                plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
+                        "selectionLimitConfirmationRequired",
+                        "maximum", settings.selectionLimit.maximumVolume,
+                        "current", outline.originalVolume));
+            }
             activeSelections.put(player.getUniqueId(), new CachedSelection(
-                    shape, createOutline(actor, selectionWorld, selection)));
+                    shape, outline.lines, manualExpansionDisabled, settings.selectionLimit));
+            if (newSelection && outline.offerRemoval && outline.expandedVolume != outline.originalVolume) {
+                plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
+                        "claimExpansionSelection",
+                        "original", outline.originalVolume,
+                        "expanded", outline.expandedVolume));
+            }
         } catch (IncompleteRegionException ignored) {
             activeSelections.remove(player.getUniqueId());
             // An incomplete selection has no border to display.
@@ -168,17 +223,20 @@ public final class SelectionVisualizer {
         if (cached == null || !cached.shape.worldName.equals(player.getWorld().getName())) {
             return;
         }
-        renderLines(player, cached.lines);
+        renderLines(player, cached);
     }
 
-    private List<Line> createOutline(LocalPlayer player, World world, Region selection) {
+    private Outline createOutline(LocalPlayer player, World world, Region selection,
+                                  boolean expansionDisabled) {
+        WorldConfiguration configuration = WorldGuard.getInstance()
+                .getPlatform().getGlobalStateManager().get(world);
         if (selection instanceof CuboidRegion) {
-            ProtectedCuboidRegion preview = new ProtectedCuboidRegion(
+            ProtectedCuboidRegion original = new ProtectedCuboidRegion(
                     "selection_preview", selection.getMinimumPoint(), selection.getMaximumPoint());
-            WorldConfiguration configuration = WorldGuard.getInstance()
-                    .getPlatform().getGlobalStateManager().get(world);
+            ProtectedCuboidRegion preview = original;
+            int originalVolume = original.volume();
             RegionManager manager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(world);
-            if (manager != null) {
+            if (manager != null && !expansionDisabled) {
                 preview = ClaimRegionExpander.expand(
                         preview,
                         world.getMinimumPoint(),
@@ -187,18 +245,25 @@ public final class SelectionVisualizer {
                         configuration.getMaxClaimVolume(player),
                         candidate -> manager.getApplicableRegions(candidate).isOwnerOfAll(player));
             }
-            return createCuboidOutline(preview.getMinimumPoint(), preview.getMaximumPoint());
+            List<Line> lines = particleSettings().chunkCubes
+                    ? createChunkGridOutline(preview.getMinimumPoint(), preview.getMaximumPoint())
+                    : createCuboidOutline(preview.getMinimumPoint(), preview.getMaximumPoint());
+            return new Outline(
+                    lines,
+                    originalVolume, preview.volume(),
+                    configuration.claimExpansionOfferMode.selection && !expansionDisabled,
+                    original);
         }
         if (selection instanceof Polygonal2DRegion polygon) {
-            ProtectedPolygonalRegion preview = new ProtectedPolygonalRegion(
+            ProtectedPolygonalRegion original = new ProtectedPolygonalRegion(
                     "selection_preview",
                     polygon.getPoints(),
                     polygon.getMinimumPoint().y(),
                     polygon.getMaximumPoint().y());
-            WorldConfiguration configuration = WorldGuard.getInstance()
-                    .getPlatform().getGlobalStateManager().get(world);
+            ProtectedPolygonalRegion preview = original;
+            int originalVolume = original.volume();
             RegionManager manager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(world);
-            if (manager != null) {
+            if (manager != null && !expansionDisabled) {
                 preview = ClaimRegionExpander.expand(
                         preview,
                         world.getMinimumPoint(),
@@ -207,12 +272,21 @@ public final class SelectionVisualizer {
                         configuration.getMaxClaimVolume(player),
                         candidate -> manager.getApplicableRegions(candidate).isOwnerOfAll(player));
             }
-            return createPolygonOutline(
-                    preview.getPoints(),
-                    preview.getMinimumPoint().y(),
-                    preview.getMaximumPoint().y());
+            List<Line> lines = particleSettings().chunkCubes
+                    ? createPolygonChunkOutline(polygon, preview)
+                    : createPolygonOutline(
+                            preview.getPoints(),
+                            preview.getMinimumPoint().y(),
+                            preview.getMaximumPoint().y());
+            return new Outline(
+                    lines,
+                    originalVolume, preview.volume(),
+                    configuration.claimExpansionOfferMode.selection && !expansionDisabled,
+                    original);
         }
-        return List.of();
+        return new Outline(List.of(), 0, 0, false,
+                new ProtectedCuboidRegion(
+                        "selection_preview", selection.getMinimumPoint(), selection.getMaximumPoint()));
     }
 
     private static List<Line> createCuboidOutline(BlockVector3 minimum, BlockVector3 maximum) {
@@ -239,6 +313,104 @@ public final class SelectionVisualizer {
         addLine(lines, minX, minY, maxZ, minX, maxY, maxZ);
         addLine(lines, maxX, minY, maxZ, maxX, maxY, maxZ);
         return lines;
+    }
+
+    private static List<Line> createChunkGridOutline(BlockVector3 minimum, BlockVector3 maximum) {
+        int minimumChunkX = Math.floorDiv(minimum.x(), 16);
+        int maximumChunkX = Math.floorDiv(maximum.x(), 16);
+        int minimumChunkZ = Math.floorDiv(minimum.z(), 16);
+        int maximumChunkZ = Math.floorDiv(maximum.z(), 16);
+        long chunkCount = ((long) maximumChunkX - minimumChunkX + 1)
+                * ((long) maximumChunkZ - minimumChunkZ + 1);
+        if (chunkCount > MAX_CHUNK_CUBES) {
+            return createCuboidOutline(minimum, maximum);
+        }
+
+        List<Integer> xBoundaries = chunkBoundaries(minimum.x(), maximum.x(), minimumChunkX, maximumChunkX);
+        List<Integer> zBoundaries = chunkBoundaries(minimum.z(), maximum.z(), minimumChunkZ, maximumChunkZ);
+        double minimumY = minimum.y();
+        double maximumY = maximum.y() + 1.0;
+        double minimumX = minimum.x();
+        double maximumX = maximum.x() + 1.0;
+        double minimumZ = minimum.z();
+        double maximumZ = maximum.z() + 1.0;
+        List<Line> lines = new ArrayList<>(
+                xBoundaries.size() * zBoundaries.size()
+                        + (xBoundaries.size() + zBoundaries.size()) * 2);
+
+        for (int z : zBoundaries) {
+            addLine(lines, minimumX, minimumY, z, maximumX, minimumY, z);
+            addLine(lines, minimumX, maximumY, z, maximumX, maximumY, z);
+        }
+        for (int x : xBoundaries) {
+            addLine(lines, x, minimumY, minimumZ, x, minimumY, maximumZ);
+            addLine(lines, x, maximumY, minimumZ, x, maximumY, maximumZ);
+            for (int z : zBoundaries) {
+                addLine(lines, x, minimumY, z, x, maximumY, z);
+            }
+        }
+        return lines;
+    }
+
+    private static List<Integer> chunkBoundaries(
+            int minimum, int maximum, int minimumChunk, int maximumChunk) {
+        List<Integer> boundaries = new ArrayList<>(maximumChunk - minimumChunk + 2);
+        boundaries.add(minimum);
+        for (int chunk = minimumChunk + 1; chunk <= maximumChunk; chunk++) {
+            boundaries.add(chunk << 4);
+        }
+        int end = maximum + 1;
+        if (boundaries.getLast() != end) {
+            boundaries.add(end);
+        }
+        return boundaries;
+    }
+
+    private static List<Line> createPolygonChunkOutline(
+            Polygonal2DRegion polygon, ProtectedPolygonalRegion preview) {
+        BlockVector3 minimum = preview.getMinimumPoint();
+        BlockVector3 maximum = preview.getMaximumPoint();
+        long boundingChunks = ((long) Math.floorDiv(maximum.x(), 16) - Math.floorDiv(minimum.x(), 16) + 1)
+                * ((long) Math.floorDiv(maximum.z(), 16) - Math.floorDiv(minimum.z(), 16) + 1);
+        if (boundingChunks > MAX_CHUNK_CUBES) {
+            return createPolygonOutline(preview.getPoints(), minimum.y(), maximum.y());
+        }
+        Collection<BlockVector2> chunks = polygon.getChunks();
+        if (chunks.size() > MAX_CHUNK_CUBES) {
+            return createPolygonOutline(preview.getPoints(), minimum.y(), maximum.y());
+        }
+        Set<Edge> edges = new LinkedHashSet<>(Math.max(16, chunks.size() * 8));
+        int minimumY = minimum.y();
+        int maximumY = maximum.y() + 1;
+        for (BlockVector2 chunk : chunks) {
+            int minimumX = chunk.x() << 4;
+            int minimumZ = chunk.z() << 4;
+            addCuboidEdges(edges, minimumX, minimumY, minimumZ,
+                    minimumX + 16, maximumY, minimumZ + 16);
+        }
+        List<Line> lines = new ArrayList<>(edges.size());
+        for (Edge edge : edges) {
+            addLine(lines, edge.startX, edge.startY, edge.startZ,
+                    edge.endX, edge.endY, edge.endZ);
+        }
+        return lines;
+    }
+
+    private static void addCuboidEdges(Set<Edge> edges,
+                                       int minX, int minY, int minZ,
+                                       int maxX, int maxY, int maxZ) {
+        edges.add(new Edge(minX, minY, minZ, maxX, minY, minZ));
+        edges.add(new Edge(minX, minY, maxZ, maxX, minY, maxZ));
+        edges.add(new Edge(minX, maxY, minZ, maxX, maxY, minZ));
+        edges.add(new Edge(minX, maxY, maxZ, maxX, maxY, maxZ));
+        edges.add(new Edge(minX, minY, minZ, minX, minY, maxZ));
+        edges.add(new Edge(maxX, minY, minZ, maxX, minY, maxZ));
+        edges.add(new Edge(minX, maxY, minZ, minX, maxY, maxZ));
+        edges.add(new Edge(maxX, maxY, minZ, maxX, maxY, maxZ));
+        edges.add(new Edge(minX, minY, minZ, minX, maxY, minZ));
+        edges.add(new Edge(maxX, minY, minZ, maxX, maxY, minZ));
+        edges.add(new Edge(minX, minY, maxZ, minX, maxY, maxZ));
+        edges.add(new Edge(maxX, minY, maxZ, maxX, maxY, maxZ));
     }
 
     private static List<Line> createPolygonOutline(
@@ -281,7 +453,8 @@ public final class SelectionVisualizer {
         lines.add(new Line(startX, startY, startZ, endX, endY, endZ));
     }
 
-    private void renderLines(Player player, List<Line> lines) {
+    private void renderLines(Player player, CachedSelection cached) {
+        List<Line> lines = cached.lines;
         if (lines.isEmpty()) {
             return;
         }
@@ -290,39 +463,66 @@ public final class SelectionVisualizer {
         int maxParticles = particles.maxCount;
         double maxDistanceSquared = particles.maxDistanceSquared;
         Location eye = player.getEyeLocation();
-        List<VisibleLine> visibleLines = new ArrayList<>(lines.size());
+        double[] visibility = cached.visibility;
+        int visibleCount = 0;
         double totalVisibleLength = 0;
-        for (Line line : lines) {
-            VisibleLine visible = visiblePart(line, eye, maxDistanceSquared);
-            if (visible != null) {
-                visibleLines.add(visible);
-                totalVisibleLength += visible.length;
+        for (int i = 0; i < lines.size(); i++) {
+            Line line = lines.get(i);
+            int offset = i * 2;
+            if (visiblePart(line, eye, maxDistanceSquared, visibility, offset)) {
+                visibleCount++;
+                totalVisibleLength += line.length
+                        * (visibility[offset + 1] - visibility[offset]);
             }
         }
-        if (visibleLines.isEmpty()) {
+        if (visibleCount == 0) {
             return;
         }
 
-        int extraPointBudget = Math.max(1, maxParticles - visibleLines.size() * 2);
+        if (visibleCount >= maxParticles) {
+            int visibleIndex = 0;
+            int emitted = 0;
+            for (int i = 0; i < lines.size() && emitted < maxParticles; i++) {
+                int offset = i * 2;
+                if (Double.isNaN(visibility[offset])) continue;
+                int target = emitted * visibleCount / maxParticles;
+                if (visibleIndex++ < target) continue;
+                emitParticle(player, particles, lines.get(i),
+                        visibility[offset], visibility[offset + 1], 0.5);
+                emitted++;
+            }
+            return;
+        }
+
+        int extraPointBudget = Math.max(1, maxParticles - visibleCount);
         double spacing = Math.max(particles.spacing, totalVisibleLength / extraPointBudget);
         int emitted = 0;
 
-        for (VisibleLine visible : visibleLines) {
-            Line line = visible.line;
-            int segments = Math.max(1, (int) Math.floor(visible.length / spacing));
-            for (int i = 0; i <= segments && emitted < maxParticles; i++) {
-                double progress = visible.startProgress
-                        + (visible.endProgress - visible.startProgress) * i / segments;
-                double x = line.startX + (line.endX - line.startX) * progress;
-                double y = line.startY + (line.endY - line.startY) * progress;
-                double z = line.startZ + (line.endZ - line.startZ) * progress;
-                player.spawnParticle(Particle.DUST, x, y, z, 1, 0, 0, 0, 0, particles.data);
+        for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+            int offset = lineIndex * 2;
+            if (Double.isNaN(visibility[offset])) continue;
+            Line line = lines.get(lineIndex);
+            double visibleLength = line.length * (visibility[offset + 1] - visibility[offset]);
+            int points = 1 + (int) Math.floor(visibleLength / spacing);
+            for (int i = 0; i < points && emitted < maxParticles; i++) {
+                emitParticle(player, particles, line, visibility[offset], visibility[offset + 1],
+                        points == 1 ? 0.5 : (double) i / (points - 1));
                 emitted++;
             }
             if (emitted >= maxParticles) {
                 return;
             }
         }
+    }
+
+    private static void emitParticle(
+            Player player, ParticleSettings particles, Line line,
+            double startProgress, double endProgress, double lineProgress) {
+        double progress = startProgress + (endProgress - startProgress) * lineProgress;
+        double x = line.startX + (line.endX - line.startX) * progress;
+        double y = line.startY + (line.endY - line.startY) * progress;
+        double z = line.startZ + (line.endZ - line.startZ) * progress;
+        player.spawnParticle(Particle.DUST, x, y, z, 1, 0, 0, 0, 0, particles.data);
     }
 
     private ParticleSettings particleSettings() {
@@ -332,17 +532,24 @@ public final class SelectionVisualizer {
     private void refreshSettings() {
         ParticleSettings cached = particleSettings;
         if (!cached.matches(settings)) {
-            particleSettings = ParticleSettings.from(settings);
+            ParticleSettings replacement = ParticleSettings.from(settings);
+            particleSettings = replacement;
+            if (cached.chunkCubes != replacement.chunkCubes) {
+                activeSelections.clear();
+            }
         }
     }
 
-    private static VisibleLine visiblePart(Line line, Location eye, double maxDistanceSquared) {
+    private static boolean visiblePart(
+            Line line, Location eye, double maxDistanceSquared, double[] visibility, int offset) {
         if (line.length == 0) {
             double deltaX = eye.getX() - line.startX;
             double deltaY = eye.getY() - line.startY;
             double deltaZ = eye.getZ() - line.startZ;
-            return deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ <= maxDistanceSquared
-                    ? new VisibleLine(line, 0, 0) : null;
+            boolean visible = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ <= maxDistanceSquared;
+            visibility[offset] = visible ? 0 : Double.NaN;
+            visibility[offset + 1] = 0;
+            return visible;
         }
 
         double vectorX = line.endX - line.startX;
@@ -363,13 +570,20 @@ public final class SelectionVisualizer {
         double closestDistanceSquared = closestDeltaX * closestDeltaX
                 + closestDeltaY * closestDeltaY + closestDeltaZ * closestDeltaZ;
         if (closestDistanceSquared > maxDistanceSquared) {
-            return null;
+            visibility[offset] = Double.NaN;
+            return false;
         }
 
         double visibleProgress = Math.sqrt(maxDistanceSquared - closestDistanceSquared) / line.length;
         double startProgress = Math.max(0, projectedProgress - visibleProgress);
         double endProgress = Math.min(1, projectedProgress + visibleProgress);
-        return startProgress <= endProgress ? new VisibleLine(line, startProgress, endProgress) : null;
+        if (startProgress > endProgress) {
+            visibility[offset] = Double.NaN;
+            return false;
+        }
+        visibility[offset] = startProgress;
+        visibility[offset + 1] = endProgress;
+        return true;
     }
 
     private static final class Line {
@@ -396,27 +610,78 @@ public final class SelectionVisualizer {
         }
     }
 
-    private static final class VisibleLine {
-        final Line line;
-        final double startProgress;
-        final double endProgress;
-        final double length;
+    private static final class Edge {
+        public final int startX;
+        public final int startY;
+        public final int startZ;
+        public final int endX;
+        public final int endY;
+        public final int endZ;
+        public final int hashCode;
 
-        VisibleLine(Line line, double startProgress, double endProgress) {
-            this.line = line;
-            this.startProgress = startProgress;
-            this.endProgress = endProgress;
-            this.length = line.length * (endProgress - startProgress);
+        private Edge(int firstX, int firstY, int firstZ, int secondX, int secondY, int secondZ) {
+            boolean ordered = firstX < secondX
+                    || firstX == secondX && (firstY < secondY
+                    || firstY == secondY && firstZ <= secondZ);
+            startX = ordered ? firstX : secondX;
+            startY = ordered ? firstY : secondY;
+            startZ = ordered ? firstZ : secondZ;
+            endX = ordered ? secondX : firstX;
+            endY = ordered ? secondY : firstY;
+            endZ = ordered ? secondZ : firstZ;
+            int hash = startX;
+            hash = 31 * hash + startY;
+            hash = 31 * hash + startZ;
+            hash = 31 * hash + endX;
+            hash = 31 * hash + endY;
+            hashCode = 31 * hash + endZ;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) return true;
+            if (!(other instanceof Edge edge)) return false;
+            return startX == edge.startX && startY == edge.startY && startZ == edge.startZ
+                    && endX == edge.endX && endY == edge.endY && endZ == edge.endZ;
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
         }
     }
 
     private static final class CachedSelection {
         public final SelectionShape shape;
         public final List<Line> lines;
+        public final double[] visibility;
+        public final boolean manualExpansionDisabled;
+        public final SelectionLimit selectionLimit;
 
-        private CachedSelection(SelectionShape shape, List<Line> lines) {
+        private CachedSelection(SelectionShape shape, List<Line> lines, boolean manualExpansionDisabled,
+                                SelectionLimit selectionLimit) {
             this.shape = shape;
             this.lines = List.copyOf(lines);
+            this.visibility = new double[lines.size() * 2];
+            this.manualExpansionDisabled = manualExpansionDisabled;
+            this.selectionLimit = selectionLimit;
+        }
+    }
+
+    private static final class Outline {
+        public final List<Line> lines;
+        public final int originalVolume;
+        public final int expandedVolume;
+        public final boolean offerRemoval;
+        public final ProtectedRegion originalRegion;
+
+        private Outline(List<Line> lines, int originalVolume, int expandedVolume,
+                        boolean offerRemoval, ProtectedRegion originalRegion) {
+            this.lines = lines;
+            this.originalVolume = originalVolume;
+            this.expandedVolume = expandedVolume;
+            this.offerRemoval = offerRemoval;
+            this.originalRegion = originalRegion;
         }
     }
 
@@ -473,10 +738,11 @@ public final class SelectionVisualizer {
         public final int red;
         public final int green;
         public final int blue;
+        public final boolean chunkCubes;
         public final Particle.DustOptions data;
 
         private ParticleSettings(float size, double spacing, int maxCount, double viewDistance,
-                                 int red, int green, int blue) {
+                                 int red, int green, int blue, boolean chunkCubes) {
             this.size = size;
             this.spacing = spacing;
             this.maxCount = maxCount;
@@ -485,6 +751,7 @@ public final class SelectionVisualizer {
             this.red = red;
             this.green = green;
             this.blue = blue;
+            this.chunkCubes = chunkCubes;
             this.data = new Particle.DustOptions(Color.fromRGB(red, green, blue), size);
         }
 
@@ -496,7 +763,8 @@ public final class SelectionVisualizer {
                     settings.selectionParticleViewDistance,
                     settings.selectionParticleRed,
                     settings.selectionParticleGreen,
-                    settings.selectionParticleBlue);
+                    settings.selectionParticleBlue,
+                    settings.selectionParticleChunkCubes);
         }
 
         boolean matches(ConfigurationManager settings) {
@@ -506,7 +774,8 @@ public final class SelectionVisualizer {
                     && Double.compare(viewDistance, settings.selectionParticleViewDistance) == 0
                     && red == settings.selectionParticleRed
                     && green == settings.selectionParticleGreen
-                    && blue == settings.selectionParticleBlue;
+                    && blue == settings.selectionParticleBlue
+                    && chunkCubes == settings.selectionParticleChunkCubes;
         }
     }
 }

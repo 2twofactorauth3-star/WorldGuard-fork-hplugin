@@ -190,11 +190,12 @@ public class RegionProtectionListener extends AbstractListener {
 
             } else if (type == Material.FROSTED_ICE) {
                 event.setSilent(true); // gets spammy
-                canPlace = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.BLOCK_PLACE, Flags.FROSTED_ICE_FORM));
+                canPlace = testBuild(query, BukkitAdapter.adapt(target), associable, event,
+                        Flags.BLOCK_PLACE, Flags.FROSTED_ICE_FORM);
                 what = "@wg:protectionActionUseFrostwalker@"; // hidden anyway
             /* Everything else */
             } else {
-                canPlace = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.BLOCK_PLACE));
+                canPlace = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.BLOCK_PLACE);
                 what = "@wg:protectionActionPlaceBlock@";
             }
 
@@ -226,12 +227,13 @@ public class RegionProtectionListener extends AbstractListener {
 
                 /* TNT */
                 if (event.getCause().find(EntityType.TNT, EntityType.TNT_MINECART) != null) {
-                    canBreak = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.BLOCK_BREAK, Flags.TNT));
+                    canBreak = testBuild(query, BukkitAdapter.adapt(target), associable, event,
+                            Flags.BLOCK_BREAK, Flags.TNT);
                     what = "@wg:protectionActionUseDynamite@";
 
                 /* Everything else */
                 } else {
-                    canBreak = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.BLOCK_BREAK));
+                    canBreak = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.BLOCK_BREAK);
                     what = "@wg:protectionActionBreakBlock@";
                 }
 
@@ -262,47 +264,48 @@ public class RegionProtectionListener extends AbstractListener {
 
             /* Saplings, etc. */
             if (Materials.isConsideredBuildingIfUsed(type)) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event));
+                canUse = testBuild(query, BukkitAdapter.adapt(target), associable, event);
                 what = "@wg:protectionActionUse@";
 
             /* Inventory */
             } else if (Materials.isInventoryBlock(type)) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.CHEST_ACCESS));
+                canUse = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.CHEST_ACCESS);
                 what = "@wg:protectionActionOpen@";
 
             /* Inventory for blocks with the possibility to be only use, e.g. lectern */
             } else if (handleAsInventoryUsage(event.getOriginalEvent())) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.CHEST_ACCESS));
+                canUse = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.CHEST_ACCESS);
                 what = "@wg:protectionActionTake@";
 
             /* Anvils */
             } else if (Materials.isAnvil(type)) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.USE_ANVIL));
+                canUse = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.USE_ANVIL);
                 what = "@wg:protectionActionUse@";
 
             /* Beds */
             } else if (Materials.isBed(type)) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT, Flags.SLEEP));
+                canUse = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.INTERACT, Flags.SLEEP);
                 what = "@wg:protectionActionSleep@";
 
             /* Respawn Anchors */
             } else if(type == Material.RESPAWN_ANCHOR) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT, Flags.RESPAWN_ANCHORS));
+                canUse = testBuild(query, BukkitAdapter.adapt(target), associable, event,
+                        Flags.INTERACT, Flags.RESPAWN_ANCHORS);
                 what = "@wg:protectionActionUseAnchors@";
 
             /* TNT */
             } else if (type == Material.TNT) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT, Flags.TNT));
+                canUse = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.INTERACT, Flags.TNT);
                 what = "@wg:protectionActionUseExplosives@";
 
             /* Legacy USE flag */
             } else if (Materials.isUseFlagApplicable(type)) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT, Flags.USE));
+                canUse = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.INTERACT, Flags.USE);
                 what = "@wg:protectionActionUse@";
 
             /* Everything else */
             } else {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT));
+                canUse = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.INTERACT);
                 what = "@wg:protectionActionUse@";
             }
 
@@ -332,26 +335,26 @@ public class RegionProtectionListener extends AbstractListener {
 
         /* Vehicles */
         if (Entities.isVehicle(type)) {
-            canSpawn = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.PLACE_VEHICLE));
+            canSpawn = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.PLACE_VEHICLE);
             what = "@wg:protectionActionPlaceVehicles@";
 
         /* Item pickup */
         } else if (event.getEntity() instanceof Item) {
-            canSpawn = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.ITEM_DROP));
+            canSpawn = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.ITEM_DROP);
             what = "@wg:protectionActionDropItems@";
 
         /* XP drops */
         } else if (type == EntityType.EXPERIENCE_ORB) {
-            canSpawn = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.EXP_DROPS));
+            canSpawn = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.EXP_DROPS);
             what = "@wg:protectionActionDropXp@";
 
         } else if (Entities.isAoECloud(type)) {
-            canSpawn = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.POTION_SPLASH));
+            canSpawn = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.POTION_SPLASH);
             what = "@wg:protectionActionUseLingeringPotions@";
 
         /* Everything else */
         } else {
-            canSpawn = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event));
+            canSpawn = testBuild(query, BukkitAdapter.adapt(target), associable, event);
             what = "@wg:protectionActionPlaceThings@";
         }
 
@@ -377,17 +380,17 @@ public class RegionProtectionListener extends AbstractListener {
 
         /* Vehicles */
         if (Entities.isVehicle(type)) {
-            canDestroy = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.DESTROY_VEHICLE));
+            canDestroy = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.DESTROY_VEHICLE);
             what = "@wg:protectionActionBreakVehicles@";
 
         /* Item pickup */
         } else if (event.getEntity() instanceof Item || event.getEntity() instanceof ExperienceOrb) {
-            canDestroy = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.ITEM_PICKUP));
+            canDestroy = testBuild(query, BukkitAdapter.adapt(target), associable, event, Flags.ITEM_PICKUP);
             what = "@wg:protectionActionPickupItems@";
 
         /* Everything else */
         } else {
-            canDestroy = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event));
+            canDestroy = testBuild(query, BukkitAdapter.adapt(target), associable, event);
             what = "@wg:protectionActionBreakThings@";
         }
 
@@ -425,8 +428,7 @@ public class RegionProtectionListener extends AbstractListener {
         if (Entities.isHostile(entity) || Entities.isAmbient(entity)
                 || Entities.isNPC(entity) || entity instanceof Player) {
             boolean allowed = event.getRelevantFlags().isEmpty()
-                    || query.queryState(BukkitAdapter.adapt(target), associable,
-                            combine(event)) != State.DENY;
+                    || queryState(query, BukkitAdapter.adapt(target), associable, event) != State.DENY;
             return allowed ? null : "@wg:protectionActionUse@";
         }
         if (Entities.isConsideredBuildingIfUsed(entity)
@@ -436,11 +438,11 @@ public class RegionProtectionListener extends AbstractListener {
         }
         if (Entities.isRiddenOnUse(entity)) {
             if (!(event.getOriginalEvent() instanceof PlayerLeashEntityEvent)) return null;
-            boolean allowed = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event));
+            boolean allowed = testBuild(query, BukkitAdapter.adapt(target), associable, event);
             return allowed ? null : "@wg:protectionActionUse@";
         }
-        boolean allowed = query.testBuild(
-                BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT));
+        boolean allowed = testBuild(
+                query, BukkitAdapter.adapt(target), associable, event, Flags.INTERACT);
         return allowed ? null : "@wg:protectionActionUse@";
     }
 
@@ -452,25 +454,25 @@ public class RegionProtectionListener extends AbstractListener {
         if ((type == EntityType.ITEM_FRAME || type == EntityType.GLOW_ITEM_FRAME)
                 && event.getCause().getFirstPlayer() != null
                 && ((ItemFrame) entity).getItem().getType() != Material.AIR) {
-            boolean allowed = query.testBuild(BukkitAdapter.adapt(target), associable,
-                    combine(event, Flags.ITEM_FRAME_ROTATE));
+            boolean allowed = testBuild(query, BukkitAdapter.adapt(target), associable,
+                    event, Flags.ITEM_FRAME_ROTATE);
             return allowed ? null : "@wg:protectionActionChange@";
         }
         if (type == EntityType.HOPPER_MINECART
                 && getWorldConfig(event.getWorld()).allowHopperMinecartAccess
                 && (event.getOriginalEvent() instanceof PlayerInteractEntityEvent
                         || event.getOriginalEvent() instanceof InventoryOpenEvent)) {
-            boolean allowed = query.testBuild(BukkitAdapter.adapt(target), associable,
-                    combine(event, Flags.HOPPER_MINECART_ACCESS));
+            boolean allowed = testBuild(query, BukkitAdapter.adapt(target), associable,
+                    event, Flags.HOPPER_MINECART_ACCESS);
             return allowed ? null : "@wg:protectionActionOpen@";
         }
         if (event.getOriginalEvent() instanceof InventoryOpenEvent
                 || event.getOriginalEvent() instanceof InventoryMoveItemEvent) {
-            boolean allowed = query.testBuild(BukkitAdapter.adapt(target), associable,
-                    combine(event, Flags.CHEST_ACCESS));
+            boolean allowed = testBuild(query, BukkitAdapter.adapt(target), associable,
+                    event, Flags.CHEST_ACCESS);
             return allowed ? null : "@wg:protectionActionOpen@";
         }
-        boolean allowed = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event));
+        boolean allowed = testBuild(query, BukkitAdapter.adapt(target), associable, event);
         return allowed ? null : "@wg:protectionActionChange@";
     }
 
@@ -503,30 +505,28 @@ public class RegionProtectionListener extends AbstractListener {
             boolean pvp) {
         if (Entities.isHostile(event.getEntity()) || Entities.isAmbient(event.getEntity())) {
             boolean allowed = event.getRelevantFlags().isEmpty()
-                    || query.queryState(target, associable, combine(event)) != State.DENY;
+                    || queryState(query, target, associable, event) != State.DENY;
             return allowed ? null : "@wg:protectionActionHit@";
         }
         if (Entities.isVehicle(event.getEntity().getType())) {
-            boolean allowed = query.testBuild(
-                    target, associable, combine(event, Flags.DESTROY_VEHICLE));
+            boolean allowed = testBuild(query, target, associable, event, Flags.DESTROY_VEHICLE);
             return allowed ? null : "@wg:protectionActionChange@";
         }
         if (Entities.isConsideredBuildingIfUsed(event.getEntity())) {
-            boolean allowed = query.testBuild(target, associable, combine(event));
+            boolean allowed = testBuild(query, target, associable, event);
             return allowed ? null : "@wg:protectionActionChange@";
         }
         if (pvp) return deniedPvpAction(event, target, associable, query, playerAttacker);
         if (event.getEntity() instanceof Player) {
             boolean allowed = event.getRelevantFlags().isEmpty()
-                    || query.queryState(target, associable, combine(event)) != State.DENY;
+                    || queryState(query, target, associable, event) != State.DENY;
             return allowed ? null : "@wg:protectionActionDamage@";
         }
         if (Entities.isNonHostile(event.getEntity())) {
-            boolean allowed = query.testBuild(
-                    target, associable, combine(event, Flags.DAMAGE_ANIMALS));
+            boolean allowed = testBuild(query, target, associable, event, Flags.DAMAGE_ANIMALS);
             return allowed ? null : "@wg:protectionActionHarm@";
         }
-        boolean allowed = query.testBuild(target, associable, combine(event, Flags.INTERACT));
+        boolean allowed = testBuild(query, target, associable, event, Flags.INTERACT);
         return allowed ? null : "@wg:protectionActionHit@";
     }
 
@@ -540,10 +540,9 @@ public class RegionProtectionListener extends AbstractListener {
         Player defender = (Player) event.getEntity();
         if (Entities.isNPC(defender)) return null;
         LocalPlayer localAttacker = WorldGuardPlugin.inst().wrapPlayer(playerAttacker);
-        boolean allowed = query.testBuild(target, associable, combine(event, Flags.PVP))
-                && query.queryState(localAttacker.getLocation(), localAttacker,
-                        combine(event, Flags.PVP)) != State.DENY
-                && query.queryState(target, localAttacker, combine(event, Flags.PVP)) != State.DENY;
+        boolean allowed = testBuild(query, target, associable, event, Flags.PVP)
+                && queryState(query, localAttacker.getLocation(), localAttacker, event, Flags.PVP) != State.DENY
+                && queryState(query, target, localAttacker, event, Flags.PVP) != State.DENY;
         if (!allowed && Events.fireAndTestCancel(new DisallowedPVPEvent(
                 playerAttacker, defender, event.getOriginalEvent()))) return null;
         return allowed ? null : "@wg:protectionActionPvp@";
@@ -593,6 +592,61 @@ public class RegionProtectionListener extends AbstractListener {
                 }
             }
         }
+    }
+
+    private static boolean testBuild(
+            RegionQuery query,
+            com.sk89q.worldedit.util.Location target,
+            RegionAssociable associable,
+            DelegateEvent event) {
+        return event.getRelevantFlags().isEmpty()
+                ? query.testBuild(target, associable)
+                : query.testBuild(target, associable, combine(event));
+    }
+
+    private static boolean testBuild(
+            RegionQuery query,
+            com.sk89q.worldedit.util.Location target,
+            RegionAssociable associable,
+            DelegateEvent event,
+            StateFlag flag) {
+        return event.getRelevantFlags().isEmpty()
+                ? query.testBuild(target, associable, flag)
+                : query.testBuild(target, associable, combine(event, flag));
+    }
+
+    private static boolean testBuild(
+            RegionQuery query,
+            com.sk89q.worldedit.util.Location target,
+            RegionAssociable associable,
+            DelegateEvent event,
+            StateFlag first,
+            StateFlag second) {
+        return event.getRelevantFlags().isEmpty()
+                ? query.testBuild(target, associable, first, second)
+                : query.testBuild(target, associable, combine(event, first, second));
+    }
+
+    @Nullable
+    private static State queryState(
+            RegionQuery query,
+            com.sk89q.worldedit.util.Location target,
+            RegionAssociable associable,
+            DelegateEvent event) {
+        return event.getRelevantFlags().isEmpty()
+                ? null : query.queryState(target, associable, combine(event));
+    }
+
+    @Nullable
+    private static State queryState(
+            RegionQuery query,
+            com.sk89q.worldedit.util.Location target,
+            RegionAssociable associable,
+            DelegateEvent event,
+            StateFlag flag) {
+        return event.getRelevantFlags().isEmpty()
+                ? query.queryState(target, associable, flag)
+                : query.queryState(target, associable, combine(event, flag));
     }
 
     /**

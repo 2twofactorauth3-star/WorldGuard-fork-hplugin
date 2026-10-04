@@ -35,9 +35,7 @@ import org.bukkit.event.Event;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -104,7 +102,10 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
      */
     public List<Block> getBlocks() {
         if (blocks == null) { // be lazy here because we often don't call getBlocks internally, just filter
-            blocks = blockStates.stream().map(BlockState::getBlock).collect(Collectors.toList());
+            blocks = new ArrayList<>(blockStates.size());
+            for (BlockState state : blockStates) {
+                blocks.add(state.getBlock());
+            }
         }
         return blocks;
     }
@@ -120,25 +121,41 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
      */
     public boolean filter(Predicate<Location> predicate, boolean cancelEventOnFalse) {
         return blocks == null
-                ? filterInternal(blockStates, BlockState::getLocation, predicate, cancelEventOnFalse)
-                : filterInternal(blocks, Block::getLocation, predicate, cancelEventOnFalse);
+                ? filterBlockStates(predicate, cancelEventOnFalse)
+                : filterBlocks(predicate, cancelEventOnFalse);
     }
 
-    private <B> boolean filterInternal(List<B> blockList, Function<B, Location> locFunc,
-                                       Predicate<Location> predicate, boolean cancelEventOnFalse) {
+    private boolean filterBlockStates(Predicate<Location> predicate, boolean cancelEventOnFalse) {
         boolean hasRemoval = false;
-        Iterator<B> it = blockList.iterator();
+        Iterator<BlockState> it = blockStates.iterator();
         while (it.hasNext()) {
-            if (!predicate.test(locFunc.apply(it.next()))) {
+            if (!predicate.test(it.next().getLocation())) {
                 hasRemoval = true;
 
                 if (cancelEventOnFalse) {
-                    blockList.clear();
+                    blockStates.clear();
                     setCancelled(true);
                     break;
                 } else {
                     it.remove();
                 }
+            }
+        }
+        return hasRemoval;
+    }
+
+    private boolean filterBlocks(Predicate<Location> predicate, boolean cancelEventOnFalse) {
+        boolean hasRemoval = false;
+        Iterator<Block> it = blocks.iterator();
+        while (it.hasNext()) {
+            if (!predicate.test(it.next().getLocation())) {
+                hasRemoval = true;
+                if (cancelEventOnFalse) {
+                    blocks.clear();
+                    setCancelled(true);
+                    break;
+                }
+                it.remove();
             }
         }
         return hasRemoval;

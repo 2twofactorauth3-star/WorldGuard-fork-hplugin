@@ -644,6 +644,21 @@ messages:
       cooldownMillis: -1
       message:
         - "{prefix} Region <#FDBE00>{region}<white> was automatically expanded from <#FDBE00>{original}<white> to <#FDBE00>{expanded}<white> blocks <click:run_command:'/rg undo-expansion {region}'><hover:show_text:'<#FDBE00>Click to restore the original bounds'><#FDBE00>[Remove automatic expansion]</hover></click>"
+    expansionSelection:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "{prefix} The selection will be automatically expanded from <#FDBE00>{original}<white> to <#FDBE00>{expanded}<white> blocks <click:run_command:'/rg toggle-expansion'><hover:show_text:'<#FDBE00>Click to claim without expansion'><#FDBE00>[Remove automatic expansion]</hover></click>"
+    expansionDisabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "{prefix} Automatic expansion for the next claim is <#FDBE00>disabled <click:run_command:'/rg toggle-expansion'><hover:show_text:'<#FDBE00>Click to restore expansion'><#FDBE00>[Enable]</hover></click>"
+    expansionEnabled:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Automatic expansion for the next claim is <#FDBE00>enabled'
     expansionUndone:
       mode: message
       cooldownMillis: -1
@@ -659,6 +674,39 @@ messages:
       cooldownMillis: -1
       message:
         - '{prefix} Region <#FDBE00>{region}<white> has already changed, so its automatic expansion cannot be undone'
+
+  selection:
+    limit:
+      exceeded:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{prefix} The selection contains <#FDBE00>{current}<white> blocks, while the maximum is <#FDBE00>{maximum}'
+      confirmationRequired:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - "{prefix} This selection contains <#FDBE00>{current}<white> blocks and exceeds the limit of <#FDBE00>{maximum}<white> <click:run_command:'/rg confirm-selection'><hover:show_text:'<#FDBE00>Confirm this exact selection'><#FDBE00>[Confirm the risk]</hover></click>"
+      confirmed:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{prefix} This oversized selection was <#55FF88>confirmed'
+      bypassUnavailable:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{prefix} You cannot bypass the selection volume limit'
+      confirmationNotRequired:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{prefix} This selection does not require confirmation'
+      expansionSkipped:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - '{prefix} Automatic expansion would create <#FDBE00>{expanded}<white> blocks and exceed the limit of <#FDBE00>{maximum}<white>, so this claim will be created without expansion'
 
   flag:
     valueWithEmpty:
@@ -926,6 +974,16 @@ messages:
       cooldownMillis: -1
       message:
         - 'Remove automatic expansion from the latest claim'
+    toggleClaimExpansion:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Enable or disable automatic expansion for the next claim'
+    confirmSelection:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Confirm the exact oversized selection before using it'
     selectRegion:
       mode: message
       cooldownMillis: -1
@@ -1055,27 +1113,27 @@ messages:
         mode: message
         cooldownMillis: -1
         message:
-          - "<hover:show_text:'<white>Explicitly <#FDBE00>set<white> value'><#FDBE00>{value}</hover> "
+          - "<hover:show_text:'<white>Explicitly <#FDBE00>set<white> value'><{valueColor}>{value}</hover> "
       explicitEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:run_command:'{command}'><hover:show_text:'<white>Click to unset'><#FDBE00>{value}</hover></click> "
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Click to unset'><{valueColor}>{value}</hover></click> "
       inheritedEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:run_command:'{command}'><hover:show_text:'<white>Click to set <gray>• The <#FDBE00>value<white> is currently inherited'><#FDBE00>{value}</hover></click> "
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Click to set <gray>• The <#FDBE00>value<white> is currently inherited'><{valueColor}>{value}</hover></click> "
       availableEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:run_command:'{command}'><hover:show_text:'<white>Click to set'><#FDBE00>{value}</hover></click> "
+          - "<click:run_command:'{command}'><hover:show_text:'<white>Click to set'><{valueColor}>{value}</hover></click> "
       danger:
         mode: message
         cooldownMillis: -1
         message:
-          - "<hover:show_text:'<red>This can have unintended consequences, read the flag documentation before changing it'><dark_red>{value}</hover> "
+          - "<hover:show_text:'<red>This can have unintended consequences, read the flag documentation before changing it'><{valueColor}>{value}</hover> "
     custom:
       mode: message
       cooldownMillis: -1
@@ -1091,32 +1149,32 @@ messages:
         mode: message
         cooldownMillis: -1
         message:
-          - '<#FDBE00>{value} '
+          - '<{valueColor}>{value} '
       inherited:
         mode: message
         cooldownMillis: -1
         message:
-          - "<hover:show_text:'<white>Inherited value'><#FDBE00>{value}</hover> "
+          - "<hover:show_text:'<white>Inherited value'><{valueColor}>{value}</hover> "
       available:
         mode: message
         cooldownMillis: -1
         message:
-          - '<gray>{value} '
+          - "<hover:show_text:'<white>Available value'><{valueColor}>{value}</hover> "
       explicitEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to change'><white>{value}</hover></click> "
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to change'><{valueColor}>{value}</hover></click> "
       inheritedEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to set'><gray>{value}</hover></click> "
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to set <gray>• The value is currently inherited'><{valueColor}>{value}</hover></click> "
       availableEditable:
         mode: message
         cooldownMillis: -1
         message:
-          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to set'><dark_gray>{value}</hover></click> "
+          - "<click:suggest_command:'{command}'><hover:show_text:'<white>Click to set'><{valueColor}>{value}</hover></click> "
 
   regionInfo:
     title:
@@ -1251,6 +1309,11 @@ messages:
       cooldownMillis: -1
       message:
         - "<white>Bounds<gray>: <click:run_command:'/rg select {region}'><hover:show_text:'<white>Click to select'><#FDBE00>{minimum} → {maximum}</hover></click>"
+    blockCount:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<white>Blocks<gray>: <#FDBE00>{blocks}'
 
   regionList:
     title:

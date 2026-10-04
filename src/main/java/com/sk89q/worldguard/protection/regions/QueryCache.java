@@ -14,6 +14,7 @@ package com.sk89q.worldguard.protection.regions;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.sk89q.worldedit.util.Location;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.RegionResultSet;
@@ -48,12 +49,12 @@ public final class QueryCache {
         WorldCache worldCache = local.worldCache;
         if (worldCache != null && worldCache.manager == manager) {
             worldCache.refreshIfStale();
-        }
-        if (worldCache != null
-                && worldCache.manager == manager
-                && local.generation == worldCache.generation
-                && local.position == position) {
-            return local.entry.get(option, manager, location);
+            if (local.generation == worldCache.generation && local.position == position) {
+                return local.entry.get(option, manager, location);
+            }
+            CacheEntry entry = worldCache.getOrCreate(position);
+            local.set(worldCache, position, entry);
+            return entry.get(option, manager, location);
         }
 
         while (true) {
@@ -218,14 +219,16 @@ public final class QueryCache {
 
         private ApplicableRegionSet computeNone(RegionManager manager, Location location) {
             none = manager.getApplicableRegions(
-                    location.toVector().toBlockPoint(), QueryOption.NONE);
+                    BlockVector3.at(location.getBlockX(), location.getBlockY(), location.getBlockZ()),
+                    QueryOption.NONE);
             return none;
         }
 
         private ApplicableRegionSet computeSorted(RegionManager manager, Location location) {
             if (none == null) {
                 ApplicableRegionSet result = manager.getApplicableRegions(
-                        location.toVector().toBlockPoint(), QueryOption.SORT);
+                        BlockVector3.at(location.getBlockX(), location.getBlockY(), location.getBlockZ()),
+                        QueryOption.SORT);
                 none = result;
                 sorted = result;
             } else {
@@ -237,7 +240,8 @@ public final class QueryCache {
 
         private ApplicableRegionSet computeParents(RegionManager manager, Location location) {
             parents = manager.getApplicableRegions(
-                    location.toVector().toBlockPoint(), QueryOption.COMPUTE_PARENTS);
+                    BlockVector3.at(location.getBlockX(), location.getBlockY(), location.getBlockZ()),
+                    QueryOption.COMPUTE_PARENTS);
             return parents;
         }
     }

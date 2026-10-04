@@ -19,7 +19,6 @@
 
 package com.sk89q.worldguard.util;
 
-import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 
@@ -28,11 +27,12 @@ public final class MessagingUtil {
     private MessagingUtil() {
     }
 
+    @SuppressWarnings("deprecation")
     public static void sendStringToChat(LocalPlayer player, String message) {
         String effective = message;
         effective = WorldGuard.getInstance().getPlatform().getMatcher().replaceMacros(player, effective);
         for (String mess : effective.replaceAll("\\\\n", "\n").split("\\n")) {
-            player.print(TextComponent.of(mess));
+            player.print(mess);
         }
     }
 

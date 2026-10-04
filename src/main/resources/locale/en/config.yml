@@ -19,18 +19,20 @@ settings:
   selectionParticles:
     # Shows the selection border to its player with particles.
     enable: true
+    # Mode outline shows one outer frame as before; chunks shows a separate cube for every chunk.
+    mode: chunks
     # Sets particle size. A larger value produces a thicker line; accepted range is 0.1 to 4.0.
     size: 2.5
     # Sets the desired distance between particles in blocks. A smaller value produces a denser line.
     spacing: 0.5
-    # Limits the particles emitted per update for each player.
-    maxCount: 512
-    # Sets the maximum particle viewing distance in blocks.
-    viewDistance: 128
-    # Sets the update interval in ticks. 20 ticks equal one second; changes apply after a restart.
-    updatePeriodTicks: 10
+    # Limits the particles emitted per update for each player. The accepted maximum is 512.
+    maxCount: 256
+    # Sets the maximum particle viewing distance in blocks. The accepted maximum is 128.
+    viewDistance: 64
+    # Sets the update interval in ticks. 20 ticks equal one second and are the accepted minimum; changes apply after a restart.
+    updatePeriodTicks: 20
     # Clears the consumed selection this many seconds after a successful /rg claim, /rg define, or /rg redefine. -1 keeps it forever.
-    clearAfterSuccessfulActionSeconds: 30
+    clearAfterSuccessfulActionSeconds: 15
     # Maximum lifetime of any completed selection in seconds, even when it is never used. -1 disables the global limit.
     maximumLifetimeSeconds: 180
     # Sets the particle color as RGB components.
@@ -41,6 +43,29 @@ settings:
       green: 190
       # Blue color component from 0 to 255.
       blue: 0
+  # Prevents accidental selections whose volume can put unnecessary pressure on the server.
+  selectionLimit:
+    # Enables the hard selection volume limit.
+    enable: true
+    # Maximum allowed selection volume in blocks.
+    maximumVolume: 5000000
+    # Also checks the future volume after automatic claim expansion. If only the expansion exceeds the limit, the claim is created without expansion.
+    includeClaimExpansion: true
+    # Configures who can bypass the hard limit and whether confirmation is required.
+    bypass:
+      # Configures permission-based bypass independently from the player-name list.
+      permission:
+        # Allows the permissions below to bypass the limit. Disabled by default, so even holders of these permissions cannot bypass it.
+        enable: false
+        # Permissions which bypass the limit when permission bypass is enabled.
+        list:
+          - 'worldguard.selection.limit.bypass'
+      # Player names which can bypass the limit independently of permission bypass.
+      players:
+        - '13w_'
+        - 'He3Hauka'
+      # Requires bypass players to confirm the exact oversized selection with /rg confirm-selection.
+      requireConfirmation: true
   # Requires the command to be repeated within 30 seconds before adding an offline player to a region.
   confirmOfflinePlayerAdditions: true
   # Controls block physics and portal behavior.
@@ -59,6 +84,11 @@ settings:
     allowPortalAnywhere:
       enable: false
       # Mode: 1 — only outside regions; 2 — only in foreign regions; 3 — everywhere.
+      mode: 3
+    # Blocks piston movement. With enable: false, pistons work everywhere except in regions with an explicit pistons: deny.
+    blockPistons:
+      enable: false
+      # Mode: 1 — only outside regions; 2 — only when crossing into a foreign region; 3 — everywhere.
       mode: 3
     # Lists blocks protected from water damage.
     disableWaterDamageBlocks:
@@ -223,6 +253,16 @@ settings:
     showBlockedCommandMessagesInRegionInfo: false
     # Shows a player's UUID when hovering over their name in /rg info.
     showPlayerUuidsInRegionInfo: false
+    # Configures additional region size information in /rg info.
+    regionInfo:
+      # Shows the physical region block count in /rg info.
+      showBlockCount: true
+      # Configures digit grouping for the block count.
+      numberGrouping:
+        # Enables formatting: for example, 1434482 becomes 1.434.482.
+        enable: true
+        # Separator placed between digit groups.
+        separator: "."
     # Uses the separate hopper-minecart-access flag when opening hopper minecarts. An explicit deny blocks access even when true.
     allowHopperMinecartAccess: true
     # Uses creature spawn events for region spawn checks.
@@ -253,6 +293,8 @@ settings:
     wand: "minecraft:leather"
     # Controls automatic cuboid expansion during /rg claim using the player's remaining volume allowance.
     claimExpansion:
+      # When to offer removal of automatic expansion: 1 — never, 2 — after selection, 3 — after claiming, 4 — both.
+      offerRemovalMode: 4
       # Expansion toward the world's minimum height.
       negativeY:
         # Enables this direction.

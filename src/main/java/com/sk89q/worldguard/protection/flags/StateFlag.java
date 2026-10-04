@@ -159,6 +159,23 @@ public class StateFlag extends Flag<StateFlag.State> {
         return allowed ? State.ALLOW : null;
     }
 
+    @Nullable
+    public static State combine(@Nullable State first, @Nullable State second) {
+        if (first == State.DENY || second == State.DENY) {
+            return State.DENY;
+        }
+        return first == State.ALLOW || second == State.ALLOW ? State.ALLOW : null;
+    }
+
+    @Nullable
+    public static State combine(@Nullable State first, @Nullable State second, @Nullable State third) {
+        if (first == State.DENY || second == State.DENY || third == State.DENY) {
+            return State.DENY;
+        }
+        return first == State.ALLOW || second == State.ALLOW || third == State.ALLOW
+                ? State.ALLOW : null;
+    }
+
     /**
      * Combine states, letting {@code DENY} override {@code ALLOW} and
      * {@code ALLOW} override {@code NONE} (or null).

@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Nullable;
 
@@ -53,6 +54,8 @@ public class BukkitRegionContainer extends RegionContainer {
     private final WorldGuardPlugin plugin;
     private final boolean active;
     private final ConcurrentMap<UUID, RegionManager> managersByWorld = new ConcurrentHashMap<>();
+    private final AtomicLong managerRevision = new AtomicLong();
+    private final ThreadLocal<ManagerCache> localManager = ThreadLocal.withInitial(ManagerCache::new);
 
     /**
      * Create a new instance.
@@ -78,6 +81,7 @@ public class BukkitRegionContainer extends RegionContainer {
             @EventHandler
             public void onWorldLoad(WorldLoadEvent event) {
                 load(BukkitAdapter.adapt(event.getWorld()));
+                managerRevision.incrementAndGet();
             }
 
             @EventHandler
@@ -86,6 +90,7 @@ public class BukkitRegionContainer extends RegionContainer {
                 managersByWorld.remove(event.getWorld().getUID());
                 cache.invalidate(world);
                 unload(world);
+                managerRevision.incrementAndGet();
             }
 
             @EventHandler
@@ -111,32 +116,55 @@ public class BukkitRegionContainer extends RegionContainer {
 
     public void shutdown() {
         managersByWorld.clear();
+        managerRevision.incrementAndGet();
         container.shutdown();
     }
 
     @Nullable
     public RegionManager get(org.bukkit.World world) {
+        long revision = managerRevision.get();
+        ManagerCache local = localManager.get();
+        if (local.world == world && local.revision == revision) {
+            return local.manager;
+        }
         RegionManager cached = managersByWorld.get(world.getUID());
         if (cached != null) {
+            local.set(world, cached, revision);
             return cached;
         }
         RegionManager manager = super.get(BukkitAdapter.adapt(world));
         if (manager != null) {
             managersByWorld.putIfAbsent(world.getUID(), manager);
         }
+        local.set(world, manager, revision);
         return manager;
     }
 
     @Override
     public void unload() {
         managersByWorld.clear();
+        managerRevision.incrementAndGet();
         super.unload();
     }
 
     @Override
     public void reload() {
         managersByWorld.clear();
+        managerRevision.incrementAndGet();
         super.reload();
+    }
+
+    private static final class ManagerCache {
+
+        private org.bukkit.World world;
+        private RegionManager manager;
+        private long revision = -1;
+
+        private void set(org.bukkit.World world, @Nullable RegionManager manager, long revision) {
+            this.world = world;
+            this.manager = manager;
+            this.revision = revision;
+        }
     }
 
     @Override

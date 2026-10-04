@@ -142,6 +142,8 @@ public final class PaperCommandDispatcher {
             case "redefine" -> "helpRedefineRegion";
             case "claim" -> "helpClaimRegion";
             case "undo-expansion" -> "helpUndoClaimExpansion";
+            case "toggle-expansion" -> "helpToggleClaimExpansion";
+            case "confirm-selection" -> "helpConfirmSelection";
             case "select" -> "helpSelectRegion";
             case "info" -> "helpRegionInfo";
             case "list" -> "helpRegionList";
@@ -332,7 +334,7 @@ public final class PaperCommandDispatcher {
     private static boolean isRegionArgument(String command, int index) {
         if (index == 0) {
             return Set.of("redefine", "select", "info", "flag", "flags", "setpriority",
-                    "setparent", "remove", "teleport", "undo-expansion", "addmember", "addowner",
+                    "setparent", "remove", "teleport", "undo-expansion", "toggle-expansion", "addmember", "addowner",
                     "removemember", "removeowner").contains(command);
         }
         return command.equals("setparent") && index == 1;
