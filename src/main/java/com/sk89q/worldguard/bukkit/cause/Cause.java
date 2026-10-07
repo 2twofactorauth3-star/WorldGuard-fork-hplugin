@@ -121,7 +121,7 @@ public final class Cause {
     @Nullable
     public Object getRootCause() {
         if (!causes.isEmpty()) {
-            return causes.getFirst();
+            return causes.get(0);
         }
 
         return null;

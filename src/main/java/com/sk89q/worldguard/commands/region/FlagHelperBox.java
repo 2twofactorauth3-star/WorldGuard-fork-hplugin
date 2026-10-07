@@ -47,6 +47,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import javax.annotation.Nullable;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -59,20 +60,26 @@ class FlagHelperBox extends PaginationBox {
 
     private static final Pattern MINI_MESSAGE_TAG = Pattern.compile("<[^>]+>");
 
-    private static final List<Flag<?>> FLAGS = WorldGuard.getInstance().getFlagRegistry().getAll().stream()
-            .sorted((f1, f2) -> {
-                if (f1 == f2) return 0;
-                int idx1 = Flags.INBUILT_FLAGS.indexOf(f1.getName());
-                int idx2 = Flags.INBUILT_FLAGS.indexOf(f2.getName());
-                if (idx1 < 0 && idx2 >= 0) return 1;
-                if (idx2 < 0 && idx1 >= 0) return -1;
-                if (idx1 < 0) return f1.getName().compareTo(f2.getName());
-                return idx1 < idx2 ? -1 : 1;
-            })
-            .toList();
+    private static final List<Flag<?>> FLAGS = loadFlags();
     private static final int SIZE = FLAGS.size() == Flags.INBUILT_FLAGS.size() ? FLAGS.size() : FLAGS.size() + 1;
     private static final int PAD_PX_SIZE = 180;
     static final Set<Flag<?>> DANGER_ZONE = ImmutableSet.of(Flags.BUILD, Flags.PASSTHROUGH, Flags.BLOCK_PLACE, Flags.BLOCK_BREAK);
+
+    private static List<Flag<?>> loadFlags() {
+        List<Flag<?>> flags = new ArrayList<>(WorldGuard.getInstance().getFlagRegistry().getAll());
+        flags.sort(FlagHelperBox::compareFlags);
+        return List.copyOf(flags);
+    }
+
+    private static int compareFlags(Flag<?> first, Flag<?> second) {
+        if (first == second) return 0;
+        int firstIndex = Flags.INBUILT_FLAGS.indexOf(first.getName());
+        int secondIndex = Flags.INBUILT_FLAGS.indexOf(second.getName());
+        if (firstIndex < 0 && secondIndex >= 0) return 1;
+        if (secondIndex < 0 && firstIndex >= 0) return -1;
+        if (firstIndex < 0) return first.getName().compareTo(second.getName());
+        return Integer.compare(firstIndex, secondIndex);
+    }
 
     private final World world;
     private final ProtectedRegion region;
@@ -396,7 +403,11 @@ class FlagHelperBox extends PaginationBox {
         }
 
         static int getPxLength(String string) {
-            return string.chars().reduce(0, (p, i) -> p + getPxLength((char) i) + 1);
+            int length = 0;
+            for (int index = 0; index < string.length(); index++) {
+                length += getPxLength(string.charAt(index)) + 1;
+            }
+            return length;
         }
     }
 }

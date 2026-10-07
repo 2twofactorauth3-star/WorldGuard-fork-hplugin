@@ -368,15 +368,14 @@ public class DefaultDomain implements Domain, ChangeTracked {
         }
 
         final TextComponent.Builder builder = TextComponent.builder("");
-        final Iterator<TextComponent> profiles = profileMap.keySet().stream().sorted().map(name -> {
-            final UUID uuid = profileMap.get(name);
-            return TextComponent.of(BukkitMessages.template(
+        List<String> profileNames = new ArrayList<>(profileMap.keySet());
+        profileNames.sort(null);
+        for (int index = 0; index < profileNames.size(); index++) {
+            String name = profileNames.get(index);
+            builder.append(TextComponent.of(BukkitMessages.template(
                     showPlayerUuids ? "domainPlayer" : "domainPlayerPlain",
-                    "name", name, "uuid", uuid));
-        }).iterator();
-        while (profiles.hasNext()) {
-            builder.append(profiles.next());
-            if (profiles.hasNext() || !uuids.isEmpty()) {
+                    "name", name, "uuid", profileMap.get(name))));
+            if (index + 1 < profileNames.size() || !uuids.isEmpty()) {
                 builder.append(TextComponent.of(", "));
             }
         }

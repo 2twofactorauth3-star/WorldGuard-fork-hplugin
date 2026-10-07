@@ -1,0 +1,19 @@
+#
+# WorldGuard blacklist
+#
+# [coal_ore,gold_ore,iron_ore]
+# on-break=deny,log,kick
+# on-place=deny,tell
+#
+# Events: on-break, on-destroy-with, on-place, on-use, on-interact,
+# on-drop, on-acquire, on-equip, on-dispense.
+# Actions: deny, allow, notify, log, tell, kick, ban.
+# Options: ignore-groups, ignore-perms, comment, message.
+#
+# https://worldguard.enginehub.org/en/latest/blacklist/
+#
+
+# [lava_bucket]
+# ignore-perms=my.own.madeup.permission
+# ignore-groups=admins,mods
+# on-use=deny,tell

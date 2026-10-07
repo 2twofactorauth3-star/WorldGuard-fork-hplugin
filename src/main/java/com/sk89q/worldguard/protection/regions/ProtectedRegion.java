@@ -96,9 +96,9 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
      * @param points the points to set with at least one entry
      */
     protected void setMinMaxPoints(List<BlockVector3> points) {
-        int minX = points.getFirst().x();
-        int minY = points.getFirst().y();
-        int minZ = points.getFirst().z();
+        int minX = points.get(0).x();
+        int minY = points.get(0).y();
+        int minZ = points.get(0).z();
         int maxX = minX;
         int maxY = minY;
         int maxZ = minZ;
@@ -599,8 +599,8 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
     protected boolean intersectsEdges(ProtectedRegion region) {
         List<BlockVector2> pts1 = getPoints();
         List<BlockVector2> pts2 = region.getPoints();
-        BlockVector2 lastPt1 = pts1.getLast();
-        BlockVector2 lastPt2 = pts2.getLast();
+        BlockVector2 lastPt1 = pts1.get(pts1.size() - 1);
+        BlockVector2 lastPt2 = pts2.get(pts2.size() - 1);
         for (BlockVector2 aPts1 : pts1) {
             for (BlockVector2 aPts2 : pts2) {
 

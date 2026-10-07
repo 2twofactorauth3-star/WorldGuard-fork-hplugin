@@ -21,6 +21,7 @@ package com.sk89q.worldguard.internal.platform;
 
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.gamemode.GameMode;
+import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldguard.config.ConfigurationManager;
 import com.sk89q.worldguard.protection.flags.FlagContext;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -57,6 +58,10 @@ public interface WorldGuardPlatform {
      * @param flagContextBuilder The flag context
      */
     void notifyFlagContextCreate(FlagContext.FlagContextBuilder flagContextBuilder);
+
+    void broadcastNotification(String message);
+
+    void broadcastNotification(Component component);
 
     /**
      * Get the global ConfigurationManager.

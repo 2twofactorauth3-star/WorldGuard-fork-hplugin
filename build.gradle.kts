@@ -1,6 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.api.tasks.bundling.Zip
 import org.gradle.jvm.tasks.Jar
 
 buildscript {
@@ -99,7 +99,12 @@ tasks.jar {
     enabled = false
 }
 
+val cleanPluginArtifacts by tasks.registering(Delete::class) {
+    delete(layout.buildDirectory.dir("libs"))
+}
+
 tasks.named<ShadowJar>("shadowJar") {
+    mustRunAfter(cleanPluginArtifacts)
     archiveClassifier.set("")
     dependencies {
         include(dependency("org.enginehub:squirrelid"))
@@ -123,26 +128,12 @@ tasks.named<ShadowJar>("shadowJar") {
     }
 }
 
-val sourceDistribution by tasks.registering(Zip::class) {
-    group = "distribution"
-    description = "Packages the corresponding source and build scripts for redistribution."
-    archiveClassifier.set("source-distribution")
-    destinationDirectory.set(layout.buildDirectory.dir("libs"))
-    from(layout.projectDirectory) {
-        include(
-            "LICENSE.txt",
-            "README.md",
-            "build.gradle.kts",
-            "settings.gradle.kts",
-            "gradle.properties",
-            "gradlew",
-            "gradlew.bat",
-            "gradle/**",
-            "src/main/**",
-        )
-    }
+tasks.register("pluginBuild") {
+    group = "build"
+    description = "Builds the single deployable WorldGuard Bukkit plugin JAR."
+    dependsOn(cleanPluginArtifacts, tasks.named("shadowJar"))
 }
 
 tasks.assemble {
-    dependsOn(tasks.named("shadowJar"), sourceDistribution)
+    dependsOn(tasks.named("shadowJar"))
 }

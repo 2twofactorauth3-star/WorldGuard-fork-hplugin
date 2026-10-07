@@ -356,13 +356,18 @@ public class WorldGuardBlockListener extends AbstractListener {
     }
 
     private StateFlag spreadFlag(Material type) {
-        if (Materials.isMushroom(type)) return Flags.MUSHROOMS;
-        if (type == Material.GRASS_BLOCK) return Flags.GRASS_SPREAD;
-        if (type == Material.MYCELIUM) return Flags.MYCELIUM_SPREAD;
-        if (Materials.isVine(type)) return Flags.VINE_GROWTH;
-        if (Materials.isAmethystGrowth(type) || type == Material.POINTED_DRIPSTONE) return Flags.ROCK_GROWTH;
-        if (Materials.isSculkGrowth(type)) return Flags.SCULK_GROWTH;
-        return null;
+        return switch (type) {
+            case RED_MUSHROOM, BROWN_MUSHROOM -> Flags.MUSHROOMS;
+            case GRASS_BLOCK -> Flags.GRASS_SPREAD;
+            case MYCELIUM -> Flags.MYCELIUM_SPREAD;
+            case VINE, KELP, TWISTING_VINES, WEEPING_VINES, CAVE_VINES, CAVE_VINES_PLANT ->
+                    Flags.VINE_GROWTH;
+            case BUDDING_AMETHYST, AMETHYST_CLUSTER, LARGE_AMETHYST_BUD,
+                    MEDIUM_AMETHYST_BUD, SMALL_AMETHYST_BUD, POINTED_DRIPSTONE ->
+                    Flags.ROCK_GROWTH;
+            case SCULK, SCULK_VEIN -> Flags.SCULK_GROWTH;
+            default -> null;
+        };
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -428,8 +433,12 @@ public class WorldGuardBlockListener extends AbstractListener {
         Cause cause = Cause.create(event.getBlock());
         boolean blocked = blocksMechanic(wcfg.blockOtherExplosions, event.getBlock().getLocation(), cause);
         if (!blocked) {
-            blocked = event.blockList().stream()
-                    .anyMatch(block -> blocksMechanic(wcfg.blockOtherExplosions, block.getLocation(), cause));
+            for (Block block : event.blockList()) {
+                if (blocksMechanic(wcfg.blockOtherExplosions, block.getLocation(), cause)) {
+                    blocked = true;
+                    break;
+                }
+            }
         }
         if (blocked) {
             event.setCancelled(true);

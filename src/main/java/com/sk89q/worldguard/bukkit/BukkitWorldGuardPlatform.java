@@ -22,11 +22,14 @@ package com.sk89q.worldguard.bukkit;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.gamemode.GameMode;
 import com.sk89q.worldedit.world.gamemode.GameModes;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
 import org.enginehub.squirrelid.resolver.PaperPlayerService;
 import com.sk89q.worldguard.bukkit.protection.events.flags.FlagContextCreateEvent;
 import com.sk89q.worldguard.bukkit.session.BukkitSessionManager;
@@ -41,6 +44,7 @@ import org.enginehub.squirrelid.resolver.CombinedProfileService;
 import org.enginehub.squirrelid.resolver.HttpRepositoryService;
 import org.enginehub.squirrelid.resolver.ProfileService;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -70,6 +74,26 @@ public class BukkitWorldGuardPlatform implements WorldGuardPlatform {
     @Override
     public void notifyFlagContextCreate(FlagContext.FlagContextBuilder flagContextBuilder) {
         Bukkit.getServer().getPluginManager().callEvent(new FlagContextCreateEvent(flagContextBuilder));
+    }
+
+    @Override
+    public void broadcastNotification(String message) {
+        for (Player player : Bukkit.getServer().getOnlinePlayers()) {
+            if (WorldGuardPlugin.inst().hasPermission(player, "worldguard.notify")) {
+                player.sendMessage(message);
+            }
+        }
+        WorldGuard.logger.info(message);
+    }
+
+    @Override
+    public void broadcastNotification(Component component) {
+        for (Player player : Bukkit.getServer().getOnlinePlayers()) {
+            LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
+            if (localPlayer.hasPermission("worldguard.notify")) {
+                localPlayer.print(component);
+            }
+        }
     }
 
     @Override
@@ -134,7 +158,7 @@ public class BukkitWorldGuardPlatform implements WorldGuardPlatform {
     public ProtectedRegion getSpawnProtection(World world) {
         if (world instanceof BukkitWorld) {
             org.bukkit.World bWorld = ((BukkitWorld) world).getWorld();
-            if (bWorld.getUID().equals(Bukkit.getServer().getWorlds().getFirst().getUID())) {
+            if (bWorld.getUID().equals(Bukkit.getServer().getWorlds().get(0).getUID())) {
                 int radius = Bukkit.getServer().getSpawnRadius();
                 if (radius > 0) {
                     BlockVector3 spawnLoc = BukkitAdapter.asBlockVector(bWorld.getSpawnLocation());

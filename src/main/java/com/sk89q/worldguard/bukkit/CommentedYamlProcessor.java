@@ -157,8 +157,8 @@ final class CommentedYamlProcessor extends YAMLProcessor {
     }
 
     private static String updatePath(List<PathPart> parents, ParsedKey key) {
-        while (!parents.isEmpty() && parents.getLast().indent >= key.indent) {
-            parents.removeLast();
+        while (!parents.isEmpty() && parents.get(parents.size() - 1).indent >= key.indent) {
+            parents.remove(parents.size() - 1);
         }
         parents.add(new PathPart(key.indent, key.name));
         StringBuilder path = new StringBuilder();

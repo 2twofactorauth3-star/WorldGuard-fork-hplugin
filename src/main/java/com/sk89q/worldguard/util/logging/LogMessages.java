@@ -11,7 +11,6 @@
 
 package com.sk89q.worldguard.util.logging;
 
-import java.util.Objects;
 import java.util.function.Function;
 
 /** Resolves opaque WorldGuard log keys through the platform locale. */
@@ -23,7 +22,7 @@ public final class LogMessages {
     }
 
     public static void setResolver(Function<String, String> resolver) {
-        LogMessages.resolver = Objects.requireNonNull(resolver);
+        LogMessages.resolver = resolver;
     }
 
     public static String resolve(String message) {

@@ -19,7 +19,6 @@
 
 package com.sk89q.worldguard.commands.region;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.sk89q.worldguard.commands.framework.CommandContext;
 import com.sk89q.worldguard.commands.framework.CommandException;
@@ -52,7 +51,6 @@ import com.sk89q.worldguard.protection.regions.RegionQuery.QueryOption;
 import com.sk89q.worldguard.protection.util.WorldEditRegionConverter;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 class RegionCommandsBase {
 
@@ -312,11 +310,16 @@ class RegionCommandsBase {
         Set<RegionManager> failures = container.getSaveFailures();
 
         if (!failures.isEmpty()) {
-            String failingList = Joiner.on(", ").join(failures.stream()
-                    .map(regionManager -> "'" + regionManager.getName() + "'").collect(Collectors.toList()));
+            StringBuilder failingList = new StringBuilder();
+            for (RegionManager manager : failures) {
+                if (!failingList.isEmpty()) {
+                    failingList.append(", ");
+                }
+                failingList.append('\'').append(manager.getName()).append('\'');
+            }
 
             sender.print(TextComponent.of(BukkitMessages.template(
-                    "regionSavingFailed", "worlds", failingList)));
+                    "regionSavingFailed", "worlds", failingList.toString())));
         }
     }
 

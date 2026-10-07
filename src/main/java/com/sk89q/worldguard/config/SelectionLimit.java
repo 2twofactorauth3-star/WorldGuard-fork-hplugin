@@ -22,9 +22,9 @@ package com.sk89q.worldguard.config;
 import com.sk89q.worldedit.extension.platform.Actor;
 
 import java.util.List;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public final class SelectionLimit {
 
@@ -44,9 +44,11 @@ public final class SelectionLimit {
         this.includeClaimExpansion = includeClaimExpansion;
         this.permissionBypassEnabled = permissionBypassEnabled;
         this.bypassPermissions = List.copyOf(bypassPermissions);
-        this.bypassPlayers = bypassPlayers.stream()
-                .map(name -> name.toLowerCase(Locale.ROOT))
-                .collect(Collectors.toUnmodifiableSet());
+        Set<String> normalizedPlayers = new HashSet<>(bypassPlayers.size());
+        for (String name : bypassPlayers) {
+            normalizedPlayers.add(name.toLowerCase(Locale.ROOT));
+        }
+        this.bypassPlayers = Set.copyOf(normalizedPlayers);
         this.requireBypassConfirmation = requireBypassConfirmation;
     }
 

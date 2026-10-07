@@ -32,6 +32,7 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.event.player.ProcessPlayerEvent;
 import com.sk89q.worldguard.bukkit.integration.EssentialsXIntegration;
 import com.sk89q.worldguard.bukkit.listener.EventAbstractionListener;
+import com.sk89q.worldguard.bukkit.listener.BlacklistListener;
 import com.sk89q.worldguard.bukkit.listener.InvincibilityListener;
 import com.sk89q.worldguard.bukkit.listener.PlayerMoveListener;
 import com.sk89q.worldguard.bukkit.listener.RegionFlagsListener;
@@ -256,6 +257,7 @@ public class WorldGuardPlugin extends JavaPlugin {
         (new RegionFlagsListener(this)).registerEvents();
         (new EventAbstractionListener(this)).registerEvents();
         (new InvincibilityListener(this)).registerEvents();
+        (new BlacklistListener(this)).registerEvents();
 
         // handle worlds separately to initialize already loaded worlds
         WorldGuardWorldListener worldListener = (new WorldGuardWorldListener(this));

@@ -25,8 +25,6 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Stores a key value map of typed {@link Flag}s.
  */
@@ -37,16 +35,12 @@ public class MapFlag<K, V> extends Flag<Map<K, V>> {
 
     public MapFlag(final String name, final Flag<K> keyFlag, final Flag<V> valueFlag) {
         super(name);
-        requireNonNull(keyFlag, "keyFlag cannot be null.");
-        requireNonNull(valueFlag, "valueFlag cannot be null.");
         this.keyFlag = keyFlag;
         this.valueFlag = valueFlag;
     }
 
     public MapFlag(final String name, @Nullable final RegionGroup defaultGroup, final Flag<K> keyFlag, final Flag<V> valueFlag) {
         super(name, defaultGroup);
-        requireNonNull(keyFlag, "keyFlag cannot be null.");
-        requireNonNull(valueFlag, "valueFlag cannot be null.");
         this.keyFlag = keyFlag;
         this.valueFlag = valueFlag;
     }

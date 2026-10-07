@@ -172,7 +172,7 @@ public final class BukkitMessages {
             if (lines.size() == 2) break;
             lines.add(line instanceof String string ? string : "");
         }
-        if (lines.stream().allMatch(String::isEmpty)) return List.of();
+        if (allEmpty(lines)) return List.of();
         return List.copyOf(lines);
     }
 
@@ -365,16 +365,21 @@ public final class BukkitMessages {
 
     public net.kyori.adventure.text.Component component(String input) {
         List<String> translated = lines(input);
-        return translated.isEmpty() ? MMSupport.component("") : MMSupport.component(translated.getFirst());
+        return translated.isEmpty() ? MMSupport.component("") : MMSupport.component(translated.get(0));
     }
 
     public void send(CommandSender sender, String message) {
         if (sender == null || message == null || message.isEmpty()) return;
         List<Replacement> deliveries = findDeliveries(message);
-        boolean title = deliveries.stream().anyMatch(delivery -> delivery.mode == DeliveryMode.TITLE);
-        boolean actionBar = deliveries.stream().anyMatch(delivery -> delivery.mode == DeliveryMode.ACTION_BAR);
+        boolean title = false;
+        boolean actionBar = false;
+        for (Replacement delivery : deliveries) {
+            title |= delivery.mode == DeliveryMode.TITLE;
+            actionBar |= delivery.mode == DeliveryMode.ACTION_BAR;
+            if (title && actionBar) break;
+        }
         List<String> lines = render(message, title);
-        if (lines.isEmpty() || lines.stream().allMatch(String::isEmpty)) return;
+        if (lines.isEmpty() || allEmpty(lines)) return;
         String actionBarLine = actionBar
                 ? selectActionBarLine(lines, actionBarMultipleLinesMode)
                 : null;
@@ -383,7 +388,7 @@ public final class BukkitMessages {
 
         if (title) {
             if (sender instanceof Player player) {
-                net.kyori.adventure.text.Component titleLine = MMSupport.component(lines.getFirst());
+                net.kyori.adventure.text.Component titleLine = MMSupport.component(lines.get(0));
                 net.kyori.adventure.text.Component subtitleLine = lines.size() > 1
                         ? MMSupport.component(lines.get(1))
                         : MMSupport.component("");
@@ -404,7 +409,7 @@ public final class BukkitMessages {
 
     static String selectActionBarLine(List<String> lines, int mode) {
         if (lines == null || lines.isEmpty()) return null;
-        if (lines.size() == 1) return lines.getFirst();
+        if (lines.size() == 1) return lines.get(0);
         if (mode == 1) return null;
         return lines.get(ThreadLocalRandom.current().nextInt(lines.size()));
     }
@@ -440,7 +445,14 @@ public final class BukkitMessages {
     }
 
     private boolean isCoolingDown(Player player, List<Replacement> deliveries) {
-        if (deliveries.stream().noneMatch(delivery -> delivery.cooldownMillis > 0)) return false;
+        boolean hasCooldown = false;
+        for (Replacement delivery : deliveries) {
+            if (delivery.cooldownMillis > 0) {
+                hasCooldown = true;
+                break;
+            }
+        }
+        if (!hasCooldown) return false;
         long now = System.nanoTime();
         synchronized (cooldowns) {
             Map<String, Long> playerCooldowns = cooldowns.computeIfAbsent(player, ignored -> new LinkedHashMap<>());
@@ -455,6 +467,13 @@ public final class BukkitMessages {
             }
             return false;
         }
+    }
+
+    private static boolean allEmpty(List<String> lines) {
+        for (String line : lines) {
+            if (!line.isEmpty()) return false;
+        }
+        return true;
     }
 
     private enum DeliveryMode {

@@ -69,7 +69,7 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
         this.world = world;
         this.blockStates = blocks;
         this.blocks = null;
-        this.effectiveMaterial = blocks.getFirst().getType();
+        this.effectiveMaterial = blocks.get(0).getType();
     }
 
     protected AbstractBlockEvent(@Nullable Event originalEvent, Cause cause, Block block) {

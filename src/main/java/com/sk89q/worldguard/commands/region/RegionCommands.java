@@ -73,6 +73,7 @@ import com.sk89q.worldguard.session.Session;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -80,7 +81,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Implements the /region commands for WorldGuard.
@@ -900,8 +900,7 @@ public final class RegionCommands extends RegionCommandsBase {
                 .setDelayMessage(TextComponent.of("@wg:waitRemovingRegion@"))
                 .onSuccess((Component) null, removed -> sender.print(TextComponent.of(
                         BukkitMessages.template("regionsRemoved", "regions",
-                                removed.stream().map(ProtectedRegion::getId)
-                                        .collect(Collectors.joining(", "))))))
+                                joinRegionIds(removed)))))
                 .onFailure(TextComponent.of("@wg:regionRemoveFailed@"), WorldGuard.getInstance().getExceptionConverter())
                 .buildAndExec(WorldGuard.getInstance().getExecutorService());
     }
@@ -1144,6 +1143,17 @@ public final class RegionCommands extends RegionCommandsBase {
                 .onSuccess((Component) null, sender::print)
                 .onFailure((Component) null, WorldGuard.getInstance().getExceptionConverter())
                 .buildAndExec(WorldGuard.getInstance().getExecutorService());
+    }
+
+    private static String joinRegionIds(Collection<ProtectedRegion> regions) {
+        StringBuilder joined = new StringBuilder();
+        for (ProtectedRegion region : regions) {
+            if (!joined.isEmpty()) {
+                joined.append(", ");
+            }
+            joined.append(region.getId());
+        }
+        return joined.toString();
     }
 
     private void warnAboutDangerousFlag(Actor sender, Flag<?> flag, @Nullable String value) {

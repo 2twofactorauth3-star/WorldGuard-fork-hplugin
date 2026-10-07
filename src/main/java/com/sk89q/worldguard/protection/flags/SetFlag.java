@@ -27,8 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Stores a set of types.
  */
@@ -38,13 +36,11 @@ public class SetFlag<T> extends Flag<Set<T>> {
 
     public SetFlag(String name, RegionGroup defaultGroup, Flag<T> subFlag) {
         super(name, defaultGroup);
-        requireNonNull(subFlag, "SubFlag cannot be null.");
         this.subFlag = subFlag;
     }
 
     public SetFlag(String name, Flag<T> subFlag) {
         super(name);
-        requireNonNull(subFlag, "SubFlag cannot be null.");
         this.subFlag = subFlag;
     }
 

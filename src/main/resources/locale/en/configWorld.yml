@@ -5,6 +5,24 @@
 
 # Contains all WorldGuard settings.
 settings:
+  # Controls this world's block and item blacklist from blacklist.txt.
+  blacklist:
+    # Reverses blacklist rules so only explicitly allowed actions pass.
+    useAsWhitelist: false
+    # Configures destinations used by the log action.
+    logging:
+      # Configures blacklist logging to the server console.
+      console:
+        # Enables blacklist logging to the server console.
+        enable: true
+      # Configures blacklist logging to files.
+      file:
+        # Enables blacklist logging to files.
+        enable: false
+        # Sets the blacklist log file path and date pattern.
+        path: "plugins/WorldGuard/logs/%Y-%m-%d.log"
+        # Limits the number of blacklist log files kept open simultaneously.
+        openFiles: 10
   # Controls block physics and portal behavior.
   physics:
     # Prevents gravel from falling.

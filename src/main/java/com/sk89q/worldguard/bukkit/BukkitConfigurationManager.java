@@ -35,6 +35,7 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
     private final WorldGuardPlugin plugin;
     private final ConcurrentMap<String, BukkitWorldConfiguration> worlds = new ConcurrentHashMap<>();
     private final AtomicLong revision = new AtomicLong();
+    private volatile boolean hasBlacklists;
 
     /**
      * Construct the object.
@@ -81,6 +82,7 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
     @Override
     public void unload() {
         worlds.clear();
+        hasBlacklists = false;
         revision.incrementAndGet();
     }
 
@@ -110,8 +112,12 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
     }
 
     public BukkitWorldConfiguration get(String worldName) {
-        return worlds.computeIfAbsent(worldName,
+        BukkitWorldConfiguration configuration = worlds.computeIfAbsent(worldName,
                 name -> new BukkitWorldConfiguration(plugin, name, this.getConfig()));
+        if (!hasBlacklists && configuration.getBlacklist() != null) {
+            hasBlacklists = true;
+        }
+        return configuration;
     }
 
     public BukkitWorldConfiguration get(org.bukkit.World world) {
@@ -120,6 +126,10 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
 
     public long getRevision() {
         return revision.get();
+    }
+
+    public boolean hasBlacklists() {
+        return hasBlacklists;
     }
 
 }

@@ -368,7 +368,7 @@ public final class SelectionVisualizer {
             boundaries.add(chunk << 4);
         }
         int end = maximum + 1;
-        if (boundaries.getLast() != end) {
+        if (boundaries.get(boundaries.size() - 1) != end) {
             boundaries.add(end);
         }
         return boundaries;

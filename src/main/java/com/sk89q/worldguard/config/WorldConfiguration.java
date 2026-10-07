@@ -20,7 +20,9 @@
 package com.sk89q.worldguard.config;
 
 import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.blacklist.Blacklist;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
@@ -48,6 +50,8 @@ public abstract class WorldConfiguration {
             "#\r\n";
 
     public boolean boundedLocationFlags;
+    protected File blacklistFile;
+    protected Blacklist blacklist;
     public boolean useRegions;
     public WorldMechanicSetting noPhysicsGravel;
     public WorldMechanicSetting noPhysicsSand;
@@ -116,6 +120,10 @@ public abstract class WorldConfiguration {
      * Load the configuration.
      */
     public abstract void loadConfiguration();
+
+    public Blacklist getBlacklist() {
+        return blacklist;
+    }
 
     public int getMaxRegionCount(LocalPlayer player) {
         return getHighestGroupValue(player, maxRegionCounts, maxRegionCountPerPlayer);

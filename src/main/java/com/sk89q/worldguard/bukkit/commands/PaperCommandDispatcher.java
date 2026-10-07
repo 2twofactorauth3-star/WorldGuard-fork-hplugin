@@ -123,8 +123,7 @@ public final class PaperCommandDispatcher {
         Actor actor = plugin.wrapCommandSender(source.getSender());
         for (String alias : primaryAliases) {
             Binding binding = commands.get(alias);
-            if (binding == null || binding.permissions.stream()
-                    .anyMatch(permission -> actor == null || !actor.hasPermission(permission))) {
+            if (binding == null || actor == null || !hasAllPermissions(actor, binding.permissions)) {
                 continue;
             }
             plugin.getMessages().send(source.getSender(), BukkitMessages.template(
@@ -175,7 +174,7 @@ public final class PaperCommandDispatcher {
             plugin.getMessages().send(source.getSender(), "@wg:commandFailed@");
             return 0;
         }
-        if (binding.permissions.stream().anyMatch(permission -> !actor.hasPermission(permission))) {
+        if (!hasAllPermissions(actor, binding.permissions)) {
             plugin.getMessages().send(source.getSender(), "@wg:permissionDenied@");
             return 0;
         }
@@ -187,12 +186,12 @@ public final class PaperCommandDispatcher {
                     || binding.max >= 0 && context.argsLength() > binding.max) {
                 plugin.getMessages().send(source.getSender(), BukkitMessages.template(
                         "commandUsage", "usage",
-                        "/" + root + " " + binding.aliases.getFirst() + " " + binding.usage));
+                        "/" + root + " " + binding.aliases.get(0) + " " + binding.usage));
                 return 0;
             }
             binding.executor.execute(context, actor);
             if (root.equals("region")
-                    && MUTATING_REGION_COMMANDS.contains(binding.aliases.getFirst())) {
+                    && MUTATING_REGION_COMMANDS.contains(binding.aliases.get(0))) {
                 WorldGuard.getInstance().getPlatform().getRegionContainer().invalidateCache();
                 WorldGuard.getInstance().getPlatform().getSessionManager().resetAllStates();
             }
@@ -225,8 +224,9 @@ public final class PaperCommandDispatcher {
         SuggestionInput input = parseSuggestionInput(builder);
 
         if (input.current.startsWith("-")) {
-            acceptedFlags(binding.flags).forEach(flag ->
-                    suggest(input.target, input.current, "-" + flag));
+            for (char flag : acceptedFlags(binding.flags)) {
+                suggest(input.target, input.current, "-" + flag);
+            }
         } else {
             String pendingFlag = pendingValueFlag(input.completed, binding.flags);
             if (pendingFlag != null) {
@@ -251,22 +251,26 @@ public final class PaperCommandDispatcher {
     private void addFlagValueSuggestions(
             SuggestionsBuilder target, String current, String pendingFlag) {
         Collection<String> values = switch (pendingFlag) {
-            case "w" -> Bukkit.getWorlds().stream().map(World::getName).toList();
-            case "p" -> Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+            case "w" -> worldNames();
+            case "p" -> playerNames();
             case "g" -> List.of("members", "nonmembers", "owners", "nonowners", "everyone");
             default -> List.of();
         };
-        values.forEach(value -> suggest(target, current, value));
+        for (String value : values) {
+            suggest(target, current, value);
+        }
     }
 
     private void addPositionalSuggestions(
             CommandSourceStack source, Binding binding, SuggestionInput input) {
         List<String> positional = positionalArguments(input.completed, binding.flags);
         int index = positional.size();
-        String command = binding.aliases.getFirst();
+        String command = binding.aliases.get(0);
         Collection<String> values = positionalSuggestionValues(
                 source, input.completed, positional, command, index);
-        values.forEach(value -> suggest(input.target, input.current, value));
+        for (String value : values) {
+            suggest(input.target, input.current, value);
+        }
         if (isMemberCommand(command) && index >= 1) {
             suggest(input.target, input.current, "g:");
         }
@@ -285,20 +289,24 @@ public final class PaperCommandDispatcher {
             return List.of("on", "off");
         }
         if ((command.equals("load") || command.equals("save")) && index == 0) {
-            return Bukkit.getWorlds().stream().map(World::getName).toList();
+            return worldNames();
         }
         if (isRegionArgument(command, index)) {
             return regionIds(source, completed);
         }
         if (command.equals("flag") && index == 1) {
-            return WorldGuard.getInstance().getFlagRegistry().getAll().stream()
-                    .map(Flag::getName).toList();
+            Collection<Flag<?>> flags = WorldGuard.getInstance().getFlagRegistry().getAll();
+            List<String> names = new ArrayList<>(flags.size());
+            for (Flag<?> flag : flags) {
+                names.add(flag.getName());
+            }
+            return names;
         }
         if (command.equals("flag") && index >= 2 && positional.size() >= 2) {
             return flagValues(positional.get(1));
         }
         if (isMemberCommand(command) && index >= 1) {
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+            return playerNames();
         }
         return List.of();
     }
@@ -353,9 +361,36 @@ public final class PaperCommandDispatcher {
         return flags;
     }
 
+    private static boolean hasAllPermissions(Actor actor, List<String> permissions) {
+        for (String permission : permissions) {
+            if (!actor.hasPermission(permission)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static List<String> worldNames() {
+        List<World> worlds = Bukkit.getWorlds();
+        List<String> names = new ArrayList<>(worlds.size());
+        for (World world : worlds) {
+            names.add(world.getName());
+        }
+        return names;
+    }
+
+    private static List<String> playerNames() {
+        Collection<? extends Player> players = Bukkit.getOnlinePlayers();
+        List<String> names = new ArrayList<>(players.size());
+        for (Player player : players) {
+            names.add(player.getName());
+        }
+        return names;
+    }
+
     private static String pendingValueFlag(List<String> arguments, String specification) {
         if (arguments.isEmpty()) return null;
-        String token = arguments.getLast();
+        String token = arguments.get(arguments.size() - 1);
         if (token.length() == 2 && token.charAt(0) == '-'
                 && isValueFlag(specification, token.charAt(1))) {
             return String.valueOf(token.charAt(1));

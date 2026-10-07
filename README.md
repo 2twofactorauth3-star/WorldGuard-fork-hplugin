@@ -11,7 +11,7 @@ WorldGuardFork is a region-focused WorldGuard 7.0.17 fork for Paper and Folia 1.
 
 ### About
 
-This fork keeps WorldGuard's region protection and public integration API while modernizing the plugin for current Paper servers. Legacy server fallbacks, unrelated utility commands, the old blacklist system, and obsolete compatibility code were removed.
+This fork keeps WorldGuard's region protection, public integration API, and per-world blacklist while modernizing the plugin for current Paper servers. Legacy server fallbacks, unrelated utility commands, and obsolete compatibility code were removed.
 
 The project focuses on configurable private regions, per-world defaults, MiniMessage output, clean configuration, and efficient region checks.
 
@@ -45,6 +45,7 @@ Spigot and Minecraft versions below 1.21 are intentionally unsupported.
 - Paper Brigadier registration and completion
 - Folia-aware scheduling
 - Optimized session, query, and chunk caches
+- Optimized per-world block and item blacklist with deny, allow, notify, log, tell, kick, and ban actions
 - Anonymous bStats metrics under service ID `34427`
 
 ### Commands
@@ -83,6 +84,7 @@ The main command is `/region`; aliases are `/rg` and `/regions`.
 - `regionDefaults.yml` — defaults for new, existing, and global regions
 - `messages.yml` — player-facing messages
 - `logs.yml` — console and diagnostic messages
+- `worlds/<world>/blacklist.txt` — per-world block and item rules
 
 On the first launch, set `locale: "en"` or `locale: "ru"` in `plugins/WorldGuard/locale.yml` and restart the server. Until then, WorldGuard remains enabled in API-compatible waiting mode, while region protection and gameplay listeners stay inactive.
 
@@ -118,7 +120,7 @@ Upstream: [EngineHub/WorldGuard](https://github.com/EngineHub/WorldGuard)
 
 ### О проекте
 
-WorldGuardFork — переработанный WorldGuard 7.0.17 для защиты регионов на современных серверах Paper и Folia 1.21+. Публичный API интеграций сохранён, а устаревшие fallback-ветки, посторонние команды, старая система blacklist и ненужный совместимый код удалены.
+WorldGuardFork — переработанный WorldGuard 7.0.17 для защиты регионов на современных серверах Paper и Folia 1.21+. Публичный API интеграций и blacklist для каждого мира сохранены, а устаревшие fallback-ветки, посторонние команды и ненужный совместимый код удалены.
 
 Основные цели проекта — удобные приваты, отдельные правила миров, современный MiniMessage, понятные конфиги и быстрые проверки регионов.
 
@@ -152,6 +154,7 @@ Spigot и версии Minecraft ниже 1.21 намеренно не подд�
 - Команды и автодополнение через Paper Brigadier
 - Поддержка планировщика Folia
 - Оптимизированные кэши сессий, запросов и чанков
+- Оптимизированный blacklist блоков и предметов для каждого мира с действиями deny, allow, notify, log, tell, kick и ban
 - Анонимная статистика bStats с ID `34427`
 
 ### Команды
@@ -190,6 +193,7 @@ Spigot и версии Minecraft ниже 1.21 намеренно не подд�
 - `regionDefaults.yml` — стандарты новых, существующих и глобальных регионов
 - `messages.yml` — сообщения игрокам
 - `logs.yml` — сообщения консоли и диагностики
+- `worlds/<мир>/blacklist.txt` — правила блоков и предметов отдельного мира
 
 При первом запуске укажите `locale: "ru"` или `locale: "en"` в `plugins/WorldGuard/locale.yml` и перезапустите сервер. До выбора языка WorldGuard остаётся включённым в совместимом с API режиме ожидания, но защита регионов и игровые слушатели не работают.
 

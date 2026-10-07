@@ -108,9 +108,14 @@ public class RegionLister implements Callable<Integer> {
 
             @Override
             public boolean isContainedWithin(DefaultDomain domain) {
-                return WorldGuard.getInstance().getProfileCache().getAllPresent(domain.getUniqueIds())
-                        .values().stream()
-                        .anyMatch(profile -> profile.getName().equalsIgnoreCase(name));
+                Collection<Profile> profiles = WorldGuard.getInstance().getProfileCache()
+                        .getAllPresent(domain.getUniqueIds()).values();
+                for (Profile profile : profiles) {
+                    if (profile.getName().equalsIgnoreCase(name)) {
+                        return true;
+                    }
+                }
+                return false;
             }
         };
     }

@@ -69,11 +69,7 @@ public class RegionResultSet extends AbstractRegionSet {
      */
     public RegionResultSet(Set<ProtectedRegion> applicable, @Nullable ProtectedRegion globalRegion) {
         this(NormativeOrders.fromSet(applicable), globalRegion, true);
-        this.regionSet = switch (applicable.size()) {
-            case 0 -> Collections.emptySet();
-            case 1 -> Collections.singleton(applicable.iterator().next());
-            default -> ImmutableSet.copyOf(applicable);
-        };
+        this.regionSet = copyRegions(applicable);
     }
 
     /**
@@ -91,10 +87,6 @@ public class RegionResultSet extends AbstractRegionSet {
         this(applicable, null, globalRegion, sorted);
     }
 
-    /**
-     * Create a result while retaining an already-built immutable region set.
-     * Internal callers use this to avoid copying the same spatial result twice.
-     */
     public RegionResultSet(
             List<ProtectedRegion> applicable,
             @Nullable Set<ProtectedRegion> regionSet,
@@ -180,12 +172,16 @@ public class RegionResultSet extends AbstractRegionSet {
         if (regionSet != null) {
             return regionSet;
         }
-        regionSet = switch (applicable.size()) {
-            case 0 -> Collections.emptySet();
-            case 1 -> Collections.singleton(applicable.getFirst());
-            default -> ImmutableSet.copyOf(applicable);
-        };
+        regionSet = copyRegions(applicable);
         return regionSet;
+    }
+
+    private static Set<ProtectedRegion> copyRegions(Collection<ProtectedRegion> regions) {
+        return switch (regions.size()) {
+            case 0 -> Collections.emptySet();
+            case 1 -> Collections.singleton(regions.iterator().next());
+            default -> ImmutableSet.copyOf(regions);
+        };
     }
 
     @Override

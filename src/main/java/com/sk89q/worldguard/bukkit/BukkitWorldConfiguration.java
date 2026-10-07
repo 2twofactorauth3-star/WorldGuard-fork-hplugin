@@ -20,6 +20,10 @@
 package com.sk89q.worldguard.bukkit;
 
 import com.sk89q.util.yaml.YAMLProcessor;
+import com.sk89q.worldguard.blacklist.Blacklist;
+import com.sk89q.worldguard.blacklist.BlacklistLoggerHandler;
+import com.sk89q.worldguard.blacklist.logger.ConsoleHandler;
+import com.sk89q.worldguard.blacklist.logger.FileHandler;
 import com.sk89q.worldguard.config.ClaimExpansion;
 import com.sk89q.worldguard.config.ClaimExpansionOfferMode;
 import com.sk89q.worldguard.config.WorldMechanicSetting;
@@ -27,6 +31,7 @@ import com.sk89q.worldguard.config.YamlWorldConfiguration;
 import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -61,11 +66,13 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
         this.plugin = plugin;
         File baseFolder = new File(plugin.getDataFolder(), "worlds/" + worldName);
         configFile = new File(baseFolder, "config.yml");
+        blacklistFile = new File(baseFolder, "blacklist.txt");
 
         this.worldName = worldName;
         this.parentConfig = parentConfig;
 
         plugin.createDefaultConfiguration(configFile, "configWorld.yml");
+        plugin.createDefaultConfiguration(blacklistFile, "blacklist.txt");
 
         config = new CommentedYamlProcessor(
                 configFile,
@@ -186,9 +193,45 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
         BukkitConfigValidator.validateLimitGroups(plugin, worldName,
                 maxRegionCounts.keySet(), maxClaimVolumes.keySet());
 
+        loadBlacklist();
+
         config.setHeader(CONFIG_HEADER);
 
         config.save();
+    }
+
+    private void loadBlacklist() {
+        if (blacklist != null) {
+            blacklist.getLogger().close();
+        }
+        try {
+            Blacklist loaded = new Blacklist(getBoolean("blacklist.useAsWhitelist",
+                    getBoolean("blacklist.use-as-whitelist", false)));
+            loaded.load(blacklistFile);
+            if (loaded.isEmpty() && !loaded.isWhitelist()) {
+                blacklist = null;
+                return;
+            }
+            BlacklistLoggerHandler logger = loaded.getLogger();
+            if (getBoolean("blacklist.logging.console.enable", true)) {
+                logger.addHandler(new ConsoleHandler(worldName, log));
+            }
+            if (getBoolean("blacklist.logging.file.enable", false)) {
+                logger.addHandler(new FileHandler(
+                        getString("blacklist.logging.file.path", "plugins/WorldGuard/logs/%Y-%m-%d.log"),
+                        Math.max(1, getInt("blacklist.logging.file.openFiles",
+                                getInt("blacklist.logging.file.open-files", 10))),
+                        worldName,
+                        log));
+            }
+            blacklist = loaded;
+        } catch (FileNotFoundException e) {
+            blacklist = null;
+            log.log(Level.WARNING, "WorldGuard blacklist does not exist for world " + worldName);
+        } catch (IOException e) {
+            blacklist = null;
+            log.log(Level.WARNING, "Could not load WorldGuard blacklist for world " + worldName, e);
+        }
     }
 
     private WorldMechanicSetting mechanic(String path) {

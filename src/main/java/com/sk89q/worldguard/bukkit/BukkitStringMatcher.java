@@ -63,7 +63,7 @@ public class BukkitStringMatcher implements StringMatcher {
     private World matchSpecialWorld(Actor sender, String filter, List<? extends World> worlds)
             throws CommandException {
         return switch (filter.toLowerCase(Locale.ROOT)) {
-            case "#main" -> worlds.getFirst();
+            case "#main" -> worlds.get(0);
             case "#normal" -> matchEnvironment(
                     worlds, org.bukkit.World.Environment.NORMAL, "@wg:noNormalWorld@");
             case "#nether" -> matchEnvironment(
@@ -97,11 +97,12 @@ public class BukkitStringMatcher implements StringMatcher {
 
     @Override
     public List<LocalPlayer> matchPlayerNames(String filter) {
-        List<LocalPlayer> wgPlayers = Bukkit.getServer().getOnlinePlayers().stream()
-                .map(player -> WorldGuardPlugin.inst().wrapPlayer(player))
-                .toList();
+        return matchPlayerNames(wrapOnlinePlayers(), filter);
+    }
 
-        filter = filter.toLowerCase();
+    private List<LocalPlayer> matchPlayerNames(List<LocalPlayer> wgPlayers, String filter) {
+
+        filter = filter.toLowerCase(Locale.ROOT);
 
         // Allow exact name matching
         if (filter.charAt(0) == '@' && filter.length() >= 2) {
@@ -123,7 +124,7 @@ public class BukkitStringMatcher implements StringMatcher {
             List<LocalPlayer> list = new ArrayList<>();
 
             for (LocalPlayer player : wgPlayers) {
-                if (player.getName().toLowerCase().contains(filter)) {
+                if (player.getName().toLowerCase(Locale.ROOT).contains(filter)) {
                     list.add(player);
                 }
             }
@@ -135,7 +136,7 @@ public class BukkitStringMatcher implements StringMatcher {
             List<LocalPlayer> list = new ArrayList<>();
 
             for (LocalPlayer player : wgPlayers) {
-                if (player.getName().toLowerCase().startsWith(filter)) {
+                if (player.getName().toLowerCase(Locale.ROOT).startsWith(filter)) {
                     list.add(player);
                 }
             }
@@ -165,9 +166,7 @@ public class BukkitStringMatcher implements StringMatcher {
             throw new CommandException("@wg:noPlayersMatched@");
         }
 
-        List<LocalPlayer> wgPlayers = Bukkit.getServer().getOnlinePlayers().stream()
-                .map(player -> WorldGuardPlugin.inst().wrapPlayer(player))
-                .toList();
+        List<LocalPlayer> wgPlayers = wrapOnlinePlayers();
 
         if (filter.equals("*")) {
             return checkPlayerMatch(wgPlayers);
@@ -211,9 +210,19 @@ public class BukkitStringMatcher implements StringMatcher {
             }
         }
 
-        List<LocalPlayer> players = matchPlayerNames(filter);
+        List<LocalPlayer> players = matchPlayerNames(wgPlayers, filter);
 
         return checkPlayerMatch(players);
+    }
+
+    private List<LocalPlayer> wrapOnlinePlayers() {
+        Collection<? extends Player> onlinePlayers = Bukkit.getServer().getOnlinePlayers();
+        List<LocalPlayer> players = new ArrayList<>(onlinePlayers.size());
+        WorldGuardPlugin plugin = WorldGuardPlugin.inst();
+        for (Player player : onlinePlayers) {
+            players.add(plugin.wrapPlayer(player));
+        }
+        return players;
     }
 
     @Override
