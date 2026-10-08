@@ -56,4 +56,13 @@ public enum EventType {
         return null;
     }
 
+    public static EventType fromRuleName(String ruleName) {
+        for (EventType type : values()) {
+            if (type.ruleName.equalsIgnoreCase(ruleName)) {
+                return type;
+            }
+        }
+        return null;
+    }
+
 }

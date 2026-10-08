@@ -56,6 +56,8 @@ public final class BukkitMessages {
     private static final Pattern PLACEHOLDER_MARKER =
             Pattern.compile("@wgarg:([A-Za-z][A-Za-z0-9]*):([A-Za-z0-9_-]*)@");
     private static final Pattern MESSAGE_TOKEN = Pattern.compile("@wg:([A-Za-z0-9]+)@");
+    private static final int TITLE_DELIVERY = 1;
+    private static final int ACTION_BAR_DELIVERY = 2;
 
     private final WorldGuardPlugin plugin;
     private final File file;
@@ -371,13 +373,9 @@ public final class BukkitMessages {
     public void send(CommandSender sender, String message) {
         if (sender == null || message == null || message.isEmpty()) return;
         List<Replacement> deliveries = findDeliveries(message);
-        boolean title = false;
-        boolean actionBar = false;
-        for (Replacement delivery : deliveries) {
-            title |= delivery.mode == DeliveryMode.TITLE;
-            actionBar |= delivery.mode == DeliveryMode.ACTION_BAR;
-            if (title && actionBar) break;
-        }
+        int deliveryModes = deliveryModes(deliveries);
+        boolean title = (deliveryModes & TITLE_DELIVERY) != 0;
+        boolean actionBar = (deliveryModes & ACTION_BAR_DELIVERY) != 0;
         List<String> lines = render(message, title);
         if (lines.isEmpty() || allEmpty(lines)) return;
         String actionBarLine = actionBar
@@ -387,24 +385,41 @@ public final class BukkitMessages {
         if (sender instanceof Player player && isCoolingDown(player, deliveries)) return;
 
         if (title) {
-            if (sender instanceof Player player) {
-                net.kyori.adventure.text.Component titleLine = MMSupport.component(lines.get(0));
-                net.kyori.adventure.text.Component subtitleLine = lines.size() > 1
-                        ? MMSupport.component(lines.get(1))
-                        : MMSupport.component("");
-                player.showTitle(net.kyori.adventure.title.Title.title(titleLine, subtitleLine));
-            }
+            sendTitle(sender, lines);
             return;
         }
         if (actionBar) {
-            if (sender instanceof Player player) {
-                player.sendActionBar(MMSupport.component(actionBarLine));
-            } else {
-                MMSupport.send(sender, List.of(actionBarLine));
-            }
+            sendActionBar(sender, actionBarLine);
             return;
         }
         MMSupport.send(sender, lines);
+    }
+
+    private static int deliveryModes(List<Replacement> deliveries) {
+        int modes = 0;
+        for (Replacement delivery : deliveries) {
+            if (delivery.mode == DeliveryMode.TITLE) modes |= TITLE_DELIVERY;
+            if (delivery.mode == DeliveryMode.ACTION_BAR) modes |= ACTION_BAR_DELIVERY;
+            if (modes == (TITLE_DELIVERY | ACTION_BAR_DELIVERY)) break;
+        }
+        return modes;
+    }
+
+    private static void sendTitle(CommandSender sender, List<String> lines) {
+        if (!(sender instanceof Player player)) return;
+        net.kyori.adventure.text.Component titleLine = MMSupport.component(lines.get(0));
+        net.kyori.adventure.text.Component subtitleLine = lines.size() > 1
+                ? MMSupport.component(lines.get(1))
+                : MMSupport.component("");
+        player.showTitle(net.kyori.adventure.title.Title.title(titleLine, subtitleLine));
+    }
+
+    private static void sendActionBar(CommandSender sender, String line) {
+        if (sender instanceof Player player) {
+            player.sendActionBar(MMSupport.component(line));
+        } else {
+            MMSupport.send(sender, List.of(line));
+        }
     }
 
     static String selectActionBarLine(List<String> lines, int mode) {

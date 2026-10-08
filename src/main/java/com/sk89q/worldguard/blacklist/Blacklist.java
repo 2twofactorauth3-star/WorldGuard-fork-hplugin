@@ -125,89 +125,103 @@ public class Blacklist {
      * @throws IOException if an error occurred reading from the file
      */
     public void load(File file) throws IOException {
-
         MatcherIndex.Builder builder = new MatcherIndex.Builder();
         TargetMatcherParser targetMatcherParser = new TargetMatcherParser();
         try (BufferedReader buff = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
-
             String line;
             List<BlacklistEntry> currentEntries = null;
             while ((line = buff.readLine()) != null) {
                 line = line.trim();
-
-                // Blank line
-                if (line.isEmpty()) {
-                    continue;
-                } else if (line.charAt(0) == ';' || line.charAt(0) == '#') {
+                if (isIgnoredLine(line)) continue;
+                if (isHeading(line)) {
+                    currentEntries = parseHeading(line, builder, targetMatcherParser);
                     continue;
                 }
-
-                if (line.length() >= 2 && line.charAt(0) == '[' && line.charAt(line.length() - 1) == ']') {
-                    String[] items = line.substring(1, line.length() - 1).split(",");
-                    currentEntries = new ArrayList<>();
-
-                    for (String item : items) {
-                        try {
-                            TargetMatcher matcher = targetMatcherParser.fromInput(item.trim());
-                            BlacklistEntry entry = new BlacklistEntry(this);
-                            builder.add(matcher, entry);
-                            currentEntries.add(entry);
-                        } catch (TargetMatcherParseException e) {
-                            log.log(Level.WARNING, "Could not parse a block/item heading: " + e.getMessage());
-                        }
-                    }
-                } else if (currentEntries != null) {
-                    int separator = line.indexOf('=');
-                    if (separator < 0) {
-                        log.log(Level.WARNING, "Found option with no value " + file.getName() + " for '" + line + "'");
-                        continue;
-                    }
-                    String option = line.substring(0, separator).trim();
-                    String value = line.substring(separator + 1);
-
-                    boolean unknownOption = false;
-
-                    for (BlacklistEntry entry : currentEntries) {
-                        if (option.equalsIgnoreCase("ignore-groups")) {
-                            entry.setIgnoreGroups(value.split(","));
-
-                        } else if (option.equalsIgnoreCase("ignore-perms")) {
-                            entry.setIgnorePermissions(value.split(","));
-
-                        } else if (option.equalsIgnoreCase("message")) {
-                            entry.setMessage(CommandUtils.replaceColorMacros(value.trim()));
-
-                        } else if (option.equalsIgnoreCase("comment")) {
-                            entry.setComment(CommandUtils.replaceColorMacros(value.trim()));
-
-                        } else {
-                            boolean found = false;
-
-                            for (EventType type : EventType.values()) {
-                                if (type.ruleName.equalsIgnoreCase(option)) {
-                                    entry.getActions(type.eventClass).addAll(parseActions(entry, value));
-                                    found = true;
-                                    break;
-                                }
-                            }
-
-                            if (!found) {
-                                unknownOption = true;
-                            }
-                        }
-                    }
-
-                    if (unknownOption) {
-                        log.log(Level.WARNING, "Unknown option '" + option + "' in " + file.getName() + " for '" + line + "'");
-                    }
-                } else {
+                if (currentEntries == null) {
                     log.log(Level.WARNING, "Found option with no heading "
                             + file.getName() + " for '" + line + "'");
+                    continue;
                 }
+                applyOption(file, line, currentEntries);
             }
-
             this.index = builder.build();
         }
+    }
+
+    private static boolean isIgnoredLine(String line) {
+        return line.isEmpty() || line.charAt(0) == ';' || line.charAt(0) == '#';
+    }
+
+    private static boolean isHeading(String line) {
+        return line.length() >= 2 && line.charAt(0) == '[' && line.charAt(line.length() - 1) == ']';
+    }
+
+    private List<BlacklistEntry> parseHeading(String line, MatcherIndex.Builder builder,
+                                              TargetMatcherParser targetMatcherParser) {
+        String[] items = line.substring(1, line.length() - 1).split(",");
+        List<BlacklistEntry> entries = new ArrayList<>(items.length);
+        for (String item : items) {
+            try {
+                TargetMatcher matcher = targetMatcherParser.fromInput(item.trim());
+                BlacklistEntry entry = new BlacklistEntry(this);
+                builder.add(matcher, entry);
+                entries.add(entry);
+            } catch (TargetMatcherParseException e) {
+                log.log(Level.WARNING, "Could not parse a block/item heading: " + e.getMessage());
+            }
+        }
+        return entries;
+    }
+
+    private void applyOption(File file, String line, List<BlacklistEntry> entries) {
+        int separator = line.indexOf('=');
+        if (separator < 0) {
+            log.log(Level.WARNING, "Found option with no value " + file.getName() + " for '" + line + "'");
+            return;
+        }
+        String option = line.substring(0, separator).trim();
+        String value = line.substring(separator + 1);
+        EventType eventType = EventType.fromRuleName(option);
+        if (applyEntryOption(entries, option, value, eventType)) return;
+        log.log(Level.WARNING, "Unknown option '" + option + "' in " + file.getName() + " for '" + line + "'");
+    }
+
+    private boolean applyEntryOption(List<BlacklistEntry> entries, String option, String value,
+                                     EventType eventType) {
+        if (eventType != null) {
+            for (BlacklistEntry entry : entries) {
+                entry.getActions(eventType.eventClass).addAll(parseActions(entry, value));
+            }
+            return true;
+        }
+        if (option.equalsIgnoreCase("ignore-groups")) {
+            setIgnoreGroups(entries, value.split(","));
+        } else if (option.equalsIgnoreCase("ignore-perms")) {
+            setIgnorePermissions(entries, value.split(","));
+        } else if (option.equalsIgnoreCase("message")) {
+            setMessage(entries, CommandUtils.replaceColorMacros(value.trim()));
+        } else if (option.equalsIgnoreCase("comment")) {
+            setComment(entries, CommandUtils.replaceColorMacros(value.trim()));
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+    private static void setIgnoreGroups(List<BlacklistEntry> entries, String[] groups) {
+        for (BlacklistEntry entry : entries) entry.setIgnoreGroups(groups);
+    }
+
+    private static void setIgnorePermissions(List<BlacklistEntry> entries, String[] permissions) {
+        for (BlacklistEntry entry : entries) entry.setIgnorePermissions(permissions);
+    }
+
+    private static void setMessage(List<BlacklistEntry> entries, String message) {
+        for (BlacklistEntry entry : entries) entry.setMessage(message);
+    }
+
+    private static void setComment(List<BlacklistEntry> entries, String comment) {
+        for (BlacklistEntry entry : entries) entry.setComment(comment);
     }
 
     private List<Action> parseActions(BlacklistEntry entry, String raw) {

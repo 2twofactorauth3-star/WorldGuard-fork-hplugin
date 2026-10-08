@@ -46,7 +46,6 @@ public class TellAction extends RepeatGuardedAction {
         if (event.getPlayer() != null) {
             if (message != null) {
                 message = message.replaceAll("(?!<\\\\)\\\\n", "\n").replaceAll("\\\\\\\\n", "\\n");
-                // TODO Find a better way to do this String.format call that doesn't require a string.
                 event.getPlayer().print(TextComponent.of(String.format(message, PlainComponentSerializer.INSTANCE.serialize(event.getTarget().getFriendlyNameComponent()))));
             } else {
                 event.getPlayer().printError(TextComponent.of("You're not allowed to " + event.getDescription() + " ").append(event.getTarget().getFriendlyNameComponent()).append(TextComponent.of(".")));
@@ -57,4 +56,3 @@ public class TellAction extends RepeatGuardedAction {
     }
 
 }
-

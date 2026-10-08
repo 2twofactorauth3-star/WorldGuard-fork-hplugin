@@ -31,6 +31,8 @@ import java.util.function.Function;
  */
 public final class CommandUtils {
 
+    private static final char[] COLOR_MACROS = createColorMacros();
+
     private CommandUtils() {
     }
 
@@ -42,43 +44,7 @@ public final class CommandUtils {
      */
     @SuppressWarnings("deprecation")
     public static String replaceColorMacros(String str) {
-        // TODO: Make this more efficient
-
-        str = str.replace("`r", "&c");
-        str = str.replace("`R", "&4");
-
-        str = str.replace("`y", "&e");
-        str = str.replace("`Y", "&6");
-
-        str = str.replace("`g", "&a");
-        str = str.replace("`G", "&2");
-
-        str = str.replace("`c", "&b");
-        str = str.replace("`C", "&3");
-
-        str = str.replace("`b", "&9");
-        str = str.replace("`B", "&1");
-
-        str = str.replace("`p", "&d");
-        str = str.replace("`P", "&5");
-
-        str = str.replace("`0", "&0");
-        str = str.replace("`1", "&8");
-        str = str.replace("`2", "&7");
-        str = str.replace("`w", "&F");
-
-        str = str.replace("`k", "&k");
-
-        str = str.replace("`l", "&l");
-        str = str.replace("`m", "&m");
-        str = str.replace("`n", "&n");
-        str = str.replace("`o", "&o");
-
-        str = str.replace("`x", "&r");
-
-        // MC classic
-        // FIXME: workaround for https://github.com/KyoriPowered/text/issues/50
-        // remove when fixed upstream and updated in WorldEdit
+        str = expandColorMacros(str);
         String[] lines = str.split("\n");
         StringBuilder serialized = new StringBuilder(str.length());
         for (int index = 0; index < lines.length; index++) {
@@ -92,6 +58,48 @@ public final class CommandUtils {
         str = serialized.toString();
 
         return str;
+    }
+
+    private static String expandColorMacros(String input) {
+        StringBuilder output = null;
+        int copiedUntil = 0;
+        for (int index = 0; index + 1 < input.length(); index++) {
+            if (input.charAt(index) != '`') continue;
+            char macro = input.charAt(index + 1);
+            char replacement = macro < COLOR_MACROS.length ? COLOR_MACROS[macro] : 0;
+            if (replacement == 0) continue;
+            if (output == null) output = new StringBuilder(input.length());
+            output.append(input, copiedUntil, index).append('&').append(replacement);
+            copiedUntil = ++index + 1;
+        }
+        return output == null ? input : output.append(input, copiedUntil, input.length()).toString();
+    }
+
+    private static char[] createColorMacros() {
+        char[] macros = new char[128];
+        macros['r'] = 'c';
+        macros['R'] = '4';
+        macros['y'] = 'e';
+        macros['Y'] = '6';
+        macros['g'] = 'a';
+        macros['G'] = '2';
+        macros['c'] = 'b';
+        macros['C'] = '3';
+        macros['b'] = '9';
+        macros['B'] = '1';
+        macros['p'] = 'd';
+        macros['P'] = '5';
+        macros['0'] = '0';
+        macros['1'] = '8';
+        macros['2'] = '7';
+        macros['w'] = 'F';
+        macros['k'] = 'k';
+        macros['l'] = 'l';
+        macros['m'] = 'm';
+        macros['n'] = 'n';
+        macros['o'] = 'o';
+        macros['x'] = 'r';
+        return macros;
     }
 
 
