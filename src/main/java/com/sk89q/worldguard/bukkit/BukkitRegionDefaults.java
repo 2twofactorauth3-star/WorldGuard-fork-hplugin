@@ -47,6 +47,10 @@ final class BukkitRegionDefaults {
         try {
             BukkitConfigValidator.validateNoDuplicateKeys(plugin, file);
             config.load();
+            if (!config.getBoolean("settings.enable", false)) {
+                worlds = Map.of();
+                return;
+            }
             BukkitConfigValidator.validateRegionDefaults(plugin, config, file);
             Map<String, WorldDefaults> loaded = new LinkedHashMap<>();
             for (Map.Entry<String, Object> entry

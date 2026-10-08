@@ -5,6 +5,8 @@
 
 # Contains every region default setting.
 settings:
+  # Enables applying region defaults from this file.
+  enable: false
   # Contains complete rule sets selected by the exact world ID.
   worlds:
     # Fallback rules for every world that has no exact key below.
