@@ -173,13 +173,21 @@ public class MemberCommands extends RegionCommandsBase {
         RegionManager manager = checkRegionManager(world);
         ProtectedRegion region = checkExistingRegion(manager, id, true);
 
-        // Check permissions
-        if (!getPermissionModel(sender).mayRemoveMembers(region)) {
+        boolean mayRemoveMembers = getPermissionModel(sender).mayRemoveMembers(region);
+        LocalPlayer selfRemovingPlayer = mayRemoveMembers
+                ? null : selfRemovingPlayer(args, sender, world, region);
+        if (!mayRemoveMembers && selfRemovingPlayer == null) {
             throw new CommandPermissionsException();
         }
 
         Callable<DefaultDomain> callable;
-        if (args.hasFlag('a')) {
+        if (selfRemovingPlayer != null) {
+            callable = () -> {
+                DefaultDomain self = new DefaultDomain();
+                self.addPlayer(selfRemovingPlayer);
+                return self;
+            };
+        } else if (args.hasFlag('a')) {
             callable = region::getMembers;
         } else {
             if (args.argsLength() < 2) {
@@ -200,6 +208,20 @@ public class MemberCommands extends RegionCommandsBase {
                         "membersRemoved", "region", region.getId())), region.getMembers()::removeAll)
                 .onFailure(TextComponent.of("@wg:membersRemoveFailed@"), worldGuard.getExceptionConverter())
                 .buildAndExec(worldGuard.getExecutorService());
+    }
+
+    private LocalPlayer selfRemovingPlayer(
+            CommandContext args, Actor sender, World world, ProtectedRegion region) {
+        if (!(sender instanceof LocalPlayer player)
+                || !worldGuard.getPlatform().getGlobalStateManager().get(world).allowMemberSelfRemoval
+                || args.hasFlag('a')
+                || args.argsLength() != 2
+                || !region.getMembers().getUniqueIds().contains(player.getUniqueId())) {
+            return null;
+        }
+        String target = args.getString(1);
+        if (target.equalsIgnoreCase(player.getName())) return player;
+        return player.getUniqueId().equals(DomainInputResolver.parseUUID(target)) ? player : null;
     }
 
     public void removeOwner(CommandContext args, Actor sender) throws CommandException {

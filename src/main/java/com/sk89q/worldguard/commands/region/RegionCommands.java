@@ -1056,13 +1056,13 @@ public final class RegionCommands extends RegionCommandsBase {
             if (region == null || region.getCenter() == null) {
                 throw new CommandException("@wg:noCenterPoint@");
             }
-            if (player.getGameMode() == GameModes.SPECTATOR) {
-                teleportLocation = new Location(world, region.getCenter(), 0, 0);
-            } else {
-                // Center teleport remains spectator-only because the available free-position
-                // search cannot guarantee that its result stays inside the selected region.
+            WorldConfiguration worldConfig = WorldGuard.getInstance().getPlatform()
+                    .getGlobalStateManager().get(world);
+            if (worldConfig.teleportCenterRequiresSpectator
+                    && player.getGameMode() != GameModes.SPECTATOR) {
                 throw new CommandException("@wg:centerSpectatorOnly@");
             }
+            teleportLocation = new Location(world, region.getCenter(), 0, 0);
         } else {
             teleportLocation = FlagValueCalculator.getEffectiveFlagOf(existing, Flags.TELE_LOC, player);
             

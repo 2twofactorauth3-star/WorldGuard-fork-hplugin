@@ -389,6 +389,10 @@ settings:
     claimOnlyInsideExistingRegions: false
     # Prevents removing every region owner: at least one player or group must remain.
     preventLastOwnerRemoval: true
+    # Allows a direct region member without management permission to remove only themselves.
+    allowMemberSelfRemoval: true
+    # Requires spectator mode when teleporting to a region center with /rg teleport -c.
+    teleportCenterRequiresSpectator: false
     # Applies location flags only inside explicit regions.
     locationFlagsOnlyInsideRegions: false
     # Sets region-count limits by permission group.

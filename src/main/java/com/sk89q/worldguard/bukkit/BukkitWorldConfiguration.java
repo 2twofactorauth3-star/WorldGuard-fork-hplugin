@@ -173,6 +173,8 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
                 getInt("regions.claimExpansion.offerRemovalMode", ClaimExpansionOfferMode.BOTH.configValue));
         claimOnlyInsideExistingRegions = getBoolean("regions.claimOnlyInsideExistingRegions", false);
         preventLastOwnerRemoval = getBoolean("regions.preventLastOwnerRemoval", true);
+        allowMemberSelfRemoval = getBoolean("regions.allowMemberSelfRemoval", true);
+        teleportCenterRequiresSpectator = getBoolean("regions.teleportCenterRequiresSpectator", false);
         applyRegionDefaultsToExistingRegions =
                 plugin.getRegionDefaults().applyToExistingRegions(worldName);
         showGlobalRegionInfo = plugin.getRegionDefaults().showGlobalRegionInfo(worldName);

@@ -389,6 +389,10 @@ settings:
     claimOnlyInsideExistingRegions: false
     # Запрещает удалять всех владельцев региона: должен остаться хотя бы один игрок или группа.
     preventLastOwnerRemoval: true
+    # Разрешает непосредственному участнику региона без права управления удалить только самого себя.
+    allowMemberSelfRemoval: true
+    # Требует режим наблюдателя для телепортации в центр региона через /rg teleport -c.
+    teleportCenterRequiresSpectator: false
     # Применяет позиционные флаги только внутри явных регионов.
     locationFlagsOnlyInsideRegions: false
     # Задаёт лимиты количества регионов по группам прав.

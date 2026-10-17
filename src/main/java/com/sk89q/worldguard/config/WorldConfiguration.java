@@ -97,6 +97,8 @@ public abstract class WorldConfiguration {
     public ClaimExpansionOfferMode claimExpansionOfferMode;
     public boolean claimOnlyInsideExistingRegions;
     public boolean preventLastOwnerRemoval;
+    public boolean allowMemberSelfRemoval;
+    public boolean teleportCenterRequiresSpectator;
     public boolean applyRegionDefaultsToExistingRegions;
     public boolean showGlobalRegionInfo;
     public boolean showPlayerUuidsInRegionInfo;
