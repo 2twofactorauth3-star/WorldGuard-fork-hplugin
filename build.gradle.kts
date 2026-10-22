@@ -71,7 +71,11 @@ dependencies {
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly("com.mojang:brigadier:1.2.9")
     testImplementation(libs.hamcrest.library)
+    testImplementation(libs.paperApi) {
+        isTransitive = false
+    }
     testImplementation("net.kyori:adventure-text-minimessage:4.17.0")
     testImplementation("net.kyori:adventure-text-serializer-gson:4.17.0")
 }

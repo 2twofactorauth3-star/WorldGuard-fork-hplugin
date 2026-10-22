@@ -121,7 +121,7 @@ public class RegionProtectionListener extends AbstractListener {
         } else {
             message = BukkitMessages.replacePlaceholder(message, "what", what);
         }
-        localPlayer.print(TextComponent.of(message));
+        localPlayer.print(message);
     }
 
     private static String deniedMessage(String action) {

@@ -1,10 +1,124 @@
 #
-# Все сообщения WorldGuard для игроков проходят через этот файл.
+# Сообщения WorldGuard для игроков. Тексты уведомлений о территории настраиваются в territoryNotifications.yml.
 # mode: message отправляет строки в чат; actionbar использует одну строку; title — title и необязательный subtitle.
 # cooldownMillis подавляет повторную отправку этого сообщения одному игроку; -1 отключает кулдаун.
 # Пустое значение message ничего не отправляет. Используется MiniMessage.
 #
 messages:
+  notificationPrefix:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '<gray>WG: <light_purple>{cause}<gold>{description}'
+  localeRequired:
+    mode: message
+    cooldownMillis: 1000
+    message:
+      - '<red>Укажите язык <#FDBE00>ru<red> или <#FDBE00>en<red> в <#FDBE00>locale.yml<red> и перезапустите сервер'
+      - '<red>Select <#FDBE00>ru<red> or <#FDBE00>en<red> in <#FDBE00>locale.yml<red> and restart the server'
+  pagination:
+    empty:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Ничего не найдено'
+    invalidPage:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Страница {page} недоступна; всего страниц: {maximum}'
+    page:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<gray>Страница <#FDBE00>{page}<gray> из <#FDBE00>{maximum}'
+    previous:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<click:run_command:'{command}'><hover:show_text:'<white>Предыдущая страница'><#FDBE00>« </hover></click>"
+    next:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<click:run_command:'{command}'><hover:show_text:'<white>Следующая страница'><#FDBE00> »</hover></click>"
+  profileLookupFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Сервис поиска UUID недоступен; не удалось найти указанных игроков'
+  profileLookupInterrupted:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Поиск UUID игроков был прерван'
+  blacklist:
+    notify:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<gold> ({action}) <white>{target} <gray>{comment}'
+    denied:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Нельзя <#FDBE00>{action}<white>: <#FDBE00>{target}'
+    kick:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<red>Вы отключены от сервера: запрещено {action}: {target}'
+    ban:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<red>Вы заблокированы: запрещено {action}: {target}'
+    banCustom:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<red>Вы заблокированы: {message}'
+    action:
+      break:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'ломать блоки'
+      place:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'ставить блоки'
+      interact:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'взаимодействовать с блоками'
+      dispense:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'выдавать предметы раздатчиком'
+      destroyWith:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'ломать блоки этим предметом'
+      acquire:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'получать предметы'
+      equip:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'надевать предметы'
+      use:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'использовать предметы'
   permissionDenied:
     mode: message
     cooldownMillis: 1000
@@ -1316,6 +1430,16 @@ messages:
         - '<white>Занимает<gray>: <#FDBE00>{blocks} <white>блоков'
 
   regionList:
+    emptyOwn:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} У вас <#FDBE00>нет регионов<white> в этом мире'
+    empty:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} Подходящих <#FDBE00>регионов<white> не найдено'
     title:
       mode: message
       cooldownMillis: -1

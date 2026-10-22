@@ -32,6 +32,7 @@ import com.sk89q.worldedit.util.formatting.component.TextComponentProducer;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.BukkitMessages;
+import com.sk89q.worldguard.bukkit.util.MMSupport;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.internal.permission.RegionPermissionModel;
 import com.sk89q.worldguard.protection.FlagValueCalculator;
@@ -359,7 +360,7 @@ public class RegionPrintoutBuilder implements Callable<TextComponent> {
                 "flag", flag.getName(),
                 "group", group == null ? "" : " -g " + group,
                 "valueColor", flagValueColor(value),
-                "value", value)));
+                "value", value instanceof String text ? MMSupport.component(text) : value)));
     }
 
     private static String flagValueColor(Object value) {

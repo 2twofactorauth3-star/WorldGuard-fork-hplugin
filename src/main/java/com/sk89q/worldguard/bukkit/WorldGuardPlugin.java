@@ -48,7 +48,6 @@ import com.sk89q.worldguard.bukkit.session.BukkitSessionManager;
 import com.sk89q.worldguard.bukkit.util.ClassSourceValidator;
 import com.sk89q.worldguard.bukkit.util.Entities;
 import com.sk89q.worldguard.bukkit.util.Events;
-import com.sk89q.worldguard.bukkit.util.MMSupport;
 import com.sk89q.worldguard.bukkit.util.SelectionVisualizer;
 import com.sk89q.worldguard.bukkit.util.SelectionLimitTracker;
 import com.sk89q.worldguard.commands.WorldGuardCommands;
@@ -91,9 +90,6 @@ import java.util.logging.Logger;
 public class WorldGuardPlugin extends JavaPlugin {
 
     private static final int BSTATS_SERVICE_ID = 34427;
-    private static final List<String> LOCALE_REQUIRED_MESSAGES = List.of(
-            "<red>Укажите язык <#FDBE00>ru<red> или <#FDBE00>en<red> в <#FDBE00>locale.yml<red> и перезапустите сервер",
-            "<red>Select <#FDBE00>ru<red> or <#FDBE00>en<red> in <#FDBE00>locale.yml<red> and restart the server");
     private static WorldGuardPlugin inst;
     private static BukkitWorldGuardPlatform platform;
     private PlayerMoveListener playerMoveListener;
@@ -101,6 +97,7 @@ public class WorldGuardPlugin extends JavaPlugin {
     private BukkitLogs logs;
     private BukkitLocaleManager localeManager;
     private BukkitRegionDefaults regionDefaults;
+    private TerritoryNotifications territoryNotifications;
     private final ConcurrentMap<UUID, BukkitPlayer> playerWrappers = new ConcurrentHashMap<>();
     private final Set<UUID> claimExpansionDisabled = ConcurrentHashMap.newKeySet();
     private SelectionLimitTracker selectionLimitTracker;
@@ -206,6 +203,7 @@ public class WorldGuardPlugin extends JavaPlugin {
         logs.load();
         regionDefaults = new BukkitRegionDefaults(this);
         messages = new BukkitMessages(this);
+        territoryNotifications = new TerritoryNotifications(this);
 
         // Catch bad things being done by naughty plugins that include WorldGuard's classes
         ClassSourceValidator verifier = new ClassSourceValidator(this);
@@ -258,6 +256,7 @@ public class WorldGuardPlugin extends JavaPlugin {
         (new EventAbstractionListener(this)).registerEvents();
         (new InvincibilityListener(this)).registerEvents();
         (new BlacklistListener(this)).registerEvents();
+        getServer().getPluginManager().registerEvents(territoryNotifications, this);
 
         // handle worlds separately to initialize already loaded worlds
         WorldGuardWorldListener worldListener = (new WorldGuardWorldListener(this));
@@ -265,6 +264,7 @@ public class WorldGuardPlugin extends JavaPlugin {
             worldListener.initWorld(world);
         }
         worldListener.registerEvents();
+        territoryNotifications.start();
 
         if (this.isFolia()) {
             for (Player player : Bukkit.getServer().getOnlinePlayers()) {
@@ -296,6 +296,7 @@ public class WorldGuardPlugin extends JavaPlugin {
             metrics.shutdown();
             metrics = null;
         }
+        if (territoryNotifications != null) territoryNotifications.close();
         WorldGuard.getInstance().disable();
         playerWrappers.clear();
         claimExpansionDisabled.clear();
@@ -507,7 +508,7 @@ public class WorldGuardPlugin extends JavaPlugin {
     }
 
     public void sendLocaleRequired(CommandSender sender) {
-        MMSupport.send(sender, LOCALE_REQUIRED_MESSAGES);
+        messages.send(sender, "@wg:localeRequired@");
     }
 
     public BukkitLogs getLogs() {
@@ -516,6 +517,10 @@ public class WorldGuardPlugin extends JavaPlugin {
 
     BukkitRegionDefaults getRegionDefaults() {
         return regionDefaults;
+    }
+
+    TerritoryNotifications getTerritoryNotifications() {
+        return territoryNotifications;
     }
 
     BukkitLocaleManager getLocaleManager() {

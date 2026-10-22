@@ -86,9 +86,9 @@ public class DomainInputResolver implements Callable<DefaultDomain> {
                     domain.addPlayer(profile.getUniqueId());
                 }
             } catch (IOException e) {
-                throw new UnresolvedNamesException("The UUID lookup service failed so the names entered could not be turned into UUIDs");
+                throw new UnresolvedNamesException("@wg:profileLookupFailed@");
             } catch (InterruptedException e) {
-                throw new UnresolvedNamesException("UUID lookup was interrupted");
+                throw new UnresolvedNamesException("@wg:profileLookupInterrupted@");
             }
         }
 

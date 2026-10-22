@@ -1,0 +1,175 @@
+# All territory notification texts and delivery channels are configured here.
+# The highest-priority physical region is selected; __global__ is used outside physical regions.
+# Changing territory clears the previous actionbar and bossbar. Apply changes with /wg reload.
+# General module settings.
+settings:
+  # Enables territory notifications.
+  enable: true
+  # Shows the current territory on joining the server and reloading settings.
+  showOnJoin: true
+  # Treats regions where you are a member as your own; false only considers ownership.
+  includeMembers: true
+  # Allowed worlds: an asterisk enables all, an empty list disables all.
+  worlds:
+    - '*'
+  # Territory outside physical regions.
+  free:
+    # MiniMessage name. Texts below support {name}, {region}, {world}, {player}, {prefix}.
+    name: '<bold><gradient:#FFD65C:#FFF0A6>UNCLAIMED TERRITORY</gradient></bold>'
+    # Sound played on entering this territory.
+    sound:
+      # Enables the sound.
+      enable: false
+      # Minecraft sound key.
+      type: 'minecraft:block.note_block.pling'
+      # Volume from 0 to 10.
+      volume: 1.0
+      # Pitch from 0.01 to 2.
+      pitch: 1.0
+    # Title and subtitle shown on entering.
+    title:
+      # Enables the title.
+      enable: false
+      # Main MiniMessage line.
+      title: '{name}'
+      # MiniMessage subtitle; an empty string hides it.
+      subtitle: ''
+      # Fade-in time in seconds.
+      fadeInSeconds: 0.5
+      # Stay time in seconds.
+      staySeconds: 3.0
+      # Fade-out time in seconds.
+      fadeOutSeconds: 0.5
+    # Text above the hotbar.
+    actionBar:
+      # Enables the actionbar. Refreshed every second without querying regions again.
+      enable: true
+      # MiniMessage text.
+      message: '{name}'
+      # Duration in seconds; -1 keeps it visible until the territory changes.
+      durationSeconds: -1
+    # Boss bar at the top of the screen.
+    bossBar:
+      # Enables the boss bar.
+      enable: false
+      # MiniMessage bar title.
+      message: '{name}'
+      # Duration in seconds; -1 keeps it visible until the territory changes.
+      durationSeconds: -1
+      # Color: PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE.
+      color: YELLOW
+      # Overlay: PROGRESS, NOTCHED_6, NOTCHED_10, NOTCHED_12, NOTCHED_20.
+      overlay: PROGRESS
+      # Bar progress from 0 to 1.
+      progress: 1.0
+    # Chat messages.
+    messages:
+      # Enables chat messages.
+      enable: false
+      # MiniMessage lines.
+      message:
+        - '{name}'
+      # Repeat interval in seconds; -1 sends only on entering, without repeats.
+      repeatSeconds: -1
+  # Another player's territory.
+  occupied:
+    name: '<bold><gradient:#FF526D:#FF9B7A>CLAIMED TERRITORY</gradient></bold>'
+    sound:
+      enable: false
+      type: 'minecraft:block.note_block.pling'
+      volume: 1.0
+      pitch: 1.0
+    title:
+      enable: false
+      title: '{name}'
+      subtitle: ''
+      fadeInSeconds: 0.5
+      staySeconds: 3.0
+      fadeOutSeconds: 0.5
+    actionBar:
+      enable: true
+      message: '{name}'
+      durationSeconds: -1
+    bossBar:
+      enable: false
+      message: '{name}'
+      durationSeconds: -1
+      color: RED
+      overlay: PROGRESS
+      progress: 1.0
+    messages:
+      enable: false
+      message:
+        - '{name}'
+      repeatSeconds: -1
+  # Your own territory.
+  own:
+    name: '<bold><gradient:#45D994:#AEF59B>YOUR TERRITORY</gradient></bold>'
+    sound:
+      enable: false
+      type: 'minecraft:block.note_block.pling'
+      volume: 1.0
+      pitch: 1.0
+    title:
+      enable: false
+      title: '{name}'
+      subtitle: ''
+      fadeInSeconds: 0.5
+      staySeconds: 3.0
+      fadeOutSeconds: 0.5
+    actionBar:
+      enable: true
+      message: '{name}'
+      durationSeconds: -1
+    bossBar:
+      enable: false
+      message: '{name}'
+      durationSeconds: -1
+      color: GREEN
+      overlay: PROGRESS
+      progress: 1.0
+    messages:
+      enable: false
+      message:
+        - '{name}'
+      repeatSeconds: -1
+  # Custom zones; the first matching entry overrides the default category.
+  customNames:
+    # Spawn zone. Copy this entry with a different key to add other zones.
+    spawnZone:
+      # Exact world names; an asterisk matches any world.
+      worlds:
+        - 'spawn'
+      # Case-insensitive region IDs; an asterisk matches any selected region.
+      regions:
+        - '__global__'
+        - 'spawn'
+      name: '<bold><gradient:#FF883D:#FFD178>SPAWN ZONE</gradient></bold>'
+      sound:
+        enable: false
+        type: 'minecraft:block.note_block.pling'
+        volume: 1.0
+        pitch: 1.0
+      title:
+        enable: false
+        title: '{name}'
+        subtitle: ''
+        fadeInSeconds: 0.5
+        staySeconds: 3.0
+        fadeOutSeconds: 0.5
+      actionBar:
+        enable: true
+        message: '{name}'
+        durationSeconds: -1
+      bossBar:
+        enable: false
+        message: '{name}'
+        durationSeconds: -1
+        color: YELLOW
+        overlay: PROGRESS
+        progress: 1.0
+      messages:
+        enable: false
+        message:
+          - '{name}'
+        repeatSeconds: -1

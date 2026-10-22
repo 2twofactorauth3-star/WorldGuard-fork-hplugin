@@ -25,7 +25,7 @@ import com.google.common.collect.Iterators;
 import com.sk89q.worldedit.registry.Keyed;
 import com.sk89q.worldedit.registry.Registry;
 import com.sk89q.worldedit.util.Location;
-import com.sk89q.worldedit.util.formatting.component.PaginationBox;
+import com.sk89q.worldguard.commands.LocalizedPaginationBox;
 import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldedit.world.World;
@@ -56,7 +56,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-class FlagHelperBox extends PaginationBox {
+class FlagHelperBox extends LocalizedPaginationBox {
 
     private static final Pattern MINI_MESSAGE_TAG = Pattern.compile("<[^>]+>");
 

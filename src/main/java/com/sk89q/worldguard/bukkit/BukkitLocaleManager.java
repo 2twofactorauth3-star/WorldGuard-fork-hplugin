@@ -41,7 +41,7 @@ final class BukkitLocaleManager {
 
     private static final Set<String> SUPPORTED_LOCALES = Set.of("en", "ru");
     private static final List<String> LOCALIZED_FILES =
-            List.of("config.yml", "messages.yml", "logs.yml", "regionDefaults.yml");
+            List.of("config.yml", "messages.yml", "logs.yml", "regionDefaults.yml", "territoryNotifications.yml");
     private static final String PENDING_FALLBACK_FILE = ".locale-pending";
 
     private final WorldGuardPlugin plugin;

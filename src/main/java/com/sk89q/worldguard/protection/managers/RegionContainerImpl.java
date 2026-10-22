@@ -54,15 +54,18 @@ import java.util.logging.Logger;
 public class RegionContainerImpl {
 
     private static final Logger log = Logger.getLogger(RegionContainerImpl.class.getCanonicalName());
-    private static final int LOAD_ATTEMPT_INTERVAL = 1000 * 30;
-    private static final int SAVE_INTERVAL = 1000 * 30;
 
     private final ConcurrentMap<Normal, RegionManager> mapping = new ConcurrentHashMap<>();
     private final Object lock = new Object();
     private final RegionDriver driver;
     private final Function<String, ? extends ConcurrentRegionIndex> indexFactory = new ChunkHashTable.Factory(new PriorityRTreeIndex.Factory());
-    private final Timer timer = new Timer("WorldGuard Region I/O");
+    private final Timer timer;
     private final FlagRegistry flagRegistry;
+    private TimerTask loadTask;
+    private TimerTask saveTask;
+    private long loadAttemptIntervalMillis;
+    private long saveIntervalMillis;
+    private boolean stopped;
 
     private final Set<Normal> failingLoads = new HashSet<>();
     private final Set<RegionManager> failingSaves = Collections.synchronizedSet(
@@ -75,12 +78,38 @@ public class RegionContainerImpl {
      * @param flagRegistry the flag registry
      */
     public RegionContainerImpl(RegionDriver driver, FlagRegistry flagRegistry) {
+        this(driver, flagRegistry, 30000, 30000);
+    }
+
+    public RegionContainerImpl(RegionDriver driver, FlagRegistry flagRegistry,
+                               long loadAttemptIntervalMillis, long saveIntervalMillis) {
         checkNotNull(driver);
         checkNotNull(flagRegistry, "flagRegistry");
         this.driver = driver;
-        timer.schedule(new BackgroundLoader(), LOAD_ATTEMPT_INTERVAL, LOAD_ATTEMPT_INTERVAL);
-        timer.schedule(new BackgroundSaver(), SAVE_INTERVAL, SAVE_INTERVAL);
         this.flagRegistry = flagRegistry;
+        timer = new Timer("WorldGuard Region I/O");
+        setIntervals(loadAttemptIntervalMillis, saveIntervalMillis);
+    }
+
+    public final void setIntervals(long loadAttemptIntervalMillis, long saveIntervalMillis) {
+        long loadInterval = Math.clamp(loadAttemptIntervalMillis, 15000, 60000);
+        long saveInterval = Math.clamp(saveIntervalMillis, 15000, 60000);
+        synchronized (lock) {
+            if (stopped) return;
+            if (this.loadAttemptIntervalMillis != loadInterval) {
+                if (loadTask != null) loadTask.cancel();
+                this.loadAttemptIntervalMillis = loadInterval;
+                loadTask = new BackgroundLoader();
+                timer.schedule(loadTask, loadInterval, loadInterval);
+            }
+            if (this.saveIntervalMillis != saveInterval) {
+                if (saveTask != null) saveTask.cancel();
+                this.saveIntervalMillis = saveInterval;
+                saveTask = new BackgroundSaver();
+                timer.schedule(saveTask, saveInterval, saveInterval);
+            }
+            timer.purge();
+        }
     }
 
     /**
@@ -194,8 +223,11 @@ public class RegionContainerImpl {
      * Disable completely.
      */
     public void shutdown() {
-        timer.cancel();
-        unloadAll();
+        synchronized (lock) {
+            stopped = true;
+            timer.cancel();
+            unloadAll();
+        }
     }
 
     /**
@@ -235,6 +267,7 @@ public class RegionContainerImpl {
         @Override
         public void run() {
             synchronized (lock) {
+                if (stopped || saveTask != this) return;
                 // Block loading of new region managers
 
                 for (Map.Entry<Normal, RegionManager> entry : mapping.entrySet()) {
@@ -265,6 +298,7 @@ public class RegionContainerImpl {
         @Override
         public void run() {
             synchronized (lock) {
+                if (stopped || loadTask != this) return;
                 if (!failingLoads.isEmpty()) {
                     Iterator<Normal> it = failingLoads.iterator();
                     while (it.hasNext()) {

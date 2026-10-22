@@ -1,10 +1,124 @@
 #
-# All player-facing WorldGuard messages pass through this file.
+# WorldGuard player messages. Territory notification texts are configured in territoryNotifications.yml.
 # mode: message sends lines to chat; actionbar uses one line; title uses title and optional subtitle lines.
 # cooldownMillis suppresses repeated sends to the same player for this message; -1 disables cooldown.
 # Empty message values send nothing. MiniMessage is required.
 #
 messages:
+  notificationPrefix:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - '<gray>WG: <light_purple>{cause}<gold>{description}'
+  localeRequired:
+    mode: message
+    cooldownMillis: 1000
+    message:
+      - '<red>Укажите язык <#FDBE00>ru<red> или <#FDBE00>en<red> в <#FDBE00>locale.yml<red> и перезапустите сервер'
+      - '<red>Select <#FDBE00>ru<red> or <#FDBE00>en<red> in <#FDBE00>locale.yml<red> and restart the server'
+  pagination:
+    empty:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} No results found'
+    invalidPage:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - 'Page {page} is unavailable; total pages: {maximum}'
+    page:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<gray>Page <#FDBE00>{page}<gray> of <#FDBE00>{maximum}'
+    previous:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<click:run_command:'{command}'><hover:show_text:'<white>Previous page'><#FDBE00>« </hover></click>"
+    next:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - "<click:run_command:'{command}'><hover:show_text:'<white>Next page'><#FDBE00> »</hover></click>"
+  profileLookupFailed:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'The UUID lookup service is unavailable; the requested players could not be resolved'
+  profileLookupInterrupted:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - 'Player UUID lookup was interrupted'
+  blacklist:
+    notify:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<gold> ({action}) <white>{target} <gray>{comment}'
+    denied:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} You cannot <#FDBE00>{action}<white>: <#FDBE00>{target}'
+    kick:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<red>You were disconnected: forbidden action {action}: {target}'
+    ban:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<red>You were banned: forbidden action {action}: {target}'
+    banCustom:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '<red>You were banned: {message}'
+    action:
+      break:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'break blocks'
+      place:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'place blocks'
+      interact:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'interact with blocks'
+      dispense:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'dispense items'
+      destroyWith:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'break blocks using this item'
+      acquire:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'acquire items'
+      equip:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'equip items'
+      use:
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'use items'
   permissionDenied:
     mode: message
     cooldownMillis: 1000
@@ -1316,6 +1430,16 @@ messages:
         - '<white>Occupies<gray>: <#FDBE00>{blocks} <white>blocks'
 
   regionList:
+    emptyOwn:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} You have <#FDBE00>no regions<white> in this world'
+    empty:
+      mode: message
+      cooldownMillis: -1
+      message:
+        - '{prefix} No matching <#FDBE00>regions<white> were found'
     title:
       mode: message
       cooldownMillis: -1

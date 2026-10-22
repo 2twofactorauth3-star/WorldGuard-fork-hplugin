@@ -57,6 +57,7 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
         BukkitConfigValidator.validatePrefix(plugin);
         plugin.getMessages().load();
         plugin.getRegionDefaults().load();
+        plugin.getTerritoryNotifications().load();
         super.load();
     }
 

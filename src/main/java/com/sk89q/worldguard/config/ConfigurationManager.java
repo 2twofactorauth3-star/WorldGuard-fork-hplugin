@@ -75,8 +75,13 @@ public abstract class ConfigurationManager {
     public SelectionLimit selectionLimit;
     public boolean confirmOfflinePlayerAdditions;
     public boolean showBlockedCommandMessagesInRegionInfo;
+    public boolean suggestGlobalRegionToNonMembers;
     public boolean disableDefaultBypass;
     public boolean announceBypassStatus;
+    public long entryDenyMessageCooldownMillis = 2500;
+    public long exitDenyMessageCooldownMillis = 2500;
+    public long regionLoadAttemptIntervalMillis = 30000;
+    public long regionSaveIntervalMillis = 30000;
 
     /**
      * Region storage configuration.

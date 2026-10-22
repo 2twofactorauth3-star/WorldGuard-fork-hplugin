@@ -50,6 +50,11 @@ public abstract class YamlConfigurationManager extends ConfigurationManager {
         announceBypassStatus = getBoolean("regions.announceBypassStatus", false);
         showBlockedCommandMessagesInRegionInfo = getBoolean(
                 "regions.showBlockedCommandMessagesInRegionInfo", false);
+        suggestGlobalRegionToNonMembers = getBoolean("regions.suggestGlobalRegionToNonMembers", false);
+        entryDenyMessageCooldownMillis = getIntervalMillis("messages.entryDenyCooldownMillis", 2500, 1000, 5000);
+        exitDenyMessageCooldownMillis = getIntervalMillis("messages.exitDenyCooldownMillis", 2500, 1000, 5000);
+        regionLoadAttemptIntervalMillis = getIntervalMillis("regions.loadAttemptIntervalMillis", 30000, 15000, 60000);
+        regionSaveIntervalMillis = getIntervalMillis("regions.saveIntervalMillis", 30000, 15000, 60000);
 
         particleEffects = getBoolean("useParticleEffects", true);
         showSelectionBorders = getBoolean("selectionParticles.enable", true);
@@ -111,6 +116,13 @@ public abstract class YamlConfigurationManager extends ConfigurationManager {
     private double getNumber(String node, double def) {
         Object value = config.getProperty(settingsPath(node));
         return value instanceof Number number ? number.doubleValue() : def;
+    }
+
+    private long getIntervalMillis(String node, long fallback, long minimum, long maximum) {
+        double value = getNumber(node, fallback);
+        long interval = (long) clamp(Double.isNaN(value) ? fallback : value, minimum, maximum);
+        config.setProperty(settingsPath(node), interval);
+        return interval;
     }
 
     private static double clamp(double value, double minimum, double maximum) {

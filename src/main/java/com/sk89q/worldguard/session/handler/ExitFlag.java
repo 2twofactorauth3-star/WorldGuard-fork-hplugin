@@ -20,9 +20,9 @@
 package com.sk89q.worldguard.session.handler;
 
 import com.sk89q.worldedit.util.Location;
-import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
@@ -41,7 +41,6 @@ public class ExitFlag extends FlagValueChangeHandler<State> {
         }
     }
 
-    private static final long MESSAGE_THRESHOLD = 1000 * 2;
     private String storedMessage;
     private boolean exitViaTeleport = false;
     private long lastMessage;
@@ -59,9 +58,10 @@ public class ExitFlag extends FlagValueChangeHandler<State> {
 
     private void sendMessage(LocalPlayer player) {
         long now = System.currentTimeMillis();
+        long cooldown = WorldGuard.getInstance().getPlatform().getGlobalStateManager().exitDenyMessageCooldownMillis;
 
-        if ((now - lastMessage) > MESSAGE_THRESHOLD && storedMessage != null && !storedMessage.isEmpty()) {
-            player.print(TextComponent.of(storedMessage));
+        if (now - lastMessage >= cooldown && storedMessage != null && !storedMessage.isEmpty()) {
+            player.print(storedMessage);
             lastMessage = now;
         }
     }

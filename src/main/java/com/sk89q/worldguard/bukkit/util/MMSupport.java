@@ -22,10 +22,14 @@ package com.sk89q.worldguard.bukkit.util;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.Tag;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.command.CommandSender;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -38,7 +42,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class MMSupport {
 
     private static final int CACHE_SIZE = 8192;
-    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+    private static final String COMPONENT_TAG = "wg_component";
+    private static final GsonComponentSerializer GSON = GsonComponentSerializer.gson();
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.builder()
+            .tags(TagResolver.resolver(TagResolver.standard(),
+                    TagResolver.resolver(COMPONENT_TAG, (arguments, context) -> {
+                        String encoded = arguments.popOr("Missing component data").value();
+                        try {
+                            String json = new String(Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8);
+                            return Tag.selfClosingInserting(GSON.deserialize(json));
+                        } catch (IllegalArgumentException e) {
+                            throw context.newException("Invalid component data", e, arguments);
+                        }
+                    })))
+            .build();
     private static final Component EMPTY_COMPONENT = Component.empty()
             .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
     private static final List<Component> EMPTY_COMPONENTS = List.of();
@@ -58,8 +75,17 @@ public final class MMSupport {
         if (component == null) return "";
         String json = com.sk89q.worldedit.util.formatting.text.serializer.gson.GsonComponentSerializer.INSTANCE
                 .serialize(component);
-        Component adventure = GsonComponentSerializer.gson().deserialize(json);
+        Component adventure = GSON.deserialize(json);
         return MINI_MESSAGE.serialize(withoutDefaultItalic(adventure));
+    }
+
+    public static String encodeComponent(Component component) {
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(GSON.serialize(component).getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static String componentTag(String encoded) {
+        return "<" + COMPONENT_TAG + ":'" + encoded + "'>";
     }
 
     public static String escape(String text) {

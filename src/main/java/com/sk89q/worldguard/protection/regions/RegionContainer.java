@@ -56,7 +56,8 @@ public abstract class RegionContainer {
      */
     public void initialize() {
         ConfigurationManager config = WorldGuard.getInstance().getPlatform().getGlobalStateManager();
-        container = new RegionContainerImpl(config.selectedRegionStoreDriver, WorldGuard.getInstance().getFlagRegistry());
+        container = new RegionContainerImpl(config.selectedRegionStoreDriver, WorldGuard.getInstance().getFlagRegistry(),
+                config.regionLoadAttemptIntervalMillis, config.regionSaveIntervalMillis);
         query = new RegionQuery(cache);
 
         loadWorlds();
@@ -90,6 +91,8 @@ public abstract class RegionContainer {
     public void reload() {
         synchronized (lock) {
             unload();
+            ConfigurationManager config = WorldGuard.getInstance().getPlatform().getGlobalStateManager();
+            container.setIntervals(config.regionLoadAttemptIntervalMillis, config.regionSaveIntervalMillis);
             loadWorlds();
         }
     }

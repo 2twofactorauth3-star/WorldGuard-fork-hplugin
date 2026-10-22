@@ -19,19 +19,21 @@
 
 package com.sk89q.worldguard.util.formatting.component;
 
-import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
+import com.sk89q.worldedit.util.formatting.text.serializer.plain.PlainComponentSerializer;
+import com.sk89q.worldguard.blacklist.BlacklistMessages;
 import com.sk89q.worldguard.blacklist.event.BlacklistEvent;
+import com.sk89q.worldguard.bukkit.BukkitMessages;
+import com.sk89q.worldguard.bukkit.util.MMSupport;
 
 @SuppressWarnings("this-escape")
 public class BlacklistNotify extends Notify {
 
     public BlacklistNotify(BlacklistEvent event, String comment) {
-        super(event.getCauseName(), " (" + event.getDescription() + ") ");
-        Component base = event.getTarget().getFriendlyNameComponent();
-        if (comment != null) {
-            base = base.append(TextComponent.of(" (" + comment + ")"));
-        }
-        append(base);
+        super(event.getCauseName(), "");
+        append(TextComponent.of(BukkitMessages.template("blacklistNotify",
+                "action", BlacklistMessages.action(event),
+                "target", PlainComponentSerializer.INSTANCE.serialize(event.getTarget().getFriendlyNameComponent()),
+                "comment", MMSupport.component(comment == null ? "" : comment))));
     }
 }

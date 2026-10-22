@@ -19,7 +19,6 @@
 
 package com.sk89q.worldguard.bukkit;
 
-import com.sk89q.util.yaml.YAMLFormat;
 import com.sk89q.util.yaml.YAMLProcessor;
 import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldguard.bukkit.util.MMSupport;
@@ -54,7 +53,7 @@ import java.util.regex.Pattern;
 public final class BukkitMessages {
 
     private static final Pattern PLACEHOLDER_MARKER =
-            Pattern.compile("@wgarg:([A-Za-z][A-Za-z0-9]*):([A-Za-z0-9_-]*)@");
+            Pattern.compile("@wgarg:([A-Za-z][A-Za-z0-9]*):([A-Za-z0-9_-]*)(?::(component))?@");
     private static final Pattern MESSAGE_TOKEN = Pattern.compile("@wg:([A-Za-z0-9]+)@");
     private static final int TITLE_DELIVERY = 1;
     private static final int ACTION_BAR_DELIVERY = 2;
@@ -90,7 +89,8 @@ public final class BukkitMessages {
         actionBarMultipleLinesMode = plugin.getLocaleManager().configuredActionBarMultipleLinesMode();
         migrateBooleanLikeKeys();
 
-        YAMLProcessor config = new YAMLProcessor(file, false, YAMLFormat.EXTENDED);
+        YAMLProcessor config = new CommentedYamlProcessor(
+                file, () -> plugin.getDefaultConfigurationResource("messages.yml"), plugin.getLogger());
         try {
             BukkitConfigValidator.validateNoDuplicateKeys(plugin, file);
             config.load();
@@ -99,11 +99,12 @@ public final class BukkitMessages {
             replacements = Map.of();
             return;
         }
+        Set<String> bundledKeys = loadBundledKeys(config);
         BukkitConfigValidator.validateMessages(plugin, config, file, actionBarMultipleLinesMode);
 
         Map<String, MessageDefinition> configuredMessages = readDefinitions(config.getProperty("messages"));
         Map<String, Replacement> loaded = new LinkedHashMap<>();
-        Set<String> keys = new LinkedHashSet<>(loadBundledKeys());
+        Set<String> keys = new LinkedHashSet<>(bundledKeys);
         keys.addAll(configuredMessages.keySet());
         for (String key : keys) {
             MessageDefinition definition = configuredMessages.getOrDefault(key, MessageDefinition.EMPTY);
@@ -113,7 +114,7 @@ public final class BukkitMessages {
         cooldowns.clear();
     }
 
-    private Set<String> loadBundledKeys() {
+    private Set<String> loadBundledKeys(YAMLProcessor config) {
         try (InputStream input = plugin.getDefaultConfigurationResource("messages.yml")) {
             if (input == null) return Set.of();
             Object rootValue = new Yaml().load(input);
@@ -121,11 +122,36 @@ public final class BukkitMessages {
             Object messagesValue = root.get("messages");
             if (!(messagesValue instanceof Map<?, ?> messages)) return Set.of();
 
+            if (mergeMissingMessages(config, messages)) config.save();
             return readDefinitions(messages).keySet();
         } catch (IOException | RuntimeException e) {
             plugin.getLogger().log(Level.WARNING, "@wglog:unableReadBundledMessages@", e);
             return Set.of();
         }
+    }
+
+    static boolean mergeMissingMessages(YAMLProcessor config, Map<?, ?> defaults) {
+        Set<String> configured = readDefinitions(config.getProperty("messages")).keySet();
+        return mergeMissingMessages(config, defaults, "messages", "", configured);
+    }
+
+    private static boolean mergeMissingMessages(
+            YAMLProcessor config, Map<?, ?> defaults, String path, String key, Set<String> configured) {
+        if (!key.isEmpty() && (defaults.containsKey("message")
+                || defaults.containsKey("mode") || defaults.containsKey("cooldownMillis"))) {
+            if (configured.contains(key)) return false;
+            config.setProperty(path, defaults);
+            return true;
+        }
+        boolean changed = false;
+        for (Map.Entry<?, ?> entry : defaults.entrySet()) {
+            if (!(entry.getKey() instanceof String child) || child.isEmpty()
+                    || !(entry.getValue() instanceof Map<?, ?> section)) continue;
+            String childKey = key.isEmpty() ? child
+                    : key + Character.toUpperCase(child.charAt(0)) + child.substring(1);
+            changed |= mergeMissingMessages(config, section, path + "." + child, childKey, configured);
+        }
+        return changed;
     }
 
     private static String token(String key) {
@@ -281,7 +307,10 @@ public final class BukkitMessages {
             Matcher argumentMatcher = PLACEHOLDER_MARKER.matcher(source);
             argumentMatcher.region(argumentEnd, source.length());
             while (argumentMatcher.lookingAt()) {
-                placeholders.put(argumentMatcher.group(1), decodePlaceholder(argumentMatcher.group(2)));
+                String value = argumentMatcher.group(3) == null
+                        ? MMSupport.escape(decodePlaceholder(argumentMatcher.group(2)))
+                        : MMSupport.componentTag(argumentMatcher.group(2));
+                placeholders.put(argumentMatcher.group(1), value);
                 argumentEnd = argumentMatcher.end();
                 argumentMatcher.region(argumentEnd, source.length());
             }
@@ -297,8 +326,7 @@ public final class BukkitMessages {
                     for (String choice : choices) {
                         String value = choice;
                         for (Map.Entry<String, String> placeholder : placeholders.entrySet()) {
-                            value = replacePlaceholder(value, placeholder.getKey(),
-                                    MMSupport.escape(placeholder.getValue()));
+                            value = replacePlaceholder(value, placeholder.getKey(), placeholder.getValue());
                         }
                         expanded.add(new StringBuilder(output).append(value));
                     }
@@ -330,9 +358,14 @@ public final class BukkitMessages {
             if (!name.matches("[A-Za-z][A-Za-z0-9]*")) {
                 throw new IllegalArgumentException("Invalid placeholder name: " + name);
             }
-            String value = String.valueOf(placeholders[i + 1]);
-            output.append("@wgarg:").append(name).append(':')
-                    .append(encoder.encodeToString(value.getBytes(StandardCharsets.UTF_8))).append('@');
+            Object value = placeholders[i + 1];
+            output.append("@wgarg:").append(name).append(':');
+            if (value instanceof net.kyori.adventure.text.Component component) {
+                output.append(MMSupport.encodeComponent(component)).append(":component");
+            } else {
+                output.append(encoder.encodeToString(String.valueOf(value).getBytes(StandardCharsets.UTF_8)));
+            }
+            output.append('@');
         }
         return output.toString();
     }

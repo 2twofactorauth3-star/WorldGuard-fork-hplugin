@@ -11,7 +11,6 @@
 
 package com.sk89q.worldguard.bukkit;
 
-import com.sk89q.util.yaml.YAMLFormat;
 import com.sk89q.util.yaml.YAMLProcessor;
 import com.sk89q.worldguard.util.logging.LogMessages;
 import org.yaml.snakeyaml.Yaml;
@@ -41,7 +40,8 @@ public final class BukkitLogs {
     public void load() {
         plugin.createDefaultConfiguration(file, "logs.yml");
         prefix = plugin.getLocaleManager().configuredPrefix();
-        YAMLProcessor config = new YAMLProcessor(file, false, YAMLFormat.EXTENDED);
+        YAMLProcessor config = new CommentedYamlProcessor(
+                file, () -> plugin.getDefaultConfigurationResource("logs.yml"), plugin.getLogger());
         try {
             BukkitConfigValidator.validateNoDuplicateKeys(plugin, file);
             config.load();
@@ -51,6 +51,15 @@ public final class BukkitLogs {
             return;
         }
 
+        boolean changed = false;
+        for (Map.Entry<String, List<String>> entry : readBundled(plugin, plugin.getLocaleManager().currentLocale()).entrySet()) {
+            String path = "logs." + entry.getKey();
+            if (config.getProperty(path) == null) {
+                config.setProperty(path + ".message", entry.getValue());
+                changed = true;
+            }
+        }
+        if (changed) config.save();
         Map<String, List<String>> loaded = new LinkedHashMap<>();
         Collection<String> keys = config.getKeys("logs");
         if (keys != null) {

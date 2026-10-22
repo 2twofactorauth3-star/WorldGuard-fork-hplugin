@@ -22,6 +22,7 @@ package com.sk89q.worldguard.blacklist.action;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldedit.util.formatting.text.serializer.plain.PlainComponentSerializer;
 import com.sk89q.worldguard.blacklist.BlacklistEntry;
+import com.sk89q.worldguard.blacklist.BlacklistMessages;
 import com.sk89q.worldguard.blacklist.event.BlacklistEvent;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -36,6 +37,7 @@ public class TellAction extends RepeatGuardedAction {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected ActionResult applyNonRepeated(BlacklistEvent event, boolean silent) {
         if (silent) {
             return ActionResult.INHERIT;
@@ -46,9 +48,10 @@ public class TellAction extends RepeatGuardedAction {
         if (event.getPlayer() != null) {
             if (message != null) {
                 message = message.replaceAll("(?!<\\\\)\\\\n", "\n").replaceAll("\\\\\\\\n", "\\n");
-                event.getPlayer().print(TextComponent.of(String.format(message, PlainComponentSerializer.INSTANCE.serialize(event.getTarget().getFriendlyNameComponent()))));
+                event.getPlayer().print(String.format(message,
+                        PlainComponentSerializer.INSTANCE.serialize(event.getTarget().getFriendlyNameComponent())));
             } else {
-                event.getPlayer().printError(TextComponent.of("You're not allowed to " + event.getDescription() + " ").append(event.getTarget().getFriendlyNameComponent()).append(TextComponent.of(".")));
+                event.getPlayer().print(TextComponent.of(BlacklistMessages.message("blacklistDenied", event)));
             }
         }
 

@@ -11,17 +11,20 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.bukkit.BukkitMessages;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.commands.framework.CommandContext;
 import com.sk89q.worldguard.commands.framework.CommandException;
 import com.sk89q.worldguard.commands.framework.CommandPermissionsException;
+import com.sk89q.worldguard.internal.permission.RegionPermissionModel;
 import com.sk89q.worldguard.protection.flags.BooleanFlag;
 import com.sk89q.worldguard.protection.flags.EnumFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.SetFlag;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -266,8 +269,9 @@ public final class PaperCommandDispatcher {
         List<String> positional = positionalArguments(input.completed, binding.flags);
         int index = positional.size();
         String command = binding.aliases.get(0);
-        Collection<String> values = positionalSuggestionValues(
-                source, input.completed, positional, command, index);
+        Collection<String> values = isRegionArgument(command, index)
+                ? regionIds(source, binding, input.completed)
+                : positionalSuggestionValues(positional, command, index);
         for (String value : values) {
             suggest(input.target, input.current, value);
         }
@@ -277,8 +281,6 @@ public final class PaperCommandDispatcher {
     }
 
     private Collection<String> positionalSuggestionValues(
-            CommandSourceStack source,
-            List<String> completed,
             List<String> positional,
             String command,
             int index) {
@@ -290,9 +292,6 @@ public final class PaperCommandDispatcher {
         }
         if ((command.equals("load") || command.equals("save")) && index == 0) {
             return worldNames();
-        }
-        if (isRegionArgument(command, index)) {
-            return regionIds(source, completed);
         }
         if (command.equals("flag") && index == 1) {
             Collection<Flag<?>> flags = WorldGuard.getInstance().getFlagRegistry().getAll();
@@ -311,17 +310,103 @@ public final class PaperCommandDispatcher {
         return List.of();
     }
 
-    private Collection<String> regionIds(CommandSourceStack source, List<String> arguments) {
-        World world = source.getLocation().getWorld();
-        for (int i = 0; i + 1 < arguments.size(); i++) {
-            if (arguments.get(i).equals("-w")) {
-                World selected = Bukkit.getWorld(arguments.get(i + 1));
-                if (selected != null) world = selected;
-            }
+    private Collection<String> regionIds(CommandSourceStack source, Binding binding, List<String> arguments) {
+        CommandContext args;
+        try {
+            args = new CommandContext(arguments.toArray(String[]::new), binding.flags, "");
+        } catch (CommandException e) {
+            return List.of();
         }
+        World world = args.hasFlag('w') ? Bukkit.getWorld(args.getFlag('w')) : source.getLocation().getWorld();
+        if (world == null) return List.of();
         RegionManager manager = WorldGuard.getInstance().getPlatform()
                 .getRegionContainer().get(BukkitAdapter.adapt(world));
-        return manager == null ? List.of() : manager.getRegions().keySet();
+        if (manager == null) return List.of();
+        var config = WorldGuard.getInstance().getPlatform().getGlobalStateManager();
+        String command = binding.aliases.get(0);
+        boolean allowSelfRemoval = command.equals("removemember")
+                && config.get(BukkitAdapter.adapt(world)).allowMemberSelfRemoval;
+        return regionSuggestions(manager.getRegions(), plugin.wrapCommandSender(source.getSender()),
+                config.suggestGlobalRegionToNonMembers, command, args, allowSelfRemoval);
+    }
+
+    static Collection<String> regionSuggestions(
+            Map<String, ProtectedRegion> regions, Actor sender, boolean suggestGlobalToNonMembers,
+            String command, CommandContext args, boolean allowSelfRemoval) {
+        if (sender == null) return List.of();
+        RegionPermissionModel perms = new RegionPermissionModel(sender);
+        ProtectedRegion child = args.argsLength() > 0
+                ? regions.get(args.getString(0).toLowerCase(Locale.ROOT)) : null;
+        List<String> result = new ArrayList<>();
+        for (ProtectedRegion region : regions.values()) {
+            if (suggestGlobalToNonMembers && region.getId().equals(ProtectedRegion.GLOBAL_REGION)
+                    || maySuggestRegion(perms, region, command, args, child, allowSelfRemoval)) {
+                result.add(region.getId());
+            }
+        }
+        return result;
+    }
+
+    private static boolean maySuggestRegion(
+            RegionPermissionModel perms, ProtectedRegion region, String command, CommandContext args,
+            ProtectedRegion child, boolean allowSelfRemoval) {
+        return switch (command) {
+            case "addmember", "addowner", "removemember", "removeowner" ->
+                    maySuggestMemberRegion(perms, region, command, args, allowSelfRemoval);
+            case "info" -> perms.mayLookup(region) && (!args.hasFlag('s') || perms.maySelect(region));
+            case "flags" -> perms.mayLookup(region);
+            case "flag" -> perms.maySetFlag(region);
+            case "remove" -> perms.mayDelete(region);
+            case "teleport" -> maySuggestTeleport(perms, region, args);
+            default -> maySuggestNonGlobalRegion(perms, region, command, child, args.argsLength() > 0);
+        };
+    }
+
+    private static boolean maySuggestMemberRegion(
+            RegionPermissionModel perms, ProtectedRegion region, String command, CommandContext args,
+            boolean allowSelfRemoval) {
+        return switch (command) {
+            case "addmember" -> perms.mayAddMembers(region);
+            case "addowner" -> perms.mayAddOwners(region) && mayAddToUnclaimed(perms.getSender(), region);
+            case "removemember" -> perms.mayRemoveMembers(region)
+                    || mayRemoveSelf(perms.getSender(), region, args, allowSelfRemoval);
+            case "removeowner" -> perms.mayRemoveOwners(region);
+            default -> false;
+        };
+    }
+
+    private static boolean mayAddToUnclaimed(Actor sender, ProtectedRegion region) {
+        for (ProtectedRegion current = region; current != null; current = current.getParent()) {
+            if (current.getOwners().size() > 0) return true;
+        }
+        return sender.hasPermission("worldguard.region.addowner.unclaimed." + region.getId());
+    }
+
+    private static boolean mayRemoveSelf(
+            Actor sender, ProtectedRegion region, CommandContext args, boolean allowSelfRemoval) {
+        return allowSelfRemoval && !args.hasFlag('a') && sender instanceof LocalPlayer player
+                && region.getMembers().getUniqueIds().contains(player.getUniqueId());
+    }
+
+    private static boolean maySuggestTeleport(RegionPermissionModel perms, ProtectedRegion region, CommandContext args) {
+        if (!(perms.getSender() instanceof LocalPlayer) || !perms.mayTeleportTo(region)) return false;
+        return args.hasFlag('s') || !args.hasFlag('c')
+                || region.isPhysicalArea() && perms.mayTeleportToCenter(region);
+    }
+
+    private static boolean maySuggestNonGlobalRegion(
+            RegionPermissionModel perms, ProtectedRegion region, String command, ProtectedRegion child, boolean parentArgument) {
+        if (region.getId().equals(ProtectedRegion.GLOBAL_REGION)) return false;
+        return switch (command) {
+            case "redefine" -> perms.mayRedefine(region);
+            case "select" -> perms.maySelect(region);
+            case "setpriority" -> perms.maySetPriority(region);
+            case "setparent" -> parentArgument
+                    ? child != null && child != region && perms.maySetParent(child, region)
+                    : perms.maySetParent(region, null);
+            case "undo-expansion" -> perms.getSender() instanceof LocalPlayer player && region.getOwners().contains(player);
+            default -> false;
+        };
     }
 
     private static Collection<String> flagValues(String flagName) {
@@ -342,7 +427,7 @@ public final class PaperCommandDispatcher {
     private static boolean isRegionArgument(String command, int index) {
         if (index == 0) {
             return Set.of("redefine", "select", "info", "flag", "flags", "setpriority",
-                    "setparent", "remove", "teleport", "undo-expansion", "toggle-expansion", "addmember", "addowner",
+                    "setparent", "remove", "teleport", "undo-expansion", "addmember", "addowner",
                     "removemember", "removeowner").contains(command);
         }
         return command.equals("setparent") && index == 1;

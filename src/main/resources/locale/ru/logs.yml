@@ -4,6 +4,8 @@
 #
 
 logs:
+  unableLoadTerritoryNotifications:
+    message: 'Не удалось загрузить territoryNotifications.yml'
   commandExecutionFailed:
     message: 'Ошибка выполнения команды: '
   localeChoiceCreated:

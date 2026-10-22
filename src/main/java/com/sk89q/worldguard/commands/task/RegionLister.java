@@ -25,7 +25,7 @@ import com.sk89q.worldguard.commands.framework.CommandException;
 import org.enginehub.squirrelid.Profile;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.util.Location;
-import com.sk89q.worldedit.util.formatting.component.PaginationBox;
+import com.sk89q.worldguard.commands.LocalizedPaginationBox;
 import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldguard.WorldGuard;
@@ -179,7 +179,8 @@ public class RegionLister implements Callable<Integer> {
         String title = ownerMatcher == null
                 ? "@wg:regionListTitle@"
                 : BukkitMessages.template("regionListTitleFor", "owner", ownerMatcher.getName());
-        PaginationBox box = new RegionListBox(title, pageCommand(), perms, entries, world);
+        String emptyMessage = "my".equals(commandScope) ? "@wg:regionListEmptyOwn@" : "@wg:regionListEmpty@";
+        LocalizedPaginationBox box = new RegionListBox(title, pageCommand(), perms, entries, world, emptyMessage);
         sender.print(box.create(page));
         return page;
     }
@@ -265,13 +266,14 @@ public class RegionLister implements Callable<Integer> {
         }
     }
 
-    private static class RegionListBox extends PaginationBox {
+    private static class RegionListBox extends LocalizedPaginationBox {
         private final RegionPermissionModel perms;
         private final List<RegionListEntry> entries;
         private final String world;
 
-        RegionListBox(String title, String cmd, RegionPermissionModel perms, List<RegionListEntry> entries, String world) {
-            super(title, cmd);
+        RegionListBox(String title, String cmd, RegionPermissionModel perms, List<RegionListEntry> entries,
+                      String world, String emptyMessage) {
+            super(title, cmd, emptyMessage);
             this.perms = perms;
             this.entries = entries;
             this.world = world;

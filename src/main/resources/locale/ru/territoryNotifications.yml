@@ -1,0 +1,175 @@
+# Все тексты и каналы уведомлений о территории настраиваются только здесь.
+# Выбирается обычный регион с наибольшим приоритетом; __global__ используется вне обычных регионов.
+# Смена территории убирает предыдущие actionbar и bossbar. Файл применяется через /wg reload.
+# Общие настройки модуля.
+settings:
+  # Включает уведомления о территории.
+  enable: true
+  # Показывает текущую территорию при входе на сервер и перезагрузке настроек.
+  showOnJoin: true
+  # Считает вашей территорией также регионы, где вы участник; false учитывает только владельцев.
+  includeMembers: true
+  # Разрешённые миры: звёздочка включает все, пустой список отключает все.
+  worlds:
+    - '*'
+  # Территория вне обычных регионов.
+  free:
+    # Название MiniMessage. В текстах ниже доступны {name}, {region}, {world}, {player}, {prefix}.
+    name: '<bold><gradient:#FFD65C:#FFF0A6>СВОБОДНАЯ ТЕРРИТОРИЯ</gradient></bold>'
+    # Звук при переходе на эту территорию.
+    sound:
+      # Включает звук.
+      enable: false
+      # Идентификатор звука Minecraft.
+      type: 'minecraft:block.note_block.pling'
+      # Громкость от 0 до 10.
+      volume: 1.0
+      # Высота тона от 0.01 до 2.
+      pitch: 1.0
+    # Заголовок и подзаголовок при переходе.
+    title:
+      # Включает title.
+      enable: false
+      # Основная строка MiniMessage.
+      title: '{name}'
+      # Подзаголовок MiniMessage; пустая строка скрывает его.
+      subtitle: ''
+      # Время появления в секундах.
+      fadeInSeconds: 0.5
+      # Время показа в секундах.
+      staySeconds: 3.0
+      # Время исчезновения в секундах.
+      fadeOutSeconds: 0.5
+    # Строка над панелью быстрого доступа.
+    actionBar:
+      # Включает actionbar. Обновляется раз в секунду без повторного поиска регионов.
+      enable: true
+      # Текст MiniMessage.
+      message: '{name}'
+      # Длительность в секундах; -1 показывает постоянно до смены территории.
+      durationSeconds: -1
+    # Полоса босса в верхней части экрана.
+    bossBar:
+      # Включает bossbar.
+      enable: false
+      # Название полосы MiniMessage.
+      message: '{name}'
+      # Длительность в секундах; -1 показывает постоянно до смены территории.
+      durationSeconds: -1
+      # Цвет: PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE.
+      color: YELLOW
+      # Деления: PROGRESS, NOTCHED_6, NOTCHED_10, NOTCHED_12, NOTCHED_20.
+      overlay: PROGRESS
+      # Заполнение полосы от 0 до 1.
+      progress: 1.0
+    # Сообщения в чат.
+    messages:
+      # Включает сообщения в чат.
+      enable: false
+      # Строки MiniMessage.
+      message:
+        - '{name}'
+      # Повтор через указанное число секунд; -1 отправляет только при переходе, без повторов.
+      repeatSeconds: -1
+  # Чужая территория.
+  occupied:
+    name: '<bold><gradient:#FF526D:#FF9B7A>ЗАНЯТАЯ ТЕРРИТОРИЯ</gradient></bold>'
+    sound:
+      enable: false
+      type: 'minecraft:block.note_block.pling'
+      volume: 1.0
+      pitch: 1.0
+    title:
+      enable: false
+      title: '{name}'
+      subtitle: ''
+      fadeInSeconds: 0.5
+      staySeconds: 3.0
+      fadeOutSeconds: 0.5
+    actionBar:
+      enable: true
+      message: '{name}'
+      durationSeconds: -1
+    bossBar:
+      enable: false
+      message: '{name}'
+      durationSeconds: -1
+      color: RED
+      overlay: PROGRESS
+      progress: 1.0
+    messages:
+      enable: false
+      message:
+        - '{name}'
+      repeatSeconds: -1
+  # Ваша территория.
+  own:
+    name: '<bold><gradient:#45D994:#AEF59B>ВАША ТЕРРИТОРИЯ</gradient></bold>'
+    sound:
+      enable: false
+      type: 'minecraft:block.note_block.pling'
+      volume: 1.0
+      pitch: 1.0
+    title:
+      enable: false
+      title: '{name}'
+      subtitle: ''
+      fadeInSeconds: 0.5
+      staySeconds: 3.0
+      fadeOutSeconds: 0.5
+    actionBar:
+      enable: true
+      message: '{name}'
+      durationSeconds: -1
+    bossBar:
+      enable: false
+      message: '{name}'
+      durationSeconds: -1
+      color: GREEN
+      overlay: PROGRESS
+      progress: 1.0
+    messages:
+      enable: false
+      message:
+        - '{name}'
+      repeatSeconds: -1
+  # Кастомные зоны; первая подходящая запись важнее стандартной категории.
+  customNames:
+    # Название зоны спавна. Для других зон скопируйте эту запись с новым ключом.
+    spawnZone:
+      # Точные имена миров; звёздочка разрешает любой мир.
+      worlds:
+        - 'spawn'
+      # ID регионов без учёта регистра; звёздочка разрешает любой выбранный регион.
+      regions:
+        - '__global__'
+        - 'spawn'
+      name: '<bold><gradient:#FF883D:#FFD178>ЗОНА СПАВНА</gradient></bold>'
+      sound:
+        enable: false
+        type: 'minecraft:block.note_block.pling'
+        volume: 1.0
+        pitch: 1.0
+      title:
+        enable: false
+        title: '{name}'
+        subtitle: ''
+        fadeInSeconds: 0.5
+        staySeconds: 3.0
+        fadeOutSeconds: 0.5
+      actionBar:
+        enable: true
+        message: '{name}'
+        durationSeconds: -1
+      bossBar:
+        enable: false
+        message: '{name}'
+        durationSeconds: -1
+        color: YELLOW
+        overlay: PROGRESS
+        progress: 1.0
+      messages:
+        enable: false
+        message:
+          - '{name}'
+        repeatSeconds: -1

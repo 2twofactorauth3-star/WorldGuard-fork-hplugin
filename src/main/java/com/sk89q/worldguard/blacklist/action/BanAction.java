@@ -21,7 +21,10 @@ package com.sk89q.worldguard.blacklist.action;
 
 import com.sk89q.worldedit.util.formatting.text.serializer.plain.PlainComponentSerializer;
 import com.sk89q.worldguard.blacklist.BlacklistEntry;
+import com.sk89q.worldguard.blacklist.BlacklistMessages;
 import com.sk89q.worldguard.blacklist.event.BlacklistEvent;
+import com.sk89q.worldguard.bukkit.BukkitMessages;
+import com.sk89q.worldguard.bukkit.util.MMSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -46,9 +49,10 @@ public class BanAction implements Action {
             String friendlyName = PlainComponentSerializer.INSTANCE.serialize(event.getTarget().getFriendlyNameComponent());
 
             if (message != null) {
-                event.getPlayer().ban("Banned: " + String.format(message, friendlyName));
+                event.getPlayer().ban(BukkitMessages.template(
+                        "blacklistBanCustom", "message", MMSupport.component(String.format(message, friendlyName))));
             } else {
-                event.getPlayer().ban("Banned: You can't " + event.getDescription() + " " + friendlyName);
+                event.getPlayer().ban(BlacklistMessages.message("blacklistBan", event));
             }
         }
 

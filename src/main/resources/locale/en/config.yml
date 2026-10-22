@@ -7,12 +7,16 @@
 settings:
   # Prefix available as {prefix} in messages.yml and logs.yml.
   prefix: "<dark_aqua><bold>WorldGuard</bold></dark_aqua><gray>:<white>"
-  # Controls how actionbar messages with multiple lines are handled.
+  # Controls message handling and repeat cooldowns.
   messages:
     # Mode 1: when two or more lines are configured, sends nothing and writes an error to logs.yml.
     # Mode 2: when two or more lines are configured, randomly selects one on every delivery.
     # Mode 2 example: from "First", "Second", and "Third", the player sees only one random line.
     actionbarMultipleLinesMode: 2
+    # Repeat cooldown for entry-deny-message when entry is denied: 1000 to 5000 ms. Apply changes with /wg reload.
+    entryDenyCooldownMillis: 2500
+    # Repeat cooldown for exit-deny-message when exit is denied: 1000 to 5000 ms. Apply changes with /wg reload.
+    exitDenyCooldownMillis: 2500
   # Shows WorldGuard particle effects when available.
   useParticleEffects: true
   # Controls the particle border of a completed WorldEdit selection and the future claim.
@@ -267,6 +271,12 @@ settings:
     blockPluginSpawning: true
   # Controls region protection and storage.
   regions:
+    # Retry interval after region loading fails: 15000 to 60000 ms. Apply changes with /wg reload.
+    loadAttemptIntervalMillis: 30000
+    # Background interval for saving region changes: 15000 to 60000 ms. Apply changes with /wg reload.
+    saveIntervalMillis: 30000
+    # When false, __global__ suggestions require permission for the specific command. True restores legacy suggestions without permission checks; it does not grant permission to execute commands.
+    suggestGlobalRegionToNonMembers: false
     # Shows the blocked-cmds-messages flag and its messages in /rg info. When false, the flag is hidden while command denial and its message still work.
     showBlockedCommandMessagesInRegionInfo: false
     # Shows a player's UUID when hovering over their name in /rg info.

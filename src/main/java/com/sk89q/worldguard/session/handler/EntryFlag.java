@@ -20,9 +20,9 @@
 package com.sk89q.worldguard.session.handler;
 
 import com.sk89q.worldedit.util.Location;
-import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -42,7 +42,6 @@ public class EntryFlag extends Handler {
         }
     }
 
-    private static final long MESSAGE_THRESHOLD = 1000 * 2;
     private long lastMessage;
 
     public EntryFlag(Session session) {
@@ -56,9 +55,10 @@ public class EntryFlag extends Handler {
         if (!getSession().getManager().hasBypass(player, (World) to.getExtent()) && !allowed && moveType.isCancellable()) {
             String message = toSet.queryValue(player, Flags.ENTRY_DENY_MESSAGE);
             long now = System.currentTimeMillis();
+            long cooldown = WorldGuard.getInstance().getPlatform().getGlobalStateManager().entryDenyMessageCooldownMillis;
 
-            if ((now - lastMessage) > MESSAGE_THRESHOLD && message != null && !message.isEmpty()) {
-                player.print(TextComponent.of(message));
+            if (now - lastMessage >= cooldown && message != null && !message.isEmpty()) {
+                player.print(message);
                 lastMessage = now;
             }
 
