@@ -20,7 +20,11 @@
 package com.sk89q.worldguard.config;
 
 import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldguard.blacklist.Blacklist;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.association.RegionAssociable;
 
 import java.io.File;
 import java.util.Map;
@@ -53,39 +57,65 @@ public abstract class WorldConfiguration {
     protected File blacklistFile;
     protected Blacklist blacklist;
     public boolean useRegions;
-    public WorldMechanicSetting noPhysicsGravel;
-    public WorldMechanicSetting noPhysicsSand;
-    public WorldMechanicSetting allowPortalAnywhere;
+    public boolean noPhysicsGravel;
+    public WorldMechanicSetting noPhysicsGravelSetting = WorldMechanicSetting.DISABLED;
+    public boolean noPhysicsSand;
+    public WorldMechanicSetting noPhysicsSandSetting = WorldMechanicSetting.DISABLED;
+    public boolean allowPortalAnywhere;
+    public WorldMechanicSetting allowPortalAnywhereSetting = WorldMechanicSetting.DISABLED;
     public WorldMechanicSetting blockPistons;
     public WorldMechanicSetting preventWaterDamageSetting;
     public Set<String> preventWaterDamage;
-    public WorldMechanicSetting blockLighter;
-    public WorldMechanicSetting disableFireSpread;
+    public boolean blockLighter;
+    public WorldMechanicSetting blockLighterSetting = WorldMechanicSetting.DISABLED;
+    public boolean disableFireSpread;
+    public WorldMechanicSetting disableFireSpreadSetting = WorldMechanicSetting.DISABLED;
     public WorldMechanicSetting disableFireSpreadBlocksSetting;
     public Set<String> disableFireSpreadBlocks;
-    public WorldMechanicSetting preventLavaFire;
+    public boolean preventLavaFire;
+    public WorldMechanicSetting preventLavaFireSetting = WorldMechanicSetting.DISABLED;
     public WorldMechanicSetting allowedLavaSpreadOverSetting;
     public Set<String> allowedLavaSpreadOver;
-    public WorldMechanicSetting blockTNTExplosions;
-    public WorldMechanicSetting blockTNTBlockDamage;
-    public WorldMechanicSetting blockCreeperExplosions;
-    public WorldMechanicSetting blockCreeperBlockDamage;
-    public WorldMechanicSetting blockWitherExplosions;
-    public WorldMechanicSetting blockWitherBlockDamage;
-    public WorldMechanicSetting blockWitherSkullExplosions;
-    public WorldMechanicSetting blockWitherSkullBlockDamage;
-    public WorldMechanicSetting blockEnderDragonBlockDamage;
-    public WorldMechanicSetting blockEnderDragonPortalCreation;
-    public WorldMechanicSetting blockFireballExplosions;
-    public WorldMechanicSetting blockFireballBlockDamage;
-    public WorldMechanicSetting blockWindChargeExplosions;
-    public WorldMechanicSetting blockOtherExplosions;
-    public WorldMechanicSetting blockEntityPaintingDestroy;
-    public WorldMechanicSetting blockEntityItemFrameDestroy;
-    public WorldMechanicSetting blockEntityArmorStandDestroy;
-    public WorldMechanicSetting blockEntityVehicleEntry;
-    public WorldMechanicSetting blockGroundSlimes;
-    public WorldMechanicSetting blockZombieDoorDestruction;
+    public boolean blockTNTExplosions;
+    public WorldMechanicSetting blockTNTExplosionsSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockTNTBlockDamage;
+    public WorldMechanicSetting blockTNTBlockDamageSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockCreeperExplosions;
+    public WorldMechanicSetting blockCreeperExplosionsSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockCreeperBlockDamage;
+    public WorldMechanicSetting blockCreeperBlockDamageSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockWitherExplosions;
+    public WorldMechanicSetting blockWitherExplosionsSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockWitherBlockDamage;
+    public WorldMechanicSetting blockWitherBlockDamageSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockWitherSkullExplosions;
+    public WorldMechanicSetting blockWitherSkullExplosionsSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockWitherSkullBlockDamage;
+    public WorldMechanicSetting blockWitherSkullBlockDamageSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockEnderDragonBlockDamage;
+    public WorldMechanicSetting blockEnderDragonBlockDamageSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockEnderDragonPortalCreation;
+    public WorldMechanicSetting blockEnderDragonPortalCreationSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockFireballExplosions;
+    public WorldMechanicSetting blockFireballExplosionsSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockFireballBlockDamage;
+    public WorldMechanicSetting blockFireballBlockDamageSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockWindChargeExplosions;
+    public WorldMechanicSetting blockWindChargeExplosionsSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockOtherExplosions;
+    public WorldMechanicSetting blockOtherExplosionsSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockEntityPaintingDestroy;
+    public WorldMechanicSetting blockEntityPaintingDestroySetting = WorldMechanicSetting.DISABLED;
+    public boolean blockEntityItemFrameDestroy;
+    public WorldMechanicSetting blockEntityItemFrameDestroySetting = WorldMechanicSetting.DISABLED;
+    public boolean blockEntityArmorStandDestroy;
+    public WorldMechanicSetting blockEntityArmorStandDestroySetting = WorldMechanicSetting.DISABLED;
+    public boolean blockEntityVehicleEntry;
+    public WorldMechanicSetting blockEntityVehicleEntrySetting = WorldMechanicSetting.DISABLED;
+    public boolean blockGroundSlimes;
+    public WorldMechanicSetting blockGroundSlimesSetting = WorldMechanicSetting.DISABLED;
+    public boolean blockZombieDoorDestruction;
+    public WorldMechanicSetting blockZombieDoorDestructionSetting = WorldMechanicSetting.DISABLED;
     public boolean blockPluginSpawning;
     public boolean highFreqFlags;
     public boolean checkLiquidFlow;
@@ -109,8 +139,10 @@ public abstract class WorldConfiguration {
     public RegionDefaults newRegionDefaults;
     public RegionDefaults globalRegionDefaults;
     public int maxRegionCountPerPlayer;
-    public WorldMechanicSetting disableEndermanGriefing;
-    public WorldMechanicSetting disableSnowmanTrails;
+    public boolean disableEndermanGriefing;
+    public WorldMechanicSetting disableEndermanGriefingSetting = WorldMechanicSetting.DISABLED;
+    public boolean disableSnowmanTrails;
+    public WorldMechanicSetting disableSnowmanTrailsSetting = WorldMechanicSetting.DISABLED;
     public boolean regionInvinciblityRemovesMobs;
     public boolean regionNetherPortalProtection;
     public boolean forceDefaultTitleTimes;
@@ -125,6 +157,16 @@ public abstract class WorldConfiguration {
 
     public Blacklist getBlacklist() {
         return blacklist;
+    }
+
+    public boolean blocksMechanic(boolean enabled, WorldMechanicSetting setting,
+                                  Location target, RegionAssociable subject) {
+        if (!enabled) return false;
+        if (setting.mode == WorldMechanicSetting.Mode.EVERYWHERE) return true;
+        ApplicableRegionSet regions = useRegions
+                ? WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery().getApplicableRegions(target)
+                : null;
+        return setting.blocks(true, regions, subject);
     }
 
     public int getMaxRegionCount(LocalPlayer player) {

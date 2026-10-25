@@ -11,10 +11,18 @@
 
 package com.sk89q.worldguard.config;
 
+import com.sk89q.worldguard.domains.Association;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.association.Associables;
+import com.sk89q.worldguard.protection.association.RegionAssociable;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+
 /**
  * Controls whether a world mechanic is blocked and where the block applies.
  */
 public final class WorldMechanicSetting {
+    public static final WorldMechanicSetting DISABLED = new WorldMechanicSetting(false, 3);
 
     public final boolean enable;
     public final Mode mode;
@@ -22,6 +30,21 @@ public final class WorldMechanicSetting {
     public WorldMechanicSetting(boolean enable, int mode) {
         this.enable = enable;
         this.mode = Mode.fromConfigValue(mode);
+    }
+
+    public boolean blocks(boolean enabled, ApplicableRegionSet regions, RegionAssociable subject) {
+        if (!enabled) return false;
+        if (mode == Mode.EVERYWHERE) return true;
+        if (regions == null) return mode == Mode.OUTSIDE_REGIONS;
+        boolean local = false;
+        for (ProtectedRegion region : regions) {
+            if (!ProtectedRegion.GLOBAL_REGION.equals(region.getId())) {
+                local = true;
+                break;
+            }
+        }
+        if (mode == Mode.OUTSIDE_REGIONS) return !local;
+        return local && !regions.testState(subject == null ? Associables.constant(Association.NON_MEMBER) : subject, Flags.BUILD);
     }
 
     public enum Mode {

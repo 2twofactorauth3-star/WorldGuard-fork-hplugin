@@ -57,6 +57,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 /**
@@ -64,6 +65,8 @@ import javax.annotation.Nullable;
  */
 @SuppressWarnings("deprecation")
 public class WorldGuardPlayerListener extends AbstractListener {
+    private static final Pattern COMMAND_NAMESPACE = Pattern.compile("^/([^ :]*:)?");
+    private static final Pattern COMMAND_WHITESPACE = Pattern.compile("\\s+");
 
     public WorldGuardPlayerListener(WorldGuardPlugin plugin) {
         super(plugin);
@@ -181,16 +184,31 @@ public class WorldGuardPlayerListener extends AbstractListener {
         }
         Player player = event.getPlayer();
         if (com.sk89q.worldguard.bukkit.util.Entities.isNPC(player)) return;
-        LocalPlayer localPlayer = getPlugin().wrapPlayer(player);
         WorldConfiguration wcfg = getWorldConfig(player.getWorld());
         if (!wcfg.useRegions) return;
+        LocalPlayer localPlayer = getPlugin().wrapPlayer(player);
 
-        RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
-        ApplicableRegionSet destination = query.getApplicableRegions(BukkitAdapter.adapt(event.getTo()));
-        ApplicableRegionSet source = query.getApplicableRegions(BukkitAdapter.adapt(event.getFrom()));
-        if (isSpecialTeleportDenied(event, localPlayer, source, destination)
-                || WorldGuard.getInstance().getPlatform().getSessionManager().get(localPlayer)
-                .testMoveTo(localPlayer, BukkitAdapter.adapt(event.getTo()), MoveType.TELEPORT) != null) {
+        var target = BukkitAdapter.adapt(event.getTo());
+        StateFlag teleportFlag = switch (event.getCause()) {
+            case ENDER_PEARL -> Flags.ENDERPEARL;
+            case CHORUS_FRUIT -> Flags.CHORUS_TELEPORT;
+            default -> null;
+        };
+        ApplicableRegionSet destination = null;
+        if (teleportFlag != null && !WorldGuard.getInstance().getPlatform().getSessionManager()
+                .hasBypass(localPlayer, localPlayer.getWorld())) {
+            RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
+            destination = query.getApplicableRegions(target);
+            if (isSpecialTeleportDenied(event, localPlayer, query, destination, teleportFlag)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+        Session session = WorldGuard.getInstance().getPlatform().getSessionManager().get(localPlayer);
+        var overridden = session.getClass() == Session.class
+                ? session.testMoveTo(localPlayer, target, MoveType.TELEPORT, false, destination)
+                : session.testMoveTo(localPlayer, target, MoveType.TELEPORT);
+        if (overridden != null) {
             event.setCancelled(true);
         }
     }
@@ -198,17 +216,10 @@ public class WorldGuardPlayerListener extends AbstractListener {
     private boolean isSpecialTeleportDenied(
             PlayerTeleportEvent event,
             LocalPlayer player,
-            ApplicableRegionSet source,
-            ApplicableRegionSet destination) {
-        StateFlag flag = switch (event.getCause()) {
-            case ENDER_PEARL -> Flags.ENDERPEARL;
-            case CHORUS_FRUIT -> Flags.CHORUS_TELEPORT;
-            default -> null;
-        };
-        if (flag == null || WorldGuard.getInstance().getPlatform().getSessionManager()
-                .hasBypass(player, player.getWorld())) {
-            return false;
-        }
+            RegionQuery query,
+            ApplicableRegionSet destination,
+            StateFlag flag) {
+        ApplicableRegionSet source = query.getApplicableRegions(BukkitAdapter.adapt(event.getFrom()));
         if (!source.testState(player, flag)) {
             sendTeleportDenyMessage(event.getPlayer(), source, player, Flags.EXIT_DENY_MESSAGE);
             return true;
@@ -243,6 +254,7 @@ public class WorldGuardPlayerListener extends AbstractListener {
 
             Set<String> allowedCommands = set.queryValue(localPlayer, Flags.ALLOWED_CMDS);
             Set<String> blockedCommands = set.queryValue(localPlayer, Flags.BLOCKED_CMDS);
+            if (allowedCommands == null && (blockedCommands == null || blockedCommands.isEmpty())) return;
             CommandFilter test = new CommandFilter(allowedCommands, blockedCommands);
 
             if (!test.apply(event.getMessage())) {
@@ -260,10 +272,8 @@ public class WorldGuardPlayerListener extends AbstractListener {
 
     private static String findBlockedCommandMessage(
             ApplicableRegionSet regions, LocalPlayer player, String command) {
-        String rule = command.toLowerCase(Locale.ROOT)
-                .replaceAll("^/([^ :]*:)?", "/")
-                .trim()
-                .replaceAll("\\s+", " ");
+        String rule = COMMAND_WHITESPACE.matcher(COMMAND_NAMESPACE.matcher(command.toLowerCase(Locale.ROOT))
+                .replaceAll("/").trim()).replaceAll(" ");
         while (!rule.isEmpty()) {
             String message = regions.queryMapValue(player, Flags.BLOCKED_CMDS_MESSAGES, rule);
             if (message != null) {

@@ -33,6 +33,7 @@ import org.bukkit.potion.PotionEffectType;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +50,10 @@ public final class Materials {
     private static final BiMap<EntityType, Material> ENTITY_ITEMS = HashBiMap.create();
     private static final Map<Material, Integer> MATERIAL_FLAGS = new EnumMap<>(Material.class);
     private static final Set<PotionEffectType> DAMAGE_EFFECTS = new HashSet<>();
+    private static final Set<Material> WAXED_COPPER = EnumSet.noneOf(Material.class);
+    private static final Set<Material> UNWAXED_COPPER = EnumSet.noneOf(Material.class);
+    private static final Tag<Material> WOODEN_SHELVES = materialTag("WOODEN_SHELVES");
+    private static final Tag<Material> COPPER_CHESTS = materialTag("COPPER_CHESTS");
 
     private static void putMaterialTag(Tag<Material> tag, Integer value) {
         if (tag == null) return;
@@ -69,12 +74,17 @@ public final class Materials {
     }
 
     @SuppressWarnings("unchecked")
-    private static boolean isMaterialTag(String fieldName, Material material) {
+    @Nullable
+    private static Tag<Material> materialTag(String fieldName) {
         try {
-            return ((Tag<Material>) Tag.class.getField(fieldName).get(null)).isTagged(material);
+            return (Tag<Material>) Tag.class.getField(fieldName).get(null);
         } catch (ReflectiveOperationException ignored) {
-            return false;
+            return null;
         }
+    }
+
+    private static boolean isTagged(@Nullable Tag<Material> tag, Material material) {
+        return tag != null && tag.isTagged(material);
     }
 
     private static void putEntityItem(String entityTypeName, String materialName) {
@@ -123,6 +133,14 @@ public final class Materials {
 
         for (Material material : Registry.MATERIAL) {
             MATERIAL_FLAGS.put(material, 0);
+            String name = material.name();
+            if (name.contains("COPPER")) {
+                if (name.startsWith("WAXED_")) WAXED_COPPER.add(material);
+                if (material.isBlock() && !name.startsWith("WAXED_")
+                        && !name.startsWith("RAW_") && !name.endsWith("_ORE")) {
+                    UNWAXED_COPPER.add(material);
+                }
+            }
         }
 
         putMaterialTag(Tag.DOORS, MODIFIED_ON_RIGHT);
@@ -370,8 +388,8 @@ public final class Materials {
                 || material == Material.CHISELED_BOOKSHELF
                 || material == Material.CRAFTER
                 || material == Material.DECORATED_POT
-                || isMaterialTag("WOODEN_SHELVES", material)
-                || isMaterialTag("COPPER_CHESTS", material)
+                || isTagged(WOODEN_SHELVES, material)
+                || isTagged(COPPER_CHESTS, material)
                 || Tag.ITEMS_CHEST_BOATS.isTagged(material)
                 || Tag.SHULKER_BOXES.isTagged(material);
     }
@@ -660,13 +678,11 @@ public final class Materials {
 
     public static boolean isWaxedCopper(Material type) {
         // copied from the MaterialTags class in Paper
-        return type.name().startsWith("WAXED_") && type.name().contains("COPPER");
+        return WAXED_COPPER.contains(type);
     }
 
     public static boolean isUnwaxedCopper(Material type) {
-        String name = type.name();
-        return type.isBlock() && name.contains("COPPER") && !name.startsWith("WAXED_")
-                && !name.startsWith("RAW_") && !name.endsWith("_ORE");
+        return UNWAXED_COPPER.contains(type);
     }
 
     public static boolean isAmethystGrowth(Material mat) {

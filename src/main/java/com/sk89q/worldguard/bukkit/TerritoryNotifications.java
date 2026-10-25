@@ -3,21 +3,22 @@ package com.sk89q.worldguard.bukkit;
 import com.sk89q.util.yaml.YAMLFormat;
 import com.sk89q.util.yaml.YAMLProcessor;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.event.player.ProcessPlayerEvent;
 import com.sk89q.worldguard.bukkit.util.Entities;
 import com.sk89q.worldguard.config.TerritoryNotificationSettings;
+import com.sk89q.worldguard.config.TerritoryNotificationSettings.Notification;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import org.bukkit.Location;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -27,23 +28,26 @@ import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 final class TerritoryNotifications implements Listener {
 
     private final WorldGuardPlugin plugin;
-    private final File file;
-    private final ConcurrentMap<UUID, TerritoryState> states = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Tracker> trackers = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedQueue<Tracker> pending = new ConcurrentLinkedQueue<>();
     private volatile TerritoryNotificationSettings settings;
     private Runnable cancelTimer;
+    private int ticks;
 
     TerritoryNotifications(WorldGuardPlugin plugin) {
         this.plugin = plugin;
-        file = new File(plugin.getDataFolder(), "territoryNotifications.yml");
     }
 
     void load() {
+        File file = new File(plugin.getDataFolder(), "territoryNotifications.yml");
         plugin.createDefaultConfiguration(file, "territoryNotifications.yml");
         YAMLProcessor config = new YAMLProcessor(file, false, YAMLFormat.EXTENDED);
         try {
@@ -54,18 +58,22 @@ final class TerritoryNotifications implements Listener {
             settings = null;
             plugin.getLogger().log(Level.SEVERE, "@wglog:unableLoadTerritoryNotifications@", e);
         }
+        if (cancelTimer != null) {
+            for (Player player : Bukkit.getOnlinePlayers()) requestUpdate(player);
+        }
     }
 
     void start() {
         if (cancelTimer != null) return;
         if (plugin.isFolia()) {
             var task = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
-                    plugin, ignored -> tick(), 20, 20);
+                    plugin, ignored -> tick(), 1, 1);
             cancelTimer = task::cancel;
         } else {
-            var task = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 20, 20);
+            var task = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1, 1);
             cancelTimer = task::cancel;
         }
+        for (Player player : Bukkit.getOnlinePlayers()) requestUpdate(player);
     }
 
     void close() {
@@ -73,129 +81,232 @@ final class TerritoryNotifications implements Listener {
             cancelTimer.run();
             cancelTimer = null;
         }
-        for (Player player : Bukkit.getOnlinePlayers()) clear(player);
-        states.clear();
+        for (Tracker tracker : trackers.values()) clear(tracker);
+        trackers.clear();
+        pending.clear();
+    }
+
+    void requestUpdate(Player player) {
+        TerritoryNotificationSettings current = settings;
+        Tracker tracker = trackers.get(player.getUniqueId());
+        if (tracker == null) {
+            if (current == null || !current.appliesTo(player.getWorld().getName()) || Entities.isNPC(player)) return;
+            tracker = trackers.computeIfAbsent(player.getUniqueId(),
+                    ignored -> new Tracker(player, plugin.wrapPlayer(player)));
+        } else if (tracker.disabled && tracker.settings == current && tracker.world == player.getWorld()) {
+            return;
+        } else if (tracker.fixed != null && tracker.presentation != null && tracker.settings == current
+                && tracker.world == player.getWorld() && tracker.worldConfig.useRegions) {
+            return;
+        }
+        if (tracker.queued.compareAndSet(false, true)) pending.offer(tracker);
+    }
+
+    void cacheRegions(Player player, Location location, RegionManager manager, ApplicableRegionSet regions) {
+        Tracker tracker = trackers.get(player.getUniqueId());
+        if (tracker == null || tracker.fixed != null || regions == null || regions.isVirtual()) return;
+        tracker.cachedManager = manager;
+        tracker.cachedWorld = location.getWorld();
+        tracker.cachedX = location.getBlockX();
+        tracker.cachedY = location.getBlockY();
+        tracker.cachedZ = location.getBlockZ();
+        tracker.cachedQueryRevision = manager.getQueryRevision();
+        tracker.cachedStructureRevision = ProtectedRegion.structureRevision();
+        tracker.cachedRegions = regions;
     }
 
     private void tick() {
         TerritoryNotificationSettings current = settings;
-        if ((current == null || !current.enabled) && states.isEmpty()) return;
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (plugin.isFolia()) {
-                player.getScheduler().run(plugin, ignored -> refresh(player), null);
-            } else {
-                refresh(player);
+        ticks = ticks == Integer.MAX_VALUE ? 1 : ticks + 1;
+        int period = current == null ? 20 : current.updatePeriodTicks;
+        boolean refresh = ticks % 20 == 0;
+        if (ticks % period == 0) drain(refresh);
+        if (refresh) {
+            for (Tracker tracker : trackers.values()) {
+                if (tracker.lastDispatchTick != ticks && (tracker.presentation != null && tracker.presentation.needsRefresh()
+                        || tracker.settings != current || tracker.retry)) dispatch(tracker, false, true);
             }
         }
     }
 
-    private void refresh(Player player) {
-        if (!player.isOnline()) return;
-        TerritoryState state = states.get(player.getUniqueId());
-        TerritoryNotificationSettings current = settings;
-        if (state == null || state.settings != current) {
-            update(player, player.getLocation(), current != null && current.showOnJoin);
-        } else {
-            state.presentation.refresh(player, System.nanoTime());
+    private void drain(boolean refresh) {
+        int remaining = trackers.size();
+        while (remaining-- > 0) {
+            Tracker tracker = pending.poll();
+            if (tracker == null) break;
+            dispatch(tracker, true, refresh);
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onPlayerMove(PlayerMoveEvent event) {
-        Location from = event.getFrom();
-        Location to = event.getTo();
-        if (to == null || from.getWorld().equals(to.getWorld()) && from.getBlockX() == to.getBlockX()
-                && from.getBlockY() == to.getBlockY() && from.getBlockZ() == to.getBlockZ()) return;
-        update(event.getPlayer(), to, true);
+    private void dispatch(Tracker tracker, boolean update, boolean refresh) {
+        tracker.lastDispatchTick = ticks;
+        if (plugin.isFolia()) {
+            tracker.player.getScheduler().run(plugin, ignored -> process(tracker, update, refresh),
+                    () -> retire(tracker));
+        } else {
+            process(tracker, update, refresh);
+        }
+    }
+
+    private void process(Tracker tracker, boolean update, boolean refresh) {
+        Player player = tracker.player;
+        if (!player.isOnline() || trackers.get(player.getUniqueId()) != tracker) return;
+        if (refresh && Entities.isNPC(player)) {
+            trackers.remove(player.getUniqueId(), tracker);
+            pending.remove(tracker);
+            clear(tracker);
+            return;
+        }
+        if (update || tracker.settings != settings || tracker.retry) {
+            tracker.queued.set(false);
+            update(tracker, player.getLocation());
+        } else if (tracker.fixed != null && !tracker.worldConfig.useRegions) {
+            clear(tracker);
+        }
+        if (refresh && tracker.presentation != null) tracker.presentation.refresh(player, System.nanoTime());
+    }
+
+    private void retire(Tracker tracker) {
+        trackers.remove(tracker.player.getUniqueId(), tracker);
+        pending.remove(tracker);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerTeleport(PlayerTeleportEvent event) {
-        if (event.getTo() != null) update(event.getPlayer(), event.getTo(), true);
+        if (event.getTo() != null) requestUpdate(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerProcess(ProcessPlayerEvent event) {
-        TerritoryNotificationSettings current = settings;
-        if (current != null) update(event.getPlayer(), event.getPlayer().getLocation(), current.showOnJoin);
+        requestUpdate(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-        update(event.getPlayer(), event.getRespawnLocation(), true);
+        requestUpdate(event.getPlayer());
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        clear(event.getPlayer());
+        Tracker tracker = trackers.remove(event.getPlayer().getUniqueId());
+        if (tracker != null) {
+            pending.remove(tracker);
+            clear(tracker);
+        }
     }
 
-    private void update(Player player, Location location, boolean send) {
+    private void update(Tracker tracker, Location location) {
         TerritoryNotificationSettings current = settings;
-        if (current == null || !current.appliesTo(location.getWorld().getName()) || Entities.isNPC(player)) {
-            clear(player);
-            return;
-        }
-        BukkitWorldConfiguration worldConfig = ((BukkitConfigurationManager) WorldGuard.getInstance()
-                .getPlatform().getGlobalStateManager()).get(location.getWorld());
-        if (!worldConfig.useRegions) {
-            clear(player);
+        org.bukkit.World world = location.getWorld();
+        boolean changed = tracker.settings != current || tracker.world != world;
+        boolean reloaded = tracker.settings != current && tracker.world == world;
+        tracker.disabled = current == null || !current.appliesTo(world.getName());
+        tracker.retry = false;
+        if (changed) configure(tracker, current, world);
+        if (tracker.disabled || !tracker.worldConfig.useRegions) {
+            clear(tracker);
             return;
         }
         BukkitRegionContainer container = (BukkitRegionContainer) WorldGuard.getInstance()
                 .getPlatform().getRegionContainer();
-        RegionManager manager = container.get(location.getWorld());
+        RegionManager manager = container.get(world);
         if (manager == null) {
-            clear(player);
+            tracker.retry = true;
+            clear(tracker);
             return;
         }
-        ApplicableRegionSet regions = container.createQuery().getApplicableRegions(BukkitAdapter.adapt(location));
-        if (regions.isVirtual()) {
-            clear(player);
-            return;
-        }
-        ProtectedRegion region = TerritoryNotificationSettings.selectRegion(
-                regions, manager.getRegion(ProtectedRegion.GLOBAL_REGION));
-        LocalPlayer localPlayer = plugin.wrapPlayer(player);
-        var notification = current.notification(localPlayer, location.getWorld().getName(), region);
-        TerritoryState previous = states.get(player.getUniqueId());
-        if (previous != null && previous.matches(location.getWorld().getUID(), region, current, notification)) return;
-        if (previous != null) previous.presentation.clear(player);
+        ProtectedRegion region = tracker.fixed == null ? selectRegion(tracker, location, manager) : null;
+        Notification notification = tracker.fixed == null
+                ? current.notification(tracker.localPlayer, world.getName(), region) : tracker.fixed;
+        present(tracker, current, world, region, notification, changed, reloaded);
+    }
+
+    private void present(Tracker tracker, TerritoryNotificationSettings current, org.bukkit.World world,
+                         ProtectedRegion region, Notification notification, boolean changed, boolean reloaded) {
+        if (!changed && tracker.notification == notification && tracker.region == region
+                && tracker.presentation != null) return;
+        clear(tracker);
+        tracker.region = region;
+        tracker.notification = notification;
         long now = System.nanoTime();
         TerritoryPresentation presentation = new TerritoryPresentation(notification,
                 TerritoryPresentation.renderer(plugin.getMessages(), notification,
                         region == null ? ProtectedRegion.GLOBAL_REGION : region.getId(),
-                        location.getWorld().getName(), player.getName()), now);
-        states.put(player.getUniqueId(), new TerritoryState(
-                location.getWorld().getUID(), region, current, notification, presentation));
-        if (send) presentation.show(player, now);
+                        world.getName(), tracker.player.getName()), now);
+        if (current.showOnJoin || !tracker.initial && !reloaded) presentation.show(tracker.player, now);
+        tracker.presentation = presentation;
+        tracker.initial = false;
     }
 
-    private void clear(Player player) {
-        TerritoryState previous = states.remove(player.getUniqueId());
-        if (previous != null) previous.presentation.clear(player);
-    }
-
-    private static final class TerritoryState {
-        public final UUID world;
-        public final ProtectedRegion region;
-        public final TerritoryNotificationSettings settings;
-        public final TerritoryNotificationSettings.Notification notification;
-        public final TerritoryPresentation presentation;
-
-        private TerritoryState(UUID world, ProtectedRegion region, TerritoryNotificationSettings settings,
-                               TerritoryNotificationSettings.Notification notification, TerritoryPresentation presentation) {
-            this.world = world;
-            this.region = region;
-            this.settings = settings;
-            this.notification = notification;
-            this.presentation = presentation;
+    private void configure(Tracker tracker, TerritoryNotificationSettings current, org.bukkit.World world) {
+        tracker.world = world;
+        tracker.fixed = null;
+        if (!tracker.disabled) {
+            tracker.worldConfig = plugin.getConfigManager().get(world);
+            Notification fixed = current.fixedNotification(world.getName());
+            if (fixed != null && !TerritoryPresentation.requiresRegion(plugin.getMessages(), fixed)) tracker.fixed = fixed;
         }
+        tracker.settings = current;
+    }
 
-        private boolean matches(UUID world, ProtectedRegion region, TerritoryNotificationSettings settings,
-                                TerritoryNotificationSettings.Notification notification) {
-            return this.world.equals(world) && this.region == region
-                    && this.settings == settings && this.notification == notification;
+    private ProtectedRegion selectRegion(Tracker tracker, Location location, RegionManager manager) {
+        BlockVector3 position = BukkitAdapter.asBlockVector(location);
+        if (tracker.cachedManager != manager || tracker.cachedWorld != location.getWorld()
+                || position.x() != tracker.cachedX || position.y() != tracker.cachedY || position.z() != tracker.cachedZ
+                || tracker.cachedQueryRevision != manager.getQueryRevision()
+                || tracker.cachedStructureRevision != ProtectedRegion.structureRevision()) {
+            return manager.getHighestPriorityRegion(position);
+        }
+        return selectCachedRegion(tracker.cachedRegions, position, manager.getRegion(ProtectedRegion.GLOBAL_REGION));
+    }
+
+    static ProtectedRegion selectCachedRegion(ApplicableRegionSet regions, BlockVector3 position, ProtectedRegion global) {
+        ProtectedRegion selected = null;
+        for (ProtectedRegion candidate : regions) {
+            if (!candidate.isPhysicalArea() || !candidate.contains(position)) continue;
+            if (selected == null || candidate.getPriority() > selected.getPriority()
+                    || candidate.getPriority() == selected.getPriority()
+                    && candidate.getId().compareTo(selected.getId()) < 0) selected = candidate;
+        }
+        return selected == null ? global : selected;
+    }
+
+    private void clear(Tracker tracker) {
+        if (tracker.presentation != null) tracker.presentation.clear(tracker.player);
+        tracker.presentation = null;
+        tracker.cachedRegions = null;
+        tracker.cachedManager = null;
+        tracker.region = null;
+        tracker.notification = null;
+    }
+
+    private static final class Tracker {
+        private final Player player;
+        private final LocalPlayer localPlayer;
+        private final AtomicBoolean queued = new AtomicBoolean();
+        private volatile TerritoryNotificationSettings settings;
+        private org.bukkit.World world;
+        private BukkitWorldConfiguration worldConfig;
+        private ProtectedRegion region;
+        private Notification notification;
+        private Notification fixed;
+        private volatile TerritoryPresentation presentation;
+        private RegionManager cachedManager;
+        private org.bukkit.World cachedWorld;
+        private int cachedX;
+        private int cachedY;
+        private int cachedZ;
+        private ApplicableRegionSet cachedRegions;
+        private long cachedQueryRevision;
+        private long cachedStructureRevision;
+        private boolean initial = true;
+        private volatile boolean disabled;
+        private volatile boolean retry;
+        private int lastDispatchTick = -1;
+
+        private Tracker(Player player, LocalPlayer localPlayer) {
+            this.player = player;
+            this.localPlayer = localPlayer;
         }
     }
 }

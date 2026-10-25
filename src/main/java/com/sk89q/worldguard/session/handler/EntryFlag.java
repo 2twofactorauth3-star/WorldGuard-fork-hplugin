@@ -50,16 +50,17 @@ public class EntryFlag extends Handler {
 
     @Override
     public boolean onCrossBoundary(LocalPlayer player, Location from, Location to, ApplicableRegionSet toSet, Set<ProtectedRegion> entered, Set<ProtectedRegion> exited, MoveType moveType) {
-        boolean allowed = toSet.testState(player, Flags.ENTRY);
-
-        if (!getSession().getManager().hasBypass(player, (World) to.getExtent()) && !allowed && moveType.isCancellable()) {
-            String message = toSet.queryValue(player, Flags.ENTRY_DENY_MESSAGE);
+        if (moveType.isCancellable()
+                && !toSet.testState(player, Flags.ENTRY)
+                && !getSession().getManager().hasBypass(player, (World) to.getExtent())) {
             long now = System.currentTimeMillis();
             long cooldown = WorldGuard.getInstance().getPlatform().getGlobalStateManager().entryDenyMessageCooldownMillis;
-
-            if (now - lastMessage >= cooldown && message != null && !message.isEmpty()) {
-                player.print(message);
-                lastMessage = now;
+            if (now - lastMessage >= cooldown) {
+                String message = toSet.queryValue(player, Flags.ENTRY_DENY_MESSAGE);
+                if (message != null && !message.isEmpty()) {
+                    player.print(message);
+                    lastMessage = now;
+                }
             }
 
             return false;

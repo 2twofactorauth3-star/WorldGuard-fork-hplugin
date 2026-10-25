@@ -61,6 +61,7 @@ import javax.annotation.Nullable;
  * data is returned.</p>
  */
 public class RegionQuery {
+    private final ThreadLocal<WorldContexts> worldContexts = ThreadLocal.withInitial(WorldContexts::new);
 
     private final ConfigurationManager config;
     private final QueryCache cache;
@@ -109,21 +110,86 @@ public class RegionQuery {
      * @return a region set
      */
     public ApplicableRegionSet getApplicableRegions(Location location, QueryOption option) {
+        return getApplicableRegions(location, option, null);
+    }
+
+    public ApplicableRegionSet getApplicableRegions(Location location, QueryOption option, QueryCache.Cursor cursor) {
         checkNotNull(location);
         checkNotNull(option);
 
         World world = (World) location.getExtent();
-        WorldConfiguration worldConfig = config.get(world);
+        WorldContext context = context(world);
+        WorldConfiguration worldConfig = context == null ? config.get(world) : context.configuration;
 
         if (!worldConfig.useRegions) {
             return PermissiveRegionSet.getInstance();
         }
 
-        RegionManager manager = WorldGuard.getInstance().getPlatform().getRegionContainer().get((World) location.getExtent());
+        RegionManager manager = context == null
+                ? WorldGuard.getInstance().getPlatform().getRegionContainer().get(world) : context.manager;
         if (manager != null) {
-            return cache.queryContains(manager, location, option);
+            return cache.queryContains(manager, location, option, cursor);
         } else {
             return FailedLoadRegionSet.getInstance();
+        }
+    }
+
+    private WorldContext context(World world) {
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        if (config.getRevision() < 0 || container.getRevision() < 0) return null;
+        WorldContexts local = worldContexts.get();
+        while (true) {
+            long configRevision = config.getRevision();
+            long managerRevision = container.getRevision();
+            WorldContext cached = local.find(world, configRevision, managerRevision, container);
+            if (cached != null) return cached;
+            WorldConfiguration current = config.get(world);
+            RegionManager manager = current.useRegions ? container.get(world) : null;
+            if (configRevision != config.getRevision() || managerRevision != container.getRevision()) continue;
+            WorldContext result = new WorldContext(world, current, manager, configRevision, managerRevision, container);
+            if (manager != null) local.remember(result);
+            return result;
+        }
+    }
+
+    private static final class WorldContexts {
+        private final WorldContext[] contexts = new WorldContext[4];
+        private int next;
+
+        private WorldContext find(World world, long config, long manager, RegionContainer owner) {
+            String name = null;
+            for (WorldContext context : contexts) {
+                if (context != null && context.owner == owner
+                        && context.configRevision == config && context.managerRevision == manager) {
+                    if (context.world == world) return context;
+                    if (name == null) name = world.getName();
+                    if (context.name.equals(name)) return context;
+                }
+            }
+            return null;
+        }
+
+        private void remember(WorldContext context) { contexts[next++ & 3] = context; }
+    }
+
+    private static final class WorldContext {
+        public final World world;
+        public final String name;
+        public final WorldConfiguration configuration;
+        public final RegionManager manager;
+        public final long configRevision;
+        public final long managerRevision;
+        public final RegionContainer owner;
+
+        private WorldContext(World world, WorldConfiguration configuration, RegionManager manager,
+                             long configRevision, long managerRevision, RegionContainer owner) {
+            this.world = world;
+            this.name = world.getName();
+            this.configuration = configuration;
+            this.manager = manager;
+            this.configRevision = configRevision;
+            this.managerRevision = managerRevision;
+            this.owner = owner;
         }
     }
 

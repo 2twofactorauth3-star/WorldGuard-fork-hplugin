@@ -43,16 +43,20 @@ public class FeedFlag extends Handler {
 
     @Override
     public void tick(LocalPlayer player, ApplicableRegionSet set) {
-        long now = System.currentTimeMillis();
-
         Integer feedAmount = set.queryValue(player, Flags.FEED_AMOUNT);
-        Integer feedDelay = set.queryValue(player, Flags.FEED_DELAY);
-        Integer minHunger = set.queryValue(player, Flags.MIN_FOOD);
-        Integer maxHunger = set.queryValue(player, Flags.MAX_FOOD);
-
-        if (feedAmount == null || feedDelay == null || feedAmount == 0 || feedDelay < 0) {
+        if (feedAmount == null || feedAmount == 0) {
             return;
         }
+        Integer feedDelay = set.queryValue(player, Flags.FEED_DELAY);
+        if (feedDelay == null || feedDelay < 0) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (feedDelay > 0 && now - lastFeed <= feedDelay * 1000L) {
+            return;
+        }
+        Integer minHunger = set.queryValue(player, Flags.MIN_FOOD);
+        Integer maxHunger = set.queryValue(player, Flags.MAX_FOOD);
         if (feedAmount < 0
                 && (getSession().isInvincible(player)
                 || (player.getGameMode() != GameModes.SURVIVAL && player.getGameMode() != GameModes.ADVENTURE))) {
@@ -76,14 +80,12 @@ public class FeedFlag extends Handler {
 
         if (feedDelay <= 0) {
             player.setFoodLevel(feedAmount > 0 ? maxHunger : minHunger);
-            player.setSaturation(player.getFoodLevel());
-            lastFeed = now;
-        } else if (now - lastFeed > feedDelay * 1000L) {
+        } else {
             // clamp health between minimum and maximum
             player.setFoodLevel(Math.clamp(player.getFoodLevel() + feedAmount, minHunger, maxHunger));
-            player.setSaturation(player.getFoodLevel());
-            lastFeed = now;
         }
+        player.setSaturation(player.getFoodLevel());
+        lastFeed = now;
     }
 
 }

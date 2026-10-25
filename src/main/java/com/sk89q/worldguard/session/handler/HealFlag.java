@@ -43,18 +43,20 @@ public class HealFlag extends Handler {
 
     @Override
     public void tick(LocalPlayer player, ApplicableRegionSet set) {
-        if (player.getHealth() <= 0) {
+        double health = player.getHealth();
+        if (health <= 0) {
             return;
         }
-
-        long now = System.currentTimeMillis();
-
         Integer healAmount = set.queryValue(player, Flags.HEAL_AMOUNT);
+        if (healAmount == null || healAmount == 0) {
+            return;
+        }
         Integer healDelay = set.queryValue(player, Flags.HEAL_DELAY);
-        Double minHealth = set.queryValue(player, Flags.MIN_HEAL);
-        Double maxHealth = set.queryValue(player, Flags.MAX_HEAL);
-
-        if (healAmount == null || healDelay == null || healAmount == 0 || healDelay < 0) {
+        if (healDelay == null || healDelay < 0) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (healDelay > 0 && now - lastHeal <= healDelay * 1000L) {
             return;
         }
         if (healAmount < 0
@@ -63,27 +65,29 @@ public class HealFlag extends Handler {
             // don't damage invincible players
             return;
         }
+        Double minHealth = set.queryValue(player, Flags.MIN_HEAL);
+        Double maxHealth = set.queryValue(player, Flags.MAX_HEAL);
+        double maximum = player.getMaxHealth();
         if (minHealth == null) {
             minHealth = 0.0;
         }
         if (maxHealth == null) {
-            maxHealth = player.getMaxHealth();
+            maxHealth = maximum;
         }
 
-        minHealth = Math.min(player.getMaxHealth(), minHealth);
-        maxHealth = Math.min(player.getMaxHealth(), maxHealth);
+        minHealth = Math.min(maximum, minHealth);
+        maxHealth = Math.min(maximum, maxHealth);
 
-        if (player.getHealth() >= maxHealth && healAmount > 0) {
+        if (health >= maxHealth && healAmount > 0) {
             return;
         }
 
         if (healDelay <= 0) {
             player.setHealth(healAmount > 0 ? maxHealth : minHealth);
-            lastHeal = now;
-        } else if (now - lastHeal > healDelay * 1000L) {
-            player.setHealth(Math.clamp(player.getHealth() + healAmount, minHealth, maxHealth));
-            lastHeal = now;
+        } else {
+            player.setHealth(Math.clamp(health + healAmount, minHealth, maxHealth));
         }
+        lastHeal = now;
     }
 
 }

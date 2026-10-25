@@ -26,6 +26,7 @@ import com.sk89q.worldguard.bukkit.util.Entities;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag.State;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.session.Session;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -43,16 +44,14 @@ public class InvincibilityListener extends AbstractListener {
         super(plugin);
     }
 
-    private boolean isInvincible(LocalPlayer player) {
-        return WorldGuard.getInstance().getPlatform().getSessionManager().get(player).isInvincible(player);
-    }
-
-    private boolean mayBeInvincible(Player player) {
-        if (WorldGuard.getInstance().getPlatform().getSessionManager().customHandlersRegistered()) {
-            return true;
-        }
+    private boolean isInvincible(Player player) {
         RegionManager manager = getRegionManager(player.getWorld());
-        return manager != null && manager.hasState(Flags.INVINCIBILITY, State.ALLOW);
+        boolean regionInvincibility = manager != null && manager.hasState(Flags.INVINCIBILITY, State.ALLOW);
+        var sessions = WorldGuard.getInstance().getPlatform().getSessionManager();
+        if (!regionInvincibility && !sessions.customHandlersRegistered()) return false;
+        LocalPlayer localPlayer = getPlugin().wrapPlayer(player);
+        Session session = sessions.get(localPlayer);
+        return (regionInvincibility || session.hasInvincibilityHandlers()) && session.isInvincible(localPlayer);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -60,11 +59,7 @@ public class InvincibilityListener extends AbstractListener {
         Entity victim = event.getEntity();
         if (!(victim instanceof Player player)) return;
         if (Entities.isNPC(player)) return;
-        if (!mayBeInvincible(player)) return;
-
-        LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-
-        if (isInvincible(localPlayer)) {
+        if (isInvincible(player)) {
             player.setFireTicks(0);
             event.setCancelled(true);
 
@@ -89,11 +84,7 @@ public class InvincibilityListener extends AbstractListener {
         Entity entity = event.getEntity();
         if (!(entity instanceof Player player)) return;
         if (Entities.isNPC(player)) return;
-        if (!mayBeInvincible(player)) return;
-
-        LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-
-        if (isInvincible(localPlayer)) {
+        if (isInvincible(player)) {
             event.setCancelled(true);
         }
     }
@@ -102,11 +93,7 @@ public class InvincibilityListener extends AbstractListener {
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (Entities.isNPC(player)) return;
-        if (!mayBeInvincible(player)) return;
-
-        LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-
-        if (event.getFoodLevel() < player.getFoodLevel() && isInvincible(localPlayer)) {
+        if (event.getFoodLevel() < player.getFoodLevel() && isInvincible(player)) {
             event.setCancelled(true);
         }
     }

@@ -45,6 +45,9 @@ import javax.annotation.Nullable;
  * multiple concurrent threads.</p>
  */
 public abstract class RegionContainer {
+    public long getRevision() {
+        return -1;
+    }
 
     protected final Object lock = new Object();
     protected final QueryCache cache = new QueryCache();

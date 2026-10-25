@@ -247,6 +247,7 @@ public class FlagValueCalculator {
         int minimumPriority = Integer.MIN_VALUE;
         State combined = null;
         boolean found = false;
+        ProtectedRegion ignoredParent = null;
         Set<ProtectedRegion> ignoredParents = null;
 
         for (ProtectedRegion region : getApplicable()) {
@@ -254,7 +255,8 @@ public class FlagValueCalculator {
             if (priority < minimumPriority) {
                 break;
             }
-            if (ignoredParents != null && ignoredParents.contains(region)) {
+            if (ignoredParent != null && (region.equals(ignoredParent)
+                    || ignoredParents != null && ignoredParents.contains(region))) {
                 continue;
             }
 
@@ -269,14 +271,16 @@ public class FlagValueCalculator {
             }
 
             ProtectedRegion parent = region.getParent();
-            if (parent != null) {
-                if (ignoredParents == null) {
-                    ignoredParents = new HashSet<>();
-                }
-                do {
+            while (parent != null) {
+                if (ignoredParent == null) {
+                    ignoredParent = parent;
+                } else if (!parent.equals(ignoredParent)) {
+                    if (ignoredParents == null) {
+                        ignoredParents = new HashSet<>();
+                    }
                     ignoredParents.add(parent);
-                    parent = parent.getParent();
-                } while (parent != null);
+                }
+                parent = parent.getParent();
             }
 
             if (setsImplicitMinimumPriority(region, priority, minimumPriority, flag, subject)) {
@@ -404,38 +408,14 @@ public class FlagValueCalculator {
 
     @Nullable
     public static <V, K> V getEffectiveMapValueOf(ProtectedRegion region, MapFlag<K, V> mapFlag, K key, RegionAssociable subject) {
-        List<ProtectedRegion> seen = mapFlag.getRegionGroupFlag() == null
-                ? Collections.emptyList() : new ArrayList<>();
         ProtectedRegion current = region;
 
         while (current != null) {
-            if (mapFlag.getRegionGroupFlag() != null) {
-                seen.add(current);
-            }
-
             Map<K, V> mapValue = current.getFlag(mapFlag);
 
-            if (mapValue != null && mapValue.containsKey(key)) {
-                boolean use = true;
-
-                if (mapFlag.getRegionGroupFlag() != null) {
-                    RegionGroup group = current.getFlag(mapFlag.getRegionGroupFlag());
-                    if (group == null) {
-                        group = mapFlag.getRegionGroupFlag().getDefault();
-                    }
-
-                    if (group == null) {
-                        use = false;
-                    } else if (subject == null) {
-                        use = group.contains(Association.NON_MEMBER);
-                    } else if (!group.contains(subject.getAssociation(seen))) {
-                        use = false;
-                    }
-                }
-
-                if (use) {
-                    return mapValue.get(key);
-                }
+            if (mapValue != null && mapValue.containsKey(key)
+                    && appliesToSubject(current, mapFlag, subject, region)) {
+                return mapValue.get(key);
             }
 
             current = current.getParent();
@@ -490,8 +470,8 @@ public class FlagValueCalculator {
 
         int minimumPriority = Integer.MIN_VALUE;
 
-        Map<ProtectedRegion, V> consideredValues = new HashMap<>();
-        Set<ProtectedRegion> ignoredParents = new HashSet<>();
+        Map<ProtectedRegion, V> consideredValues = Collections.emptyMap();
+        Set<ProtectedRegion> ignoredParents = null;
 
         for (ProtectedRegion region : getApplicable()) {
             int priority = getPriority(region);
@@ -500,7 +480,7 @@ public class FlagValueCalculator {
                 break;
             }
 
-            if (ignoredParents.contains(region)) {
+            if (ignoredParents != null && ignoredParents.contains(region)) {
                 continue;
             }
 
@@ -512,10 +492,14 @@ public class FlagValueCalculator {
                 if (returnFirst) {
                     return List.of(value);
                 }
+                if (consideredValues.isEmpty()) consideredValues = new HashMap<>();
                 consideredValues.put(region, value);
             }
 
-            addParents(ignoredParents, region);
+            if (region.getParent() != null) {
+                if (ignoredParents == null) ignoredParents = new HashSet<>();
+                addParents(ignoredParents, region);
+            }
 
             if (setsImplicitMinimumPriority(region, priority, minimumPriority, flag, subject)) {
                 minimumPriority = priority;
@@ -620,11 +604,9 @@ public class FlagValueCalculator {
             return null;
         }
 
-        List<ProtectedRegion> seen = new ArrayList<>();
         while (current != null) {
-            seen.add(current);
             V value = current.getFlag(flag);
-            if (value != null && appliesToSubject(current, flag, subject, seen)) return value;
+            if (value != null && appliesToSubject(current, flag, subject, region)) return value;
             current = current.getParent();
         }
         return null;
@@ -650,14 +632,27 @@ public class FlagValueCalculator {
             ProtectedRegion region,
             Flag<V> flag,
             @Nullable RegionAssociable subject,
-            List<ProtectedRegion> seen) {
+            ProtectedRegion start) {
         if (flag.getRegionGroupFlag() == null) return true;
         RegionGroup group = region.getFlag(flag.getRegionGroupFlag());
         if (group == null) group = flag.getRegionGroupFlag().getDefault();
         if (group == null) return false;
+        if (group == RegionGroup.ALL) return true;
         Association association = subject == null
-                ? Association.NON_MEMBER : subject.getAssociation(seen);
+                ? Association.NON_MEMBER : subject.getAssociation(parentChain(start, region));
         return group.contains(association);
+    }
+
+    private static List<ProtectedRegion> parentChain(ProtectedRegion start, ProtectedRegion end) {
+        if (start == end) return Collections.singletonList(start);
+        List<ProtectedRegion> chain = new ArrayList<>();
+        ProtectedRegion current = start;
+        while (current != null) {
+            chain.add(current);
+            if (current == end) break;
+            current = current.getParent();
+        }
+        return chain;
     }
 
     /**

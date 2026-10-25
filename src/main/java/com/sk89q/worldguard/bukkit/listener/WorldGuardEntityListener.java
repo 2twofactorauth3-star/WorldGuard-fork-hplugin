@@ -111,7 +111,7 @@ public class WorldGuardEntityListener extends AbstractListener {
             LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
 
             if (type == DamageCause.BLOCK_EXPLOSION
-                    && (blocksMechanic(wcfg.blockOtherExplosions, defender.getLocation())
+                    && (blocksMechanic(wcfg.blockOtherExplosions, wcfg.blockOtherExplosionsSetting, defender.getLocation())
                             || (wcfg.explosionFlagCancellation
                                 && !StateFlag.test(WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery()
                     .queryState(localPlayer.getLocation(), (RegionAssociable) null, Flags.OTHER_EXPLOSION))))) {
@@ -123,7 +123,7 @@ public class WorldGuardEntityListener extends AbstractListener {
             // for whatever reason, plugin-caused explosions with a null entity count as block explosions and aren't
             // handled anywhere else
             if (type == DamageCause.BLOCK_EXPLOSION
-                    && (blocksMechanic(wcfg.blockOtherExplosions, defender.getLocation())
+                    && (blocksMechanic(wcfg.blockOtherExplosions, wcfg.blockOtherExplosionsSetting, defender.getLocation())
                             || ((wcfg.explosionFlagCancellation || Entities.isConsideredBuildingIfUsed(defender))
                                 && !StateFlag.test(WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery()
                     .queryState(BukkitAdapter.adapt(defender.getLocation()), (RegionAssociable) null, Flags.OTHER_EXPLOSION))))) {
@@ -156,7 +156,7 @@ public class WorldGuardEntityListener extends AbstractListener {
         }
         return defender instanceof ArmorStand
                 && !(attacker instanceof Player)
-                && blocksMechanic(wcfg.blockEntityArmorStandDestroy, defender.getLocation(),
+                && blocksMechanic(wcfg.blockEntityArmorStandDestroy, wcfg.blockEntityArmorStandDestroySetting, defender.getLocation(),
                         Cause.create(attacker));
     }
 
@@ -174,12 +174,12 @@ public class WorldGuardEntityListener extends AbstractListener {
             Entity attacker, Entity defender, WorldConfiguration wcfg) {
         if (!(defender instanceof Player player) || Entities.isNPC(defender)) return false;
         if ((attacker instanceof TNTPrimed || attacker instanceof ExplosiveMinecart)
-                && blocksMechanic(wcfg.blockTNTExplosions, defender.getLocation(), Cause.create(attacker))) {
+                && blocksMechanic(wcfg.blockTNTExplosions, wcfg.blockTNTExplosionsSetting, defender.getLocation(), Cause.create(attacker))) {
             return true;
         }
         if (!(attacker instanceof LivingEntity) || attacker instanceof Player) return false;
         if (attacker instanceof Creeper
-                && blocksMechanic(wcfg.blockCreeperExplosions, defender.getLocation(), Cause.create(attacker))) {
+                && blocksMechanic(wcfg.blockCreeperExplosions, wcfg.blockCreeperExplosionsSetting, defender.getLocation(), Cause.create(attacker))) {
             return true;
         }
         if (!wcfg.useRegions || attacker instanceof Tameable) return false;
@@ -199,7 +199,7 @@ public class WorldGuardEntityListener extends AbstractListener {
                         && checkItemFrameProtection(attacker, itemFrame)
                 || defender instanceof ArmorStand
                         && Entities.isNonPlayerCreature(attacker)
-                        && blocksMechanic(wcfg.blockEntityArmorStandDestroy,
+                        && blocksMechanic(wcfg.blockEntityArmorStandDestroy, wcfg.blockEntityArmorStandDestroySetting,
                                 defender.getLocation(), Cause.create(attacker))) {
             event.setCancelled(true);
         }
@@ -228,14 +228,14 @@ public class WorldGuardEntityListener extends AbstractListener {
     private boolean blocksFireballDamage(
             Fireball fireball, Entity defender, WorldConfiguration wcfg) {
         if (fireball instanceof WitherSkull) {
-            return blocksMechanic(wcfg.blockWitherSkullExplosions,
+            return blocksMechanic(wcfg.blockWitherSkullExplosions, wcfg.blockWitherSkullExplosionsSetting,
                     defender.getLocation(), Cause.create(fireball));
         }
         if (fireball instanceof AbstractWindCharge) {
-            return blocksMechanic(wcfg.blockWindChargeExplosions,
+            return blocksMechanic(wcfg.blockWindChargeExplosions, wcfg.blockWindChargeExplosionsSetting,
                     defender.getLocation(), Cause.create(fireball));
         }
-        return blocksMechanic(wcfg.blockFireballExplosions,
+        return blocksMechanic(wcfg.blockFireballExplosions, wcfg.blockFireballExplosionsSetting,
                 defender.getLocation(), Cause.create(fireball));
     }
 
@@ -284,7 +284,7 @@ public class WorldGuardEntityListener extends AbstractListener {
         if (ent instanceof Creeper) {
             handleCreeperExplosion(event, wcfg, cause);
         } else if (ent instanceof EnderDragon) {
-            filterExplosionBlocks(wcfg.blockEnderDragonBlockDamage, event, cause);
+            filterExplosionBlocks(wcfg.blockEnderDragonBlockDamage, wcfg.blockEnderDragonBlockDamageSetting, event, cause);
         } else if (ent instanceof TNTPrimed || ent instanceof ExplosiveMinecart) {
             handleTntExplosion(event, wcfg, cause);
         } else if (ent instanceof Fireball fireball) {
@@ -298,19 +298,19 @@ public class WorldGuardEntityListener extends AbstractListener {
 
     private void handleCreeperExplosion(
             EntityExplodeEvent event, BukkitWorldConfiguration wcfg, Cause cause) {
-        if (blocksExplosion(wcfg.blockCreeperExplosions, event, cause)) {
+        if (blocksExplosion(wcfg.blockCreeperExplosions, wcfg.blockCreeperExplosionsSetting, event, cause)) {
             event.setCancelled(true);
         } else {
-            filterExplosionBlocks(wcfg.blockCreeperBlockDamage, event, cause);
+            filterExplosionBlocks(wcfg.blockCreeperBlockDamage, wcfg.blockCreeperBlockDamageSetting, event, cause);
         }
     }
 
     private void handleTntExplosion(
             EntityExplodeEvent event, BukkitWorldConfiguration wcfg, Cause cause) {
-        if (blocksExplosion(wcfg.blockTNTExplosions, event, cause)) {
+        if (blocksExplosion(wcfg.blockTNTExplosions, wcfg.blockTNTExplosionsSetting, event, cause)) {
             event.setCancelled(true);
         } else {
-            filterExplosionBlocks(wcfg.blockTNTBlockDamage, event, cause);
+            filterExplosionBlocks(wcfg.blockTNTBlockDamage, wcfg.blockTNTBlockDamageSetting, event, cause);
         }
     }
 
@@ -333,33 +333,33 @@ public class WorldGuardEntityListener extends AbstractListener {
             Fireball fireball,
             Cause cause) {
         if (fireball instanceof WitherSkull) {
-            if (blocksExplosion(wcfg.blockWitherSkullExplosions, event, cause)) {
+            if (blocksExplosion(wcfg.blockWitherSkullExplosions, wcfg.blockWitherSkullExplosionsSetting, event, cause)) {
                 event.setCancelled(true);
                 return true;
             }
-            filterExplosionBlocks(wcfg.blockWitherSkullBlockDamage, event, cause);
+            filterExplosionBlocks(wcfg.blockWitherSkullBlockDamage, wcfg.blockWitherSkullBlockDamageSetting, event, cause);
             return false;
         }
         if (fireball instanceof AbstractWindCharge) {
-            if (!blocksExplosion(wcfg.blockWindChargeExplosions, event, cause)) return false;
+            if (!blocksExplosion(wcfg.blockWindChargeExplosions, wcfg.blockWindChargeExplosionsSetting, event, cause)) return false;
             event.setCancelled(true);
             return true;
         }
-        if (blocksExplosion(wcfg.blockFireballExplosions, event, cause)) {
+        if (blocksExplosion(wcfg.blockFireballExplosions, wcfg.blockFireballExplosionsSetting, event, cause)) {
             event.setCancelled(true);
             return true;
         }
-        filterExplosionBlocks(wcfg.blockFireballBlockDamage, event, cause);
+        filterExplosionBlocks(wcfg.blockFireballBlockDamage, wcfg.blockFireballBlockDamageSetting, event, cause);
         return false;
     }
 
     private void handleWitherExplosion(
             EntityExplodeEvent event, BukkitWorldConfiguration wcfg, Cause cause) {
-        if (blocksExplosion(wcfg.blockWitherExplosions, event, cause)) {
+        if (blocksExplosion(wcfg.blockWitherExplosions, wcfg.blockWitherExplosionsSetting, event, cause)) {
             event.setCancelled(true);
             return;
         }
-        filterExplosionBlocks(wcfg.blockWitherBlockDamage, event, cause);
+        filterExplosionBlocks(wcfg.blockWitherBlockDamage, wcfg.blockWitherBlockDamageSetting, event, cause);
         if (wcfg.useRegions && clearBlocksDeniedByFlag(event, Flags.WITHER_DAMAGE)) {
             event.setCancelled(true);
         }
@@ -367,7 +367,7 @@ public class WorldGuardEntityListener extends AbstractListener {
 
     private void handleOtherExplosion(
             EntityExplodeEvent event, BukkitWorldConfiguration wcfg, Cause cause) {
-        if (blocksExplosion(wcfg.blockOtherExplosions, event, cause)) {
+        if (blocksExplosion(wcfg.blockOtherExplosions, wcfg.blockOtherExplosionsSetting, event, cause)) {
             event.setCancelled(true);
             return;
         }
@@ -397,33 +397,33 @@ public class WorldGuardEntityListener extends AbstractListener {
 
         BukkitWorldConfiguration wcfg = getWorldConfig(ent.getWorld());
         if (event.getEntityType() == EntityType.WITHER) {
-            if (blocksMechanic(wcfg.blockWitherExplosions, ent.getLocation(), Cause.create(ent))) {
+            if (blocksMechanic(wcfg.blockWitherExplosions, wcfg.blockWitherExplosionsSetting, ent.getLocation(), Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
             }
         } else if (event.getEntityType() == EntityType.WITHER_SKULL) {
-            if (blocksMechanic(wcfg.blockWitherSkullExplosions, ent.getLocation(), Cause.create(ent))) {
+            if (blocksMechanic(wcfg.blockWitherSkullExplosions, wcfg.blockWitherSkullExplosionsSetting, ent.getLocation(), Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
             }
         } else if (event.getEntityType() == EntityType.FIREBALL) {
-            if (blocksMechanic(wcfg.blockFireballExplosions, ent.getLocation(), Cause.create(ent))) {
+            if (blocksMechanic(wcfg.blockFireballExplosions, wcfg.blockFireballExplosionsSetting, ent.getLocation(), Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
             }
         } else if (event.getEntityType() == EntityType.CREEPER) {
-            if (blocksMechanic(wcfg.blockCreeperExplosions, ent.getLocation(), Cause.create(ent))) {
+            if (blocksMechanic(wcfg.blockCreeperExplosions, wcfg.blockCreeperExplosionsSetting, ent.getLocation(), Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
             }
         } else if (event.getEntityType() == EntityType.TNT
                 || event.getEntityType() == EntityType.TNT_MINECART) {
-            if (blocksMechanic(wcfg.blockTNTExplosions, ent.getLocation(), Cause.create(ent))) {
+            if (blocksMechanic(wcfg.blockTNTExplosions, wcfg.blockTNTExplosionsSetting, ent.getLocation(), Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
             }
         } else if (event.getEntity() instanceof AbstractWindCharge) {
-            if (blocksMechanic(wcfg.blockWindChargeExplosions, ent.getLocation(), Cause.create(ent))) {
+            if (blocksMechanic(wcfg.blockWindChargeExplosions, wcfg.blockWindChargeExplosionsSetting, ent.getLocation(), Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
             }
@@ -473,7 +473,7 @@ public class WorldGuardEntityListener extends AbstractListener {
         if (entityType == EntityType.SLIME
                 && eventLoc.getY() >= 60
                 && event.getSpawnReason() == SpawnReason.NATURAL
-                && blocksMechanic(wcfg.blockGroundSlimes, eventLoc)) {
+                && blocksMechanic(wcfg.blockGroundSlimes, wcfg.blockGroundSlimesSetting, eventLoc)) {
             event.setCancelled(true);
             return;
         }
@@ -529,7 +529,7 @@ public class WorldGuardEntityListener extends AbstractListener {
         // NOTE: as of right now, bukkit doesn't fire this event for this (despite deprecating EntityCreatePortalEvent for it)
         // maybe one day this code will be useful
         if (event.getEntity() instanceof EnderDragon
-                && blocksMechanic(wcfg.blockEnderDragonPortalCreation,
+                && blocksMechanic(wcfg.blockEnderDragonPortalCreation, wcfg.blockEnderDragonPortalCreationSetting,
                         event.getEntity().getLocation(), Cause.create(event.getEntity()))) {
             event.setCancelled(true);
         }
@@ -590,27 +590,27 @@ public class WorldGuardEntityListener extends AbstractListener {
             Material id = event.getBlock().getType();
 
             if (id == Material.GRAVEL
-                    && blocksMechanic(wcfg.noPhysicsGravel, event.getBlock().getLocation(),
+                    && blocksMechanic(wcfg.noPhysicsGravel, wcfg.noPhysicsGravelSetting, event.getBlock().getLocation(),
                             Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
             }
 
             if ((id == Material.SAND || id == Material.RED_SAND)
-                    && blocksMechanic(wcfg.noPhysicsSand, event.getBlock().getLocation(),
+                    && blocksMechanic(wcfg.noPhysicsSand, wcfg.noPhysicsSandSetting, event.getBlock().getLocation(),
                             Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
             }
         } else if (ent instanceof Enderman) {
-            if (blocksMechanic(wcfg.disableEndermanGriefing, event.getBlock().getLocation(),
+            if (blocksMechanic(wcfg.disableEndermanGriefing, wcfg.disableEndermanGriefingSetting, event.getBlock().getLocation(),
                     Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
             }
         } else if (ent.getType() == EntityType.WITHER) {
-            if (blocksMechanic(wcfg.blockWitherBlockDamage, event.getBlock().getLocation(), Cause.create(ent))
-                    || blocksMechanic(wcfg.blockWitherExplosions, event.getBlock().getLocation(),
+            if (blocksMechanic(wcfg.blockWitherBlockDamage, wcfg.blockWitherBlockDamageSetting, event.getBlock().getLocation(), Cause.create(ent))
+                    || blocksMechanic(wcfg.blockWitherExplosions, wcfg.blockWitherExplosionsSetting, event.getBlock().getLocation(),
                             Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
@@ -623,7 +623,7 @@ public class WorldGuardEntityListener extends AbstractListener {
                 }
             }
         } else if (/*ent instanceof Zombie && */event instanceof EntityBreakDoorEvent) {
-            if (blocksMechanic(wcfg.blockZombieDoorDestruction, event.getBlock().getLocation(),
+            if (blocksMechanic(wcfg.blockZombieDoorDestruction, wcfg.blockZombieDoorDestructionSetting, event.getBlock().getLocation(),
                     Cause.create(ent))) {
                 event.setCancelled(true);
                 return;
@@ -636,7 +636,7 @@ public class WorldGuardEntityListener extends AbstractListener {
         BukkitWorldConfiguration wcfg = getWorldConfig(event.getEntered().getWorld());
 
         if (!(event.getEntered() instanceof Player)
-                && blocksMechanic(wcfg.blockEntityVehicleEntry, event.getVehicle().getLocation(),
+                && blocksMechanic(wcfg.blockEntityVehicleEntry, wcfg.blockEntityVehicleEntrySetting, event.getVehicle().getLocation(),
                         Cause.create(event.getEntered()))) {
             event.setCancelled(true);
         }
@@ -661,20 +661,22 @@ public class WorldGuardEntityListener extends AbstractListener {
             }
         }
         return !(attacker instanceof Player)
-                && blocksMechanic(wcfg.blockEntityItemFrameDestroy, defender.getLocation(),
+                && blocksMechanic(wcfg.blockEntityItemFrameDestroy, wcfg.blockEntityItemFrameDestroySetting, defender.getLocation(),
                         Cause.create(attacker));
     }
 
     private boolean blocksExplosion(
+            boolean enabled,
             WorldMechanicSetting setting,
             EntityExplodeEvent event,
             Cause cause
     ) {
-        if (blocksMechanic(setting, event.getLocation(), cause)) {
+        if (!enabled) return false;
+        if (blocksMechanic(true, setting, event.getLocation(), cause)) {
             return true;
         }
         for (Block block : event.blockList()) {
-            if (blocksMechanic(setting, block.getLocation(), cause)) {
+            if (blocksMechanic(true, setting, block.getLocation(), cause)) {
                 return true;
             }
         }
@@ -682,11 +684,14 @@ public class WorldGuardEntityListener extends AbstractListener {
     }
 
     private void filterExplosionBlocks(
+            boolean enabled,
             WorldMechanicSetting setting,
             EntityExplodeEvent event,
             Cause cause
     ) {
-        event.blockList().removeIf(block -> blocksMechanic(setting, block.getLocation(), cause));
+        if (enabled) {
+            event.blockList().removeIf(block -> blocksMechanic(true, setting, block.getLocation(), cause));
+        }
     }
 
 }

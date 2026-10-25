@@ -21,7 +21,6 @@ package com.sk89q.worldguard.bukkit.listener;
 
 import com.google.common.base.Predicate;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.BukkitMessages;
@@ -427,7 +426,7 @@ public class RegionProtectionListener extends AbstractListener {
         Entity entity = event.getEntity();
         if (Entities.isHostile(entity) || Entities.isAmbient(entity)
                 || Entities.isNPC(entity) || entity instanceof Player) {
-            boolean allowed = event.getRelevantFlags().isEmpty()
+            boolean allowed = !event.hasRelevantFlags()
                     || queryState(query, BukkitAdapter.adapt(target), associable, event) != State.DENY;
             return allowed ? null : "@wg:protectionActionUse@";
         }
@@ -504,7 +503,7 @@ public class RegionProtectionListener extends AbstractListener {
             @Nullable Player playerAttacker,
             boolean pvp) {
         if (Entities.isHostile(event.getEntity()) || Entities.isAmbient(event.getEntity())) {
-            boolean allowed = event.getRelevantFlags().isEmpty()
+            boolean allowed = !event.hasRelevantFlags()
                     || queryState(query, target, associable, event) != State.DENY;
             return allowed ? null : "@wg:protectionActionHit@";
         }
@@ -518,7 +517,7 @@ public class RegionProtectionListener extends AbstractListener {
         }
         if (pvp) return deniedPvpAction(event, target, associable, query, playerAttacker);
         if (event.getEntity() instanceof Player) {
-            boolean allowed = event.getRelevantFlags().isEmpty()
+            boolean allowed = !event.hasRelevantFlags()
                     || queryState(query, target, associable, event) != State.DENY;
             return allowed ? null : "@wg:protectionActionDamage@";
         }
@@ -599,7 +598,7 @@ public class RegionProtectionListener extends AbstractListener {
             com.sk89q.worldedit.util.Location target,
             RegionAssociable associable,
             DelegateEvent event) {
-        return event.getRelevantFlags().isEmpty()
+        return !event.hasRelevantFlags()
                 ? query.testBuild(target, associable)
                 : query.testBuild(target, associable, combine(event));
     }
@@ -610,7 +609,7 @@ public class RegionProtectionListener extends AbstractListener {
             RegionAssociable associable,
             DelegateEvent event,
             StateFlag flag) {
-        return event.getRelevantFlags().isEmpty()
+        return !event.hasRelevantFlags()
                 ? query.testBuild(target, associable, flag)
                 : query.testBuild(target, associable, combine(event, flag));
     }
@@ -622,7 +621,7 @@ public class RegionProtectionListener extends AbstractListener {
             DelegateEvent event,
             StateFlag first,
             StateFlag second) {
-        return event.getRelevantFlags().isEmpty()
+        return !event.hasRelevantFlags()
                 ? query.testBuild(target, associable, first, second)
                 : query.testBuild(target, associable, combine(event, first, second));
     }
@@ -633,7 +632,7 @@ public class RegionProtectionListener extends AbstractListener {
             com.sk89q.worldedit.util.Location target,
             RegionAssociable associable,
             DelegateEvent event) {
-        return event.getRelevantFlags().isEmpty()
+        return !event.hasRelevantFlags()
                 ? null : query.queryState(target, associable, combine(event));
     }
 
@@ -644,7 +643,7 @@ public class RegionProtectionListener extends AbstractListener {
             RegionAssociable associable,
             DelegateEvent event,
             StateFlag flag) {
-        return event.getRelevantFlags().isEmpty()
+        return !event.hasRelevantFlags()
                 ? query.queryState(target, associable, flag)
                 : query.queryState(target, associable, combine(event, flag));
     }

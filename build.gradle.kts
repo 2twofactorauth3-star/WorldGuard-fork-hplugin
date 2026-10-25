@@ -61,6 +61,12 @@ dependencies {
     compileOnly(libs.essentialsx) {
         isTransitive = false
     }
+    compileOnly(libs.premiumVanishApi) {
+        isTransitive = false
+    }
+    compileOnly(libs.cmiApi) {
+        isTransitive = false
+    }
     compileOnly(libs.paperApi) {
         exclude("org.slf4j", "slf4j-api")
         exclude("junit", "junit")
@@ -75,6 +81,11 @@ dependencies {
     testImplementation(libs.hamcrest.library)
     testImplementation(libs.paperApi) {
         isTransitive = false
+    }
+    testRuntimeOnly(libs.paperApi) {
+        exclude("junit", "junit")
+        exclude(group = "org.apache.maven")
+        exclude(group = "org.apache.maven.resolver")
     }
     testImplementation("net.kyori:adventure-text-minimessage:4.17.0")
     testImplementation("net.kyori:adventure-text-serializer-gson:4.17.0")

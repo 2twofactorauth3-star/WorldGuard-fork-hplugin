@@ -9,9 +9,14 @@ settings:
   showOnJoin: true
   # Treats regions where you are a member as your own; false only considers ownership.
   includeMembers: true
+  # Movement processing interval for notifications, from 20 to 60 ticks. Does not affect protection checks.
+  updatePeriodTicks: 20
   # Allowed worlds: an asterisk enables all, an empty list disables all.
   worlds:
     - '*'
+  # Excluded worlds: notifications are disabled here even when worlds allows all worlds. An empty list removes exclusions.
+  excludedWorlds:
+    - 'forhpvp'
   # Territory outside physical regions.
   free:
     # MiniMessage name. Texts below support {name}, {region}, {world}, {player}, {prefix}.
@@ -166,6 +171,40 @@ settings:
         message: '{name}'
         durationSeconds: -1
         color: YELLOW
+        overlay: PROGRESS
+        progress: 1.0
+      messages:
+        enable: false
+        message:
+          - '{name}'
+        repeatSeconds: -1
+    arenaZone:
+      worlds:
+        - 'arena'
+      regions:
+        - '*'
+      name: '<bold><gradient:#FF526D:#FF9B7A>PVP ARENA</gradient></bold>'
+      sound:
+        enable: false
+        type: 'minecraft:block.note_block.pling'
+        volume: 1.0
+        pitch: 1.0
+      title:
+        enable: false
+        title: '{name}'
+        subtitle: ''
+        fadeInSeconds: 0.5
+        staySeconds: 3.0
+        fadeOutSeconds: 0.5
+      actionBar:
+        enable: true
+        message: '{name}'
+        durationSeconds: -1
+      bossBar:
+        enable: false
+        message: '{name}'
+        durationSeconds: -1
+        color: RED
         overlay: PROGRESS
         progress: 1.0
       messages:

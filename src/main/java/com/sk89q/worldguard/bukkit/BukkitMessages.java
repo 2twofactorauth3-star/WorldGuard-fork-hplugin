@@ -399,8 +399,18 @@ public final class BukkitMessages {
     }
 
     public net.kyori.adventure.text.Component component(String input) {
+        if (input == null || !input.contains("@wg:") && !input.contains("{prefix}")) return MMSupport.component(input);
         List<String> translated = lines(input);
         return translated.isEmpty() ? MMSupport.component("") : MMSupport.component(translated.get(0));
+    }
+
+    public net.kyori.adventure.text.Component component(
+            String input, net.kyori.adventure.text.minimessage.tag.resolver.TagResolver resolver) {
+        if (input == null || !input.contains("@wg:") && !input.contains("{prefix}")) {
+            return MMSupport.component(input, resolver);
+        }
+        List<String> translated = lines(input);
+        return MMSupport.component(translated.isEmpty() ? "" : translated.get(0), resolver);
     }
 
     public void send(CommandSender sender, String message) {

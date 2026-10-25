@@ -21,7 +21,6 @@ package com.sk89q.worldguard.protection.managers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.collect.Sets;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.LocalPlayer;
@@ -37,6 +36,7 @@ import com.sk89q.worldguard.protection.managers.storage.DifferenceSaveException;
 import com.sk89q.worldguard.protection.managers.storage.RegionDatabase;
 import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.QueryBounds;
 import com.sk89q.worldguard.protection.regions.RegionQuery.QueryOption;
 import com.sk89q.worldguard.util.Normal;
 
@@ -46,7 +46,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +55,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * A region manager holds the regions for a world.
@@ -67,14 +67,14 @@ public final class RegionManager {
     private final FlagRegistry flagRegistry;
     private ConcurrentRegionIndex index;
     private final AtomicLong queryRevision = new AtomicLong();
+    private final ThreadLocal<HighestPriorityRegion> highestPriorityRegion =
+            ThreadLocal.withInitial(HighestPriorityRegion::new);
     private volatile long observedFlagRevision = -1;
     private volatile long observedFlagUsageQueryRevision = -1;
     private volatile Map<Flag<?>, Integer> flagUsage = Collections.emptyMap();
-    private volatile long resultCacheQueryRevision = -1;
-    private volatile long resultCacheStructureRevision = -1;
-    private final Map<QueryOption, ApplicableRegionSet> emptyResults = new EnumMap<>(QueryOption.class);
-    private final Map<QueryOption, ConcurrentMap<ProtectedRegion, ApplicableRegionSet>> singletonResults =
-            new EnumMap<>(QueryOption.class);
+    private final Object resultCacheLock = new Object();
+    private volatile ResultCache resultCache;
+    private final ThreadLocal<RegionCollector> regionCollectors = ThreadLocal.withInitial(RegionCollector::new);
 
     /**
      * Create a new index.
@@ -92,9 +92,6 @@ public final class RegionManager {
         this.indexFactory = indexFactory;
         this.index = indexFactory.apply(store.getName());
         this.flagRegistry = flagRegistry;
-        for (QueryOption option : QueryOption.values()) {
-            singletonResults.put(option, new ConcurrentHashMap<>());
-        }
     }
 
     /**
@@ -130,7 +127,7 @@ public final class RegionManager {
      */
     public void save() throws StorageException {
         index.setDirty(false);
-        store.saveAll(new HashSet<>(getFilteredValuesCopy()));
+        store.saveAll(getFilteredValuesCopy());
     }
 
     /**
@@ -286,10 +283,9 @@ public final class RegionManager {
      * the children of the removed region.
      *
      * @param id the name of the region
-     * @return a list of removed regions where the first entry is the region specified by {@code id}
      */
-    public Set<ProtectedRegion> removeRegion(String id) {
-        return removeRegion(id, RemovalStrategy.REMOVE_CHILDREN);
+    public void removeRegion(String id) {
+        removeRegion(id, RemovalStrategy.REMOVE_CHILDREN);
     }
 
     /**
@@ -372,6 +368,32 @@ public final class RegionManager {
         return getApplicableRegions(position, QueryOption.COMPUTE_PARENTS);
     }
 
+    @Nullable
+    public ProtectedRegion getHighestPriorityRegion(BlockVector3 position) {
+        HighestPriorityRegion selection = highestPriorityRegion.get();
+        selection.region = null;
+        try {
+            index.applyContaining(position, selection);
+            return selection.region == null ? index.get(ProtectedRegion.GLOBAL_REGION) : selection.region;
+        } finally {
+            selection.region = null;
+        }
+    }
+
+    private static final class HighestPriorityRegion implements Predicate<ProtectedRegion> {
+        private ProtectedRegion region;
+
+        @Override
+        public boolean test(ProtectedRegion candidate) {
+            if (candidate.isPhysicalArea() && (region == null || candidate.getPriority() > region.getPriority()
+                    || candidate.getPriority() == region.getPriority()
+                    && candidate.getId().compareTo(region.getId()) < 0)) {
+                region = candidate;
+            }
+            return true;
+        }
+    }
+
     /**
      * Return a region set for the given position.
      *
@@ -380,12 +402,21 @@ public final class RegionManager {
      * @return a region set
      */
     public ApplicableRegionSet getApplicableRegions(BlockVector3 position, QueryOption option) {
+        return getApplicableRegions(position, option, null);
+    }
+
+    public ApplicableRegionSet getApplicableRegions(BlockVector3 position, QueryOption option, QueryBounds bounds) {
         checkNotNull(position);
         checkNotNull(option);
 
-        Set<ProtectedRegion> regions = Sets.newHashSet();
-        index.applyContaining(position, option.createIndexConsumer(regions));
-        return createResult(regions, option);
+        RegionCollector collector = borrowCollector(option);
+        try {
+            if (bounds == null) index.applyContaining(position, collector);
+            else index.applyContaining(position, collector, bounds);
+            return createResult(collector, option);
+        } finally {
+            collector.release();
+        }
     }
 
     /**
@@ -412,51 +443,227 @@ public final class RegionManager {
         checkNotNull(region);
         checkNotNull(option);
 
-        Set<ProtectedRegion> regions = Sets.newHashSet();
-        index.applyIntersecting(region, option.createIndexConsumer(regions));
-        return createResult(regions, option);
+        RegionCollector collector = borrowCollector(option);
+        try {
+            index.applyIntersecting(region, collector);
+            return createResult(collector, option);
+        } finally {
+            collector.release();
+        }
     }
 
-    private ApplicableRegionSet createResult(Set<ProtectedRegion> regions, QueryOption option) {
-        if (regions.size() <= 1) {
-            refreshResultCache();
-            if (regions.isEmpty()) {
-                synchronized (emptyResults) {
-                    return emptyResults.computeIfAbsent(option, ignored -> new RegionResultSet(
-                            option.constructResult(Collections.emptySet()), Collections.emptySet(),
-                            index.get(ProtectedRegion.GLOBAL_REGION), true));
-                }
-            }
-            ProtectedRegion only = regions.iterator().next();
-            return singletonResults.get(option).computeIfAbsent(only, ignored -> {
+    private RegionCollector borrowCollector(QueryOption option) {
+        RegionCollector collector = regionCollectors.get();
+        if (collector.inUse) collector = new RegionCollector();
+        collector.inUse = true;
+        collector.parents = option == QueryOption.COMPUTE_PARENTS;
+        return collector;
+    }
+
+    private ApplicableRegionSet createResult(RegionCollector collector, QueryOption option) {
+        if (collector.size <= 1) {
+            ResultCache cache = currentResultCache();
+            ProtectedRegion only = collector.first;
+            if (only == null) return cache.empty;
+            ApplicableRegionSet result = cache.singletons.get(only);
+            if (result != null) return result;
+            return cache.singletons.computeIfAbsent(only, ignored -> {
                 Set<ProtectedRegion> singleton = Collections.singleton(only);
-                return new RegionResultSet(
-                        option.constructResult(singleton), singleton,
-                        index.get(ProtectedRegion.GLOBAL_REGION), true);
+                return RegionResultSet.fromSnapshot(Collections.singletonList(only), singleton, cache.global);
             });
         }
+        ResultCache cache = collector.size <= 16 ? currentResultCache() : null;
+        if (cache != null) {
+            ApplicableRegionSet result = cache.combinations.get(collector);
+            if (result != null) return result;
+        }
+        Set<ProtectedRegion> regions = collector.snapshot();
         Set<ProtectedRegion> retained = Collections.unmodifiableSet(regions);
-        return new RegionResultSet(
-                option.constructResult(regions), retained,
-                index.get(ProtectedRegion.GLOBAL_REGION), true);
+        ApplicableRegionSet result = RegionResultSet.fromSnapshot(
+                (cache != null ? QueryOption.SORT : option).constructResult(regions), retained,
+                cache != null ? cache.global : index.get(ProtectedRegion.GLOBAL_REGION));
+        return cache == null ? result : cache.remember(retained, collector.hashCode(), result);
     }
 
-    private void refreshResultCache() {
+    private ResultCache currentResultCache() {
         long query = queryRevision.get();
         long structure = ProtectedRegion.structureRevision();
-        if (resultCacheQueryRevision == query && resultCacheStructureRevision == structure) {
-            return;
+        ResultCache cached = resultCache;
+        if (cached != null && cached.queryRevision == query && cached.structureRevision == structure) {
+            return cached;
         }
-        synchronized (emptyResults) {
-            if (resultCacheQueryRevision == query && resultCacheStructureRevision == structure) {
-                return;
+        synchronized (resultCacheLock) {
+            cached = resultCache;
+            if (cached == null || cached.queryRevision != query || cached.structureRevision != structure) {
+                cached = new ResultCache(query, structure, index.get(ProtectedRegion.GLOBAL_REGION));
+                resultCache = cached;
             }
-            emptyResults.clear();
-            for (ConcurrentMap<ProtectedRegion, ApplicableRegionSet> cache : singletonResults.values()) {
-                cache.clear();
+            return cached;
+        }
+    }
+
+    private static final class ResultCache {
+        public final long queryRevision;
+        public final long structureRevision;
+        public final ProtectedRegion global;
+        public final ApplicableRegionSet empty;
+        public final ConcurrentMap<ProtectedRegion, ApplicableRegionSet> singletons = new ConcurrentHashMap<>();
+        public final ConcurrentMap<RegionKey, ApplicableRegionSet> combinations = new ConcurrentHashMap<>();
+        private final AtomicInteger combinationCount = new AtomicInteger();
+
+        private ResultCache(long queryRevision, long structureRevision, @Nullable ProtectedRegion global) {
+            this.queryRevision = queryRevision;
+            this.structureRevision = structureRevision;
+            this.global = global;
+            this.empty = RegionResultSet.fromSnapshot(Collections.emptyList(), Collections.emptySet(), global);
+        }
+
+        private ApplicableRegionSet remember(Set<ProtectedRegion> regions, int hash, ApplicableRegionSet result) {
+            if (combinationCount.incrementAndGet() > 256) {
+                combinationCount.decrementAndGet();
+                return result;
             }
-            resultCacheQueryRevision = query;
-            resultCacheStructureRevision = structure;
+            ApplicableRegionSet existing = combinations.putIfAbsent(new RegionCombination(regions, hash), result);
+            if (existing == null) return result;
+            combinationCount.decrementAndGet();
+            return existing;
+        }
+    }
+
+    private interface RegionKey {
+        boolean matches(RegionCollector collector);
+    }
+
+    private static final class RegionCollector implements Predicate<ProtectedRegion>, RegionKey {
+        private ProtectedRegion first;
+        private ProtectedRegion second;
+        private ProtectedRegion third;
+        private ProtectedRegion fourth;
+        private Set<ProtectedRegion> multiple;
+        private int size;
+        private int hash;
+        private boolean parents;
+        private boolean inUse;
+
+        @Override
+        public boolean test(ProtectedRegion region) {
+            add(region);
+            if (parents) {
+                ProtectedRegion parent = region.getParent();
+                while (parent != null) {
+                    add(parent);
+                    parent = parent.getParent();
+                }
+            }
+            return true;
+        }
+
+        private void add(ProtectedRegion region) {
+            if (first == null) {
+                first = region;
+                size = 1;
+            } else if (multiple != null) {
+                if (multiple.add(region)) {
+                    size++;
+                    hash += region.hashCode();
+                }
+            } else if (!region.equals(first) && !region.equals(second)
+                    && !region.equals(third) && !region.equals(fourth)) {
+                addDistinct(region);
+            }
+        }
+
+        private void addDistinct(ProtectedRegion region) {
+            switch (size) {
+                case 1 -> {
+                    second = region;
+                    hash = first.hashCode();
+                }
+                case 2 -> third = region;
+                case 3 -> fourth = region;
+                default -> {
+                    multiple = snapshot();
+                    multiple.add(region);
+                }
+            }
+            size++;
+            hash += region.hashCode();
+        }
+
+        private Set<ProtectedRegion> snapshot() {
+            if (multiple != null) return multiple;
+            Set<ProtectedRegion> result = new HashSet<>();
+            result.add(first);
+            if (second != null) result.add(second);
+            if (third != null) result.add(third);
+            if (fourth != null) result.add(fourth);
+            return result;
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        @Override
+        public boolean matches(RegionCollector collector) {
+            if (size != collector.size) return false;
+            if (multiple != null) return multiple.equals(collector.multiple);
+            return containsOptional(collector.first) && containsOptional(collector.second)
+                    && containsOptional(collector.third) && containsOptional(collector.fourth);
+        }
+
+        private boolean containsOptional(@Nullable ProtectedRegion region) {
+            return region == null || region.equals(first) || region.equals(second)
+                    || region.equals(third) || region.equals(fourth);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) return true;
+            return other instanceof RegionKey key && key.matches(this);
+        }
+
+        private void release() {
+            first = null;
+            second = null;
+            third = null;
+            fourth = null;
+            multiple = null;
+            size = 0;
+            hash = 0;
+            inUse = false;
+        }
+    }
+
+    private static final class RegionCombination implements RegionKey {
+        public final Set<ProtectedRegion> regions;
+        public final int hash;
+
+        private RegionCombination(Set<ProtectedRegion> regions, int hash) {
+            this.regions = regions;
+            this.hash = hash;
+        }
+
+        @Override
+        public boolean matches(RegionCollector collector) {
+            if (regions.size() != collector.size) return false;
+            if (collector.multiple != null) return regions.equals(collector.multiple);
+            return regions.contains(collector.first) && regions.contains(collector.second)
+                    && (collector.third == null || regions.contains(collector.third))
+                    && (collector.fourth == null || regions.contains(collector.fourth));
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) return true;
+            if (other instanceof RegionCollector collector) return matches(collector);
+            return other instanceof RegionCombination combination && regions.equals(combination.regions);
         }
     }
 
@@ -535,12 +742,12 @@ public final class RegionManager {
     }
 
     /**
-     * Get an {@link ArrayList} copy of regions in the index with transient regions filtered.
+     * Get a {@link HashSet} copy of regions in the index with transient regions filtered.
      *
-     * @return a list
+     * @return a set
      */
-    private List<ProtectedRegion> getFilteredValuesCopy() {
-        List<ProtectedRegion> filteredValues = new ArrayList<>();
+    private Set<ProtectedRegion> getFilteredValuesCopy() {
+        Set<ProtectedRegion> filteredValues = new HashSet<>();
         for (ProtectedRegion region : index.values()) {
             if (!region.isTransient()) {
                 filteredValues.add(region);

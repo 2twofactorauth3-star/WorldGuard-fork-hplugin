@@ -45,6 +45,9 @@ public class RegionResultSet extends AbstractRegionSet {
 
     private final List<ProtectedRegion> applicable;
     private final FlagValueCalculator flagValueCalculator;
+    private final boolean immutable;
+    private final ProtectedRegion globalRegion;
+    private volatile RegionFlagSnapshot flagSnapshot;
     @Nullable
     private Set<ProtectedRegion> regionSet;
 
@@ -68,7 +71,7 @@ public class RegionResultSet extends AbstractRegionSet {
      * @param globalRegion the global region, set aside for special handling.
      */
     public RegionResultSet(Set<ProtectedRegion> applicable, @Nullable ProtectedRegion globalRegion) {
-        this(NormativeOrders.fromSet(applicable), globalRegion, true);
+        this(NormativeOrders.fromSet(applicable), null, globalRegion, true, true);
         this.regionSet = copyRegions(applicable);
     }
 
@@ -93,6 +96,11 @@ public class RegionResultSet extends AbstractRegionSet {
             @Nullable ProtectedRegion globalRegion,
             boolean sorted
     ) {
+        this(applicable, regionSet, globalRegion, sorted, false);
+    }
+
+    private RegionResultSet(List<ProtectedRegion> applicable, @Nullable Set<ProtectedRegion> regionSet,
+                            @Nullable ProtectedRegion globalRegion, boolean sorted, boolean immutable) {
         checkNotNull(applicable);
         if (!sorted) {
             NormativeOrders.sort(applicable);
@@ -100,6 +108,40 @@ public class RegionResultSet extends AbstractRegionSet {
         this.applicable = Collections.unmodifiableList(applicable);
         this.regionSet = regionSet;
         this.flagValueCalculator = new FlagValueCalculator(applicable, globalRegion);
+        this.immutable = immutable;
+        this.globalRegion = globalRegion;
+    }
+
+    public static RegionResultSet fromSnapshot(List<ProtectedRegion> applicable,
+                                               Set<ProtectedRegion> regionSet,
+                                               @Nullable ProtectedRegion globalRegion) {
+        return new RegionResultSet(applicable, regionSet, globalRegion, true, true);
+    }
+
+    public boolean mayHaveFlag(Flag<?> flag) {
+        if (!immutable || getClass() != RegionResultSet.class) return true;
+        RegionFlagSnapshot snapshot = snapshot();
+        return snapshot.unknownRegions || snapshot.present.contains(flag);
+    }
+
+    public boolean hasDynamicFlags(Flag<?> first, Flag<?> second) {
+        if (!immutable || getClass() != RegionResultSet.class) return true;
+        RegionFlagSnapshot snapshot = snapshot();
+        return snapshot.unknownRegions || snapshot.dynamic.contains(first) || snapshot.dynamic.contains(second);
+    }
+
+    private RegionFlagSnapshot snapshot() {
+        RegionFlagSnapshot current = flagSnapshot;
+        while (true) {
+            long flags = ProtectedRegion.flagRevision();
+            long structure = ProtectedRegion.structureRevision();
+            if (current != null && current.flagsRevision == flags && current.structureRevision == structure) return current;
+            current = new RegionFlagSnapshot(applicable, globalRegion, flags, structure);
+            if (flags == ProtectedRegion.flagRevision() && structure == ProtectedRegion.structureRevision()) {
+                flagSnapshot = current;
+                return current;
+            }
+        }
     }
 
     @Override
@@ -110,12 +152,27 @@ public class RegionResultSet extends AbstractRegionSet {
     @Override
     @Nullable
     public State queryState(@Nullable RegionAssociable subject, StateFlag... flags) {
-        return flagValueCalculator.queryState(subject, flags);
+        State combined = null;
+        for (StateFlag flag : flags) {
+            State state = calculate(subject, flag);
+            if (state == State.DENY) return state;
+            if (state != null) combined = state;
+        }
+        return combined;
     }
 
     @Override
     @Nullable
     public <V> V queryValue(@Nullable RegionAssociable subject, Flag<V> flag) {
+        return calculate(subject, flag);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <V> V calculate(@Nullable RegionAssociable subject, Flag<V> flag) {
+        if (immutable && getClass() == RegionResultSet.class && flag != null && flag.getClass() == StateFlag.class) {
+            Object value = snapshot().state((StateFlag) flag, flagValueCalculator);
+            if (value != RegionFlagSnapshot.DYNAMIC) return (V) value;
+        }
         return flagValueCalculator.queryValue(subject, flag);
     }
 

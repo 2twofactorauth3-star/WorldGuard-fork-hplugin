@@ -20,7 +20,9 @@ public final class TerritoryNotificationSettings {
     public final boolean enabled;
     public final boolean showOnJoin;
     public final boolean includeMembers;
+    public final int updatePeriodTicks;
     public final Set<String> worlds;
+    public final Set<String> excludedWorlds;
     public final Notification free;
     public final Notification occupied;
     public final Notification own;
@@ -30,7 +32,9 @@ public final class TerritoryNotificationSettings {
         enabled = config.getBoolean("settings.enable", true);
         showOnJoin = config.getBoolean("settings.showOnJoin", true);
         includeMembers = config.getBoolean("settings.includeMembers", true);
+        updatePeriodTicks = Math.clamp(config.getInt("settings.updatePeriodTicks", 20), 20, 60);
         worlds = Set.copyOf(config.getStringList("settings.worlds", List.of("*")));
+        excludedWorlds = Set.copyOf(config.getStringList("settings.excludedWorlds", List.of("forhpvp")));
         free = new Notification(config, "settings.free");
         occupied = new Notification(config, "settings.occupied");
         own = new Notification(config, "settings.own");
@@ -42,7 +46,15 @@ public final class TerritoryNotificationSettings {
     }
 
     public boolean appliesTo(String world) {
-        return enabled && (worlds.contains("*") || worlds.contains(world));
+        return enabled && !excludedWorlds.contains(world) && (worlds.contains("*") || worlds.contains(world));
+    }
+
+    public Notification fixedNotification(String world) {
+        for (CustomName customName : customNames) {
+            if (!customName.worlds.contains("*") && !customName.worlds.contains(world)) continue;
+            return customName.regions.contains("*") ? customName.notification : null;
+        }
+        return null;
     }
 
     public Notification notification(LocalPlayer player, String world, ProtectedRegion region) {

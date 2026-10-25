@@ -23,6 +23,18 @@ dependencyResolutionManagement {
             name = "EssentialsX"
             url = uri("https://repo.essentialsx.net/releases/")
         }
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "JitPack"
+                    url = uri("https://jitpack.io")
+                }
+            }
+            filter {
+                includeModule("com.github.LeonMangler", "PremiumVanishAPI")
+                includeModule("com.github.Zrips", "CMI-API")
+            }
+        }
         mavenCentral()
     }
 }

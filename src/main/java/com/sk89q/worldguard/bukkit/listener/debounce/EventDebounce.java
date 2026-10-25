@@ -27,6 +27,7 @@ import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 public class EventDebounce<K> {
 
@@ -55,6 +56,14 @@ public class EventDebounce<K> {
                 }
                 entry.cancelled = cancelled;
             }
+        }
+    }
+
+    public <T extends Event & Cancellable> void fireToCancelLazy(Cancellable originalEvent, Supplier<T> factory, K key) {
+        Entry entry = getOrCreate(key);
+        synchronized (entry) {
+            if (entry.cancelled == null) entry.cancelled = Events.fireAndTestCancel(factory.get());
+            if (entry.cancelled) originalEvent.setCancelled(true);
         }
     }
 

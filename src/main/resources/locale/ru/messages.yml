@@ -5,6 +5,21 @@
 # Пустое значение message ничего не отправляет. Используется MiniMessage.
 #
 messages:
+  cmiBackpackDenied:
+    mode: actionbar
+    cooldownMillis: 1000
+    message:
+      - '<white>Здесь нельзя открывать <#FDBE00>рюкзак CMI'
+  cmiPortalDenied:
+    mode: actionbar
+    cooldownMillis: 1000
+    message:
+      - '<white>Здесь нельзя использовать <#FDBE00>портал CMI'
+  cmiArmorstandEditDenied:
+    mode: actionbar
+    cooldownMillis: 1000
+    message:
+      - '<white>Здесь нельзя <#FDBE00>редактировать стойку для брони'
   notificationPrefix:
     mode: message
     cooldownMillis: -1

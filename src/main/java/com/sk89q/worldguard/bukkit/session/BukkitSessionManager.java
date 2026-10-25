@@ -97,28 +97,27 @@ public class BukkitSessionManager extends AbstractSessionManager implements Runn
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void run() {
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
-            if (!customHandlersRegistered()) {
-                RegionManager manager = ((BukkitRegionContainer) WorldGuard.getInstance().getPlatform()
-                        .getRegionContainer()).get(player.getWorld());
-                if (manager == null || !manager.hasAnyFlag(TICK_FLAGS)) {
-                    continue;
-                }
-            }
-            Runnable task = () -> {
-                LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-                get(localPlayer).tick(localPlayer);
-            };
             if (WorldGuardPlugin.inst().isFolia()) {
                 player.getScheduler().run(WorldGuardPlugin.inst(), new Consumer() {
                     @Override
                     public void accept(Object ignored) {
-                        task.run();
+                        tickPlayer(player);
                     }
                 }, null);
             } else {
-                task.run();
+                tickPlayer(player);
             }
         }
+    }
+
+    private void tickPlayer(Player player) {
+        RegionManager manager = ((BukkitRegionContainer) WorldGuard.getInstance().getPlatform()
+                .getRegionContainer()).get(player.getWorld());
+        boolean tickFlags = manager != null && manager.hasAnyFlag(TICK_FLAGS);
+        if (!tickFlags && !customHandlersRegistered()) return;
+        LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
+        Session session = get(localPlayer);
+        if (tickFlags || session.hasCustomTickHandlers()) session.tick(localPlayer);
     }
 
     @Override

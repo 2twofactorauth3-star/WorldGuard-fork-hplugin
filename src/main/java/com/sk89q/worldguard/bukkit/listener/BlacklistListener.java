@@ -242,20 +242,21 @@ public final class BlacklistListener extends AbstractListener {
     public void onInventoryClick(InventoryClickEvent event) {
         HumanEntity entity = event.getWhoClicked();
         if (!(entity instanceof Player player)) return;
-        Inventory inventory = event.getInventory();
-        ItemStack item = event.getCurrentItem();
-        if (item == null || inventory.getHolder() == null) return;
-
         Blacklist blacklist = blacklist(player.getWorld());
         if (blacklist == null) return;
-        LocalPlayer localPlayer = getPlugin().wrapPlayer(player);
+        Inventory inventory = event.getInventory();
+        ItemStack item = event.getCurrentItem();
+        if (item == null) return;
+        org.bukkit.inventory.InventoryHolder holder = inventory.getHolder();
+        if (holder == null) return;
+
         Target target = createTarget(item);
         if (blacklist.needsCheck(target, EventType.ACQUIRE)
                 && !blacklist.check(new ItemAcquireBlacklistEvent(
-                localPlayer, BukkitAdapter.asBlockVector(entity.getLocation()),
+                getPlugin().wrapPlayer(player), BukkitAdapter.asBlockVector(entity.getLocation()),
                 target), false, false)) {
             event.setCancelled(true);
-            if (inventory.getHolder().equals(player)) {
+            if (holder.equals(player)) {
                 event.setCurrentItem(null);
             }
         }
@@ -265,7 +266,7 @@ public final class BlacklistListener extends AbstractListener {
             Target equippedTarget = createTarget(equipped);
             if (blacklist.needsCheck(equippedTarget, EventType.EQUIP)
                     && !blacklist.check(new ItemEquipBlacklistEvent(
-                    localPlayer, BukkitAdapter.asBlockVector(player.getLocation()),
+                    getPlugin().wrapPlayer(player), BukkitAdapter.asBlockVector(player.getLocation()),
                     equippedTarget), false, false)) {
                 event.setCancelled(true);
             }

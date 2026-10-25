@@ -4,6 +4,38 @@
 #
 
 logs:
+  cmiIntegrationEnabled:
+    message: 'Подключена интеграция CMI: god, рюкзак, порталы и редактор стоек для брони'
+  cmiIntegrationDisabled:
+    message: 'Интеграция CMI отключена: плагин остановлен'
+  cmiIntegrationIncompatible:
+    message: 'Не удалось подключить возможности CMI: несовместимый или недоступный API'
+  cmiIntegrationFlagConflict:
+    message: 'Не удалось зарегистрировать флаг CMI: имя уже занято другим типом флага: '
+  cmiIntegrationActionFailed:
+    message: 'Не удалось проверить действие CMI: '
+  cmiIntegrationPlayerFailed:
+    message: 'Не удалось применить флаг god CMI для игрока '
+  vanishIntegrationEnabled:
+    message: 'Подключена интеграция с '
+  vanishIntegrationDisabled:
+    message: 'Отключена интеграция с '
+  vanishIntegrationIncompatible:
+    message: 'Не удалось подключить API плагина '
+  vanishIntegrationPlayerFailed:
+    message: 'Не удалось применить флаг ваниша для '
+  vanishIntegrationFlagConflict:
+    message: 'Не удалось зарегистрировать флаг ваниша: это имя уже занято другим типом флага: '
+  essentialsIntegrationWaiting:
+    message: 'Интеграция с Essentials ожидает включения плагина; флаги god/vanish зарегистрированы, но пока не применяются'
+  essentialsIntegrationEnabled:
+    message: 'Интеграция с Essentials подключена: god и vanish'
+  essentialsIntegrationDisabled:
+    message: 'Интеграция с Essentials отключена: плагин остановлен'
+  essentialsIntegrationIncompatible:
+    message: 'Не удалось подключить Essentials: несовместимый или недоступный API'
+  essentialsIntegrationPlayerFailed:
+    message: 'Не удалось применить флаги Essentials для игрока '
   unableLoadTerritoryNotifications:
     message: 'Не удалось загрузить territoryNotifications.yml'
   commandExecutionFailed:

@@ -47,6 +47,8 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
 
     private final World world;
     private List<Block> blocks;
+    private Block singleBlock;
+    private boolean single;
     private final List<BlockState> blockStates;
     private final Material effectiveMaterial;
 
@@ -73,17 +75,24 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
     }
 
     protected AbstractBlockEvent(@Nullable Event originalEvent, Cause cause, Block block) {
-        this(originalEvent, cause, block.getWorld(), createList(checkNotNull(block)), block.getType());
+        this(originalEvent, cause, block.getWorld(), block, block.getType());
     }
 
     protected AbstractBlockEvent(@Nullable Event originalEvent, Cause cause, Location target, Material effectiveMaterial) {
-        this(originalEvent, cause, target.getWorld(), createList(target.getBlock()), effectiveMaterial);
+        this(originalEvent, cause, target.getWorld(), target.getBlock(), effectiveMaterial);
     }
 
-    private static List<Block> createList(Block block) {
-        List<Block> blocks = new ArrayList<>();
-        blocks.add(block);
-        return blocks;
+    private AbstractBlockEvent(@Nullable Event originalEvent, Cause cause, World world,
+                               Block block, Material effectiveMaterial) {
+        super(originalEvent, cause);
+        checkNotNull(world);
+        checkNotNull(block);
+        checkNotNull(effectiveMaterial);
+        this.world = world;
+        this.singleBlock = block;
+        this.single = true;
+        this.blockStates = null;
+        this.effectiveMaterial = effectiveMaterial;
     }
 
     /**
@@ -102,9 +111,16 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
      */
     public List<Block> getBlocks() {
         if (blocks == null) { // be lazy here because we often don't call getBlocks internally, just filter
-            blocks = new ArrayList<>(blockStates.size());
-            for (BlockState state : blockStates) {
-                blocks.add(state.getBlock());
+            if (single) {
+                blocks = new ArrayList<>(1);
+                if (singleBlock != null) blocks.add(singleBlock);
+                singleBlock = null;
+                single = false;
+            } else {
+                blocks = new ArrayList<>(blockStates.size());
+                for (BlockState state : blockStates) {
+                    blocks.add(state.getBlock());
+                }
             }
         }
         return blocks;
@@ -120,6 +136,18 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
      * @return true if one or more blocks were filtered out
      */
     public boolean filter(Predicate<Location> predicate, boolean cancelEventOnFalse) {
+        if (single) {
+            if (singleBlock == null || predicate.test(singleBlock.getLocation())) return false;
+            if (single) {
+                singleBlock = null;
+            } else if (cancelEventOnFalse) {
+                blocks.clear();
+            } else {
+                blocks.remove(0);
+            }
+            if (cancelEventOnFalse) setCancelled(true);
+            return true;
+        }
         return blocks == null
                 ? filterBlockStates(predicate, cancelEventOnFalse)
                 : filterBlocks(predicate, cancelEventOnFalse);
@@ -190,7 +218,7 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
 
     @Override
     public Result getResult() {
-        if (blocks == null ? blockStates.isEmpty() : blocks.isEmpty()) {
+        if (single ? singleBlock == null : blocks == null ? blockStates.isEmpty() : blocks.isEmpty()) {
             return Result.DENY;
         }
         return super.getResult();

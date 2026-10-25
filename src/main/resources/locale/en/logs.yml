@@ -4,6 +4,38 @@
 #
 
 logs:
+  cmiIntegrationEnabled:
+    message: 'CMI integration connected: god, backpack, portal and armor stand editor'
+  cmiIntegrationDisabled:
+    message: 'CMI integration disconnected: the plugin has stopped'
+  cmiIntegrationIncompatible:
+    message: 'Unable to connect CMI features: incompatible or unavailable API'
+  cmiIntegrationFlagConflict:
+    message: 'Unable to register CMI flag: the name is already used by another flag type: '
+  cmiIntegrationActionFailed:
+    message: 'Unable to check CMI action: '
+  cmiIntegrationPlayerFailed:
+    message: 'Unable to apply CMI god flag for player '
+  vanishIntegrationEnabled:
+    message: 'Connected integration with '
+  vanishIntegrationDisabled:
+    message: 'Disconnected integration with '
+  vanishIntegrationIncompatible:
+    message: 'Unable to connect the API of '
+  vanishIntegrationPlayerFailed:
+    message: 'Unable to apply vanish flag for '
+  vanishIntegrationFlagConflict:
+    message: 'Unable to register vanish flag: the name is already used by another flag type: '
+  essentialsIntegrationWaiting:
+    message: 'Waiting for Essentials to enable; god/vanish flags are registered but not yet applied'
+  essentialsIntegrationEnabled:
+    message: 'Essentials integration connected: god and vanish'
+  essentialsIntegrationDisabled:
+    message: 'Essentials integration disconnected: the plugin has stopped'
+  essentialsIntegrationIncompatible:
+    message: 'Unable to connect Essentials: incompatible or unavailable API'
+  essentialsIntegrationPlayerFailed:
+    message: 'Unable to apply Essentials flags for player '
   unableLoadTerritoryNotifications:
     message: 'Unable to load territoryNotifications.yml'
   commandExecutionFailed:

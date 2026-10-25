@@ -96,20 +96,28 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
             throw e;
         }
 
-        noPhysicsGravel = mechanic("physics.noPhysicsGravel");
-        noPhysicsSand = mechanic("physics.noPhysicsSand");
-        allowPortalAnywhere = mechanic("physics.allowPortalAnywhere");
+        noPhysicsGravelSetting = mechanic("physics.noPhysicsGravel");
+        noPhysicsGravel = noPhysicsGravelSetting.enable;
+        noPhysicsSandSetting = mechanic("physics.noPhysicsSand");
+        noPhysicsSand = noPhysicsSandSetting.enable;
+        allowPortalAnywhereSetting = mechanic("physics.allowPortalAnywhere");
+        allowPortalAnywhere = allowPortalAnywhereSetting.enable;
         blockPistons = mechanic("physics.blockPistons");
         preventWaterDamageSetting = mechanic("physics.disableWaterDamageBlocks");
         preventWaterDamage = Set.copyOf(
                 getStringList("physics.disableWaterDamageBlocks.blocks", List.of()));
 
-        blockTNTExplosions = mechanic("ignition.blockTnt");
-        blockTNTBlockDamage = mechanic("ignition.blockTntBlockDamage");
-        blockLighter = mechanic("ignition.blockLighter");
+        blockTNTExplosionsSetting = mechanic("ignition.blockTnt");
+        blockTNTExplosions = blockTNTExplosionsSetting.enable;
+        blockTNTBlockDamageSetting = mechanic("ignition.blockTntBlockDamage");
+        blockTNTBlockDamage = blockTNTBlockDamageSetting.enable;
+        blockLighterSetting = mechanic("ignition.blockLighter");
+        blockLighter = blockLighterSetting.enable;
 
-        preventLavaFire = mechanic("fire.disableLavaFireSpread");
-        disableFireSpread = mechanic("fire.disableAllFireSpread");
+        preventLavaFireSetting = mechanic("fire.disableLavaFireSpread");
+        preventLavaFire = preventLavaFireSetting.enable;
+        disableFireSpreadSetting = mechanic("fire.disableAllFireSpread");
+        disableFireSpread = disableFireSpreadSetting.enable;
         disableFireSpreadBlocksSetting = mechanic("fire.disableFireSpreadBlocks");
         disableFireSpreadBlocks = Set.copyOf(
                 getStringList("fire.disableFireSpreadBlocks.blocks", List.of()));
@@ -117,26 +125,46 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
         allowedLavaSpreadOver = Set.copyOf(
                 getStringList("fire.lavaSpreadBlocks.blocks", List.of()));
 
-        blockCreeperExplosions = mechanic("mobs.blockCreeperExplosions");
-        blockCreeperBlockDamage = mechanic("mobs.blockCreeperBlockDamage");
-        blockWitherExplosions = mechanic("mobs.blockWitherExplosions");
-        blockWitherBlockDamage = mechanic("mobs.blockWitherBlockDamage");
-        blockWitherSkullExplosions = mechanic("mobs.blockWitherSkullExplosions");
-        blockWitherSkullBlockDamage = mechanic("mobs.blockWitherSkullBlockDamage");
-        blockEnderDragonBlockDamage = mechanic("mobs.blockEnderdragonBlockDamage");
-        blockEnderDragonPortalCreation = mechanic("mobs.blockEnderdragonPortalCreation");
-        blockFireballExplosions = mechanic("mobs.blockFireballExplosions");
-        blockFireballBlockDamage = mechanic("mobs.blockFireballBlockDamage");
-        blockWindChargeExplosions = mechanic("mobs.blockWindchargeExplosions");
-        disableEndermanGriefing = mechanic("mobs.disableEndermanGriefing");
-        disableSnowmanTrails = mechanic("mobs.disableSnowmanTrails");
-        blockEntityPaintingDestroy = mechanic("mobs.blockPaintingDestroy");
-        blockEntityItemFrameDestroy = mechanic("mobs.blockItemFrameDestroy");
-        blockEntityArmorStandDestroy = mechanic("mobs.blockArmorStandDestroy");
-        blockGroundSlimes = mechanic("mobs.blockAboveGroundSlimes");
-        blockOtherExplosions = mechanic("mobs.blockOtherExplosions");
-        blockZombieDoorDestruction = mechanic("mobs.blockZombieDoorDestruction");
-        blockEntityVehicleEntry = mechanic("mobs.blockVehicleEntry");
+        blockCreeperExplosionsSetting = mechanic("mobs.blockCreeperExplosions");
+        blockCreeperExplosions = blockCreeperExplosionsSetting.enable;
+        blockCreeperBlockDamageSetting = mechanic("mobs.blockCreeperBlockDamage");
+        blockCreeperBlockDamage = blockCreeperBlockDamageSetting.enable;
+        blockWitherExplosionsSetting = mechanic("mobs.blockWitherExplosions");
+        blockWitherExplosions = blockWitherExplosionsSetting.enable;
+        blockWitherBlockDamageSetting = mechanic("mobs.blockWitherBlockDamage");
+        blockWitherBlockDamage = blockWitherBlockDamageSetting.enable;
+        blockWitherSkullExplosionsSetting = mechanic("mobs.blockWitherSkullExplosions");
+        blockWitherSkullExplosions = blockWitherSkullExplosionsSetting.enable;
+        blockWitherSkullBlockDamageSetting = mechanic("mobs.blockWitherSkullBlockDamage");
+        blockWitherSkullBlockDamage = blockWitherSkullBlockDamageSetting.enable;
+        blockEnderDragonBlockDamageSetting = mechanic("mobs.blockEnderdragonBlockDamage");
+        blockEnderDragonBlockDamage = blockEnderDragonBlockDamageSetting.enable;
+        blockEnderDragonPortalCreationSetting = mechanic("mobs.blockEnderdragonPortalCreation");
+        blockEnderDragonPortalCreation = blockEnderDragonPortalCreationSetting.enable;
+        blockFireballExplosionsSetting = mechanic("mobs.blockFireballExplosions");
+        blockFireballExplosions = blockFireballExplosionsSetting.enable;
+        blockFireballBlockDamageSetting = mechanic("mobs.blockFireballBlockDamage");
+        blockFireballBlockDamage = blockFireballBlockDamageSetting.enable;
+        blockWindChargeExplosionsSetting = mechanic("mobs.blockWindchargeExplosions");
+        blockWindChargeExplosions = blockWindChargeExplosionsSetting.enable;
+        disableEndermanGriefingSetting = mechanic("mobs.disableEndermanGriefing");
+        disableEndermanGriefing = disableEndermanGriefingSetting.enable;
+        disableSnowmanTrailsSetting = mechanic("mobs.disableSnowmanTrails");
+        disableSnowmanTrails = disableSnowmanTrailsSetting.enable;
+        blockEntityPaintingDestroySetting = mechanic("mobs.blockPaintingDestroy");
+        blockEntityPaintingDestroy = blockEntityPaintingDestroySetting.enable;
+        blockEntityItemFrameDestroySetting = mechanic("mobs.blockItemFrameDestroy");
+        blockEntityItemFrameDestroy = blockEntityItemFrameDestroySetting.enable;
+        blockEntityArmorStandDestroySetting = mechanic("mobs.blockArmorStandDestroy");
+        blockEntityArmorStandDestroy = blockEntityArmorStandDestroySetting.enable;
+        blockGroundSlimesSetting = mechanic("mobs.blockAboveGroundSlimes");
+        blockGroundSlimes = blockGroundSlimesSetting.enable;
+        blockOtherExplosionsSetting = mechanic("mobs.blockOtherExplosions");
+        blockOtherExplosions = blockOtherExplosionsSetting.enable;
+        blockZombieDoorDestructionSetting = mechanic("mobs.blockZombieDoorDestruction");
+        blockZombieDoorDestruction = blockZombieDoorDestructionSetting.enable;
+        blockEntityVehicleEntrySetting = mechanic("mobs.blockVehicleEntry");
+        blockEntityVehicleEntry = blockEntityVehicleEntrySetting.enable;
         blockPluginSpawning = getBoolean("mobs.blockPluginSpawning",
                 getBoolean("event-handling.block-plugin-spawning", true));
 

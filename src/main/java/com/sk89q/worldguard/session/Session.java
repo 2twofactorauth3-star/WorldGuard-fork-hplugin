@@ -28,17 +28,22 @@ import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.config.ConfigurationManager;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.RegionResultSet;
 import com.sk89q.worldguard.protection.flags.StateFlag.State;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
+import com.sk89q.worldguard.protection.regions.QueryCache;
 import com.sk89q.worldguard.session.handler.Handler;
-import com.sk89q.worldguard.session.handler.FeedFlag;
-import com.sk89q.worldguard.session.handler.HealFlag;
+import com.sk89q.worldguard.session.handler.EntryFlag;
+import com.sk89q.worldguard.session.handler.GreetingFlag;
+import com.sk89q.worldguard.session.handler.FarewellFlag;
 import com.sk89q.worldguard.util.Locations;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
@@ -50,17 +55,23 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class Session {
 
+    private static final Handler[] NO_HANDLERS = new Handler[0];
     private final SessionManager manager;
     private final RegionQuery query;
+    private final QueryCache.Cursor movementQuery = new QueryCache.Cursor();
     private boolean disableBypass;
     private final HashMap<Class<?>, Handler> handlers = Maps.newLinkedHashMap();
-    private volatile Handler[] handlerArray = new Handler[0];
+    private volatile Handler[] handlerArray = NO_HANDLERS;
+    private volatile CallbackSet callbacks = CallbackSet.EMPTY;
     private Location lastValid;
     private Set<ProtectedRegion> lastRegionSet;
     private ApplicableRegionSet lastApplicableRegionSet;
     private boolean freshMoveSet;
     private volatile boolean needRefresh;
     private boolean initialized;
+    private long boundaryFlagsRevision;
+    private long boundaryStructureRevision;
+    private boolean boundaryInitialized;
     private volatile World bypassWorld;
     private volatile boolean bypassValue;
     private volatile long bypassExpiresAt;
@@ -84,6 +95,45 @@ public class Session {
     public void register(Handler handler) {
         handlers.put(handler.getClass(), handler);
         handlerArray = handlers.values().toArray(Handler[]::new);
+        refreshCallbacks();
+    }
+
+    void registerFactories(Iterable<Handler.Factory<? extends Handler>> factories) {
+        for (Handler.Factory<? extends Handler> factory : factories) {
+            Handler handler = factory.create(this);
+            handlers.put(handler.getClass(), handler);
+        }
+        handlerArray = handlers.values().toArray(Handler[]::new);
+        refreshCallbacks();
+    }
+
+    private void refreshCallbacks() {
+        ArrayList<Handler> movement = new ArrayList<>();
+        ArrayList<Handler> boundary = new ArrayList<>();
+        ArrayList<Handler> continuous = new ArrayList<>();
+        ArrayList<Handler> ticking = new ArrayList<>();
+        ArrayList<Handler> invincibility = new ArrayList<>();
+        boolean customTick = false;
+        for (Handler handler : handlerArray) {
+            HandlerCallbacks callbacks = HandlerCallbacks.of(handler);
+            if (callbacks.movement) movement.add(handler);
+            if (callbacks.boundary) boundary.add(handler);
+            if (callbacks.continuous) continuous.add(handler);
+            if (callbacks.tick) ticking.add(handler);
+            if (callbacks.invincibility) invincibility.add(handler);
+            customTick |= callbacks.customTick;
+        }
+        callbacks = new CallbackSet(movement.toArray(Handler[]::new), boundary.toArray(Handler[]::new),
+                continuous.toArray(Handler[]::new), ticking.toArray(Handler[]::new),
+                invincibility.toArray(Handler[]::new), customTick);
+    }
+
+    public boolean hasCustomTickHandlers() {
+        return callbacks.customTick;
+    }
+
+    public boolean hasInvincibilityHandlers() {
+        return callbacks.invincibility.length != 0;
     }
 
     /**
@@ -133,6 +183,9 @@ public class Session {
         for (Handler handler : handlerArray) {
             handler.initialize(player, location, set);
         }
+        boundaryFlagsRevision = ProtectedRegion.flagRevision();
+        boundaryStructureRevision = ProtectedRegion.structureRevision();
+        boundaryInitialized = false;
     }
 
     synchronized void ensureInitialized(LocalPlayer player, BiConsumer<Session, LocalPlayer> initializer) {
@@ -163,6 +216,8 @@ public class Session {
      * @param player The player
      */
     public void tick(LocalPlayer player) {
+        Handler[] tickHandlers = callbacks.tick;
+        if (tickHandlers.length == 0) return;
         ApplicableRegionSet set;
         if (freshMoveSet && lastApplicableRegionSet != null) {
             set = lastApplicableRegionSet;
@@ -172,15 +227,8 @@ public class Session {
             lastApplicableRegionSet = set;
         }
 
-        if (manager.customHandlersRegistered()) {
-            for (Handler handler : handlerArray) {
-                handler.tick(player, set);
-            }
-        } else {
-            HealFlag heal = getHandler(HealFlag.class);
-            FeedFlag feed = getHandler(FeedFlag.class);
-            if (heal != null) heal.tick(player, set);
-            if (feed != null) feed.tick(player, set);
+        for (Handler handler : tickHandlers) {
+            handler.tick(player, set);
         }
     }
 
@@ -197,7 +245,7 @@ public class Session {
             return false;
         }
         boolean invincible = regionState == State.ALLOW;
-        for (Handler handler : handlerArray) {
+        for (Handler handler : callbacks.invincibility) {
             State state = handler.getInvincibility(player);
             if (state != null) {
                 switch (state) {
@@ -258,50 +306,106 @@ public class Session {
      */
     @Nullable
     public Location testMoveTo(LocalPlayer player, Location to, MoveType moveType, boolean forced) {
+        return testMoveTo(player, to, moveType, forced, null);
+    }
+
+    @Nullable
+    public Location testMoveTo(LocalPlayer player, Location to, MoveType moveType, boolean forced,
+                               @Nullable ApplicableRegionSet destination) {
         if (!forced && needRefresh) {
             needRefresh = false;
             forced = true;
         }
 
         if (forced || Locations.isDifferentBlock(lastValid, to)) {
-            ApplicableRegionSet toSet = query.getApplicableRegions(to);
+            long flagsRevision = ProtectedRegion.flagRevision();
+            long structureRevision = ProtectedRegion.structureRevision();
+            ApplicableRegionSet toSet = destination != null ? destination : queryDestination(to);
+            CallbackSet active = callbacks;
 
-            if (manager.customHandlersRegistered()) {
-                for (Handler handler : handlerArray) {
-                    if (!handler.testMoveTo(player, lastValid, to, toSet, moveType) && moveType.isCancellable()) {
-                        return lastValid;
-                    }
-                }
-            }
+            boolean custom = manager.customHandlersRegistered();
+            if (custom && !testMovementHandlers(active, player, to, toSet, moveType)) return lastValid;
 
             Set<ProtectedRegion> toRegions = toSet.getRegions();
-            if (!manager.customHandlersRegistered()
-                    && lastValid != null
-                    && lastValid.getExtent().equals(to.getExtent())
-                    && (toRegions == lastRegionSet || toRegions.equals(lastRegionSet))) {
-                lastValid = to;
-                lastRegionSet = toRegions;
-                lastApplicableRegionSet = toSet;
-                freshMoveSet = true;
-                return null;
-            }
-
-            Set<ProtectedRegion> entered = Sets.difference(toRegions, lastRegionSet);
-            Set<ProtectedRegion> exited = Sets.difference(lastRegionSet, toRegions);
-
-            for (Handler handler : handlerArray) {
-                if (!handler.onCrossBoundary(player, lastValid, to, toSet, entered, exited, moveType) && moveType.isCancellable()) {
-                    return lastValid;
-                }
-            }
+            boolean unchanged = unchangedRegions(to, toRegions);
+            boolean refresh = forced || boundaryFlagsRevision != flagsRevision
+                    || boundaryStructureRevision != structureRevision || lastApplicableRegionSet != toSet
+                    || custom && !boundaryInitialized;
+            if ((!unchanged || custom || refresh)
+                    && !testBoundaryHandlers(active, player, to, toSet, moveType, unchanged, refresh)) return lastValid;
 
             lastValid = to;
             lastRegionSet = toRegions;
             lastApplicableRegionSet = toSet;
             freshMoveSet = true;
+            boundaryFlagsRevision = flagsRevision;
+            boundaryStructureRevision = structureRevision;
+            boundaryInitialized = true;
         }
 
         return null;
+    }
+
+    private ApplicableRegionSet queryDestination(Location destination) {
+        return query.getClass() == RegionQuery.class
+                ? query.getApplicableRegions(destination, RegionQuery.QueryOption.COMPUTE_PARENTS, movementQuery)
+                : query.getApplicableRegions(destination);
+    }
+
+    private boolean unchangedRegions(Location to, Set<ProtectedRegion> regions) {
+        return lastValid != null
+                && lastValid.getExtent().equals(to.getExtent())
+                && (regions == lastRegionSet || regions.equals(lastRegionSet));
+    }
+
+    private boolean testMovementHandlers(CallbackSet active, LocalPlayer player, Location to,
+                                         ApplicableRegionSet regions, MoveType moveType) {
+        for (Handler handler : active.movement) {
+            if (!handler.testMoveTo(player, lastValid, to, regions, moveType) && moveType.isCancellable()) return false;
+        }
+        return true;
+    }
+
+    private boolean testBoundaryHandlers(CallbackSet active, LocalPlayer player, Location to,
+                                         ApplicableRegionSet regions, MoveType moveType, boolean unchanged, boolean refresh) {
+        Set<ProtectedRegion> entered = unchanged ? Collections.emptySet() : Sets.difference(regions.getRegions(), lastRegionSet);
+        Set<ProtectedRegion> exited = unchanged ? Collections.emptySet() : Sets.difference(lastRegionSet, regions.getRegions());
+        for (Handler handler : unchanged && !refresh ? active.continuous : active.boundary) {
+            if (unchanged && !refresh && canSkipBoundary(handler, regions)) continue;
+            if (!handler.onCrossBoundary(player, lastValid, to, regions, entered, exited, moveType)
+                    && moveType.isCancellable()) return false;
+        }
+        return true;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static boolean canSkipBoundary(Handler handler, ApplicableRegionSet regions) {
+        if (!(regions instanceof RegionResultSet result)) return false;
+        Class<?> type = handler.getClass();
+        if (type == EntryFlag.class) return !result.mayHaveFlag(Flags.ENTRY);
+        if (type == GreetingFlag.class) return !result.hasDynamicFlags(Flags.GREET_MESSAGE, Flags.GREET_TITLE);
+        return type == FarewellFlag.class && !result.hasDynamicFlags(Flags.FAREWELL_MESSAGE, Flags.FAREWELL_TITLE);
+    }
+
+    private static final class CallbackSet {
+        private static final CallbackSet EMPTY = new CallbackSet(NO_HANDLERS, NO_HANDLERS, NO_HANDLERS,
+                NO_HANDLERS, NO_HANDLERS, false);
+        public final Handler[] movement;
+        public final Handler[] boundary;
+        public final Handler[] continuous;
+        public final Handler[] tick;
+        public final Handler[] invincibility;
+        public final boolean customTick;
+
+        private CallbackSet(Handler[] movement, Handler[] boundary, Handler[] continuous, Handler[] tick,
+                            Handler[] invincibility, boolean customTick) {
+            this.movement = movement;
+            this.boundary = boundary;
+            this.continuous = continuous;
+            this.tick = tick;
+            this.invincibility = invincibility;
+            this.customTick = customTick;
+        }
     }
 
     /**

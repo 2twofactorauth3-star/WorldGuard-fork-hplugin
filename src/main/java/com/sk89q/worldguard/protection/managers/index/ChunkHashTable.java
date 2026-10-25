@@ -30,11 +30,13 @@ import com.sk89q.worldguard.protection.managers.RegionDifference;
 import com.sk89q.worldguard.protection.managers.RemovalStrategy;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.QueryBounds;
 import com.sk89q.worldguard.protection.util.RegionCollectionConsumer;
 import com.sk89q.worldguard.util.collect.LongHashTable;
 import com.sk89q.worldguard.util.concurrent.EvenMoreExecutors;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +54,18 @@ import javax.annotation.Nullable;
  */
 public class ChunkHashTable implements ConcurrentRegionIndex {
 
+    private static final ClassValue<Boolean> CUSTOM_CONTAINMENT = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(Class<?> type) {
+            try {
+                return type.getMethod("applyContaining", BlockVector3.class, Predicate.class)
+                        .getDeclaringClass() != ChunkHashTable.class;
+            } catch (NoSuchMethodException exception) {
+                throw new IllegalStateException(exception);
+            }
+        }
+    };
+
     private static final int RECENT_CHUNK_CAPACITY = 4096;
     private final String name;
     private ListeningExecutorService executor = createExecutor();
@@ -60,6 +74,9 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
             new LinkedHashMap<>(256, 0.75f, true);
     private final RegionIndex index;
     private final Object lock = new Object();
+    private final ArrayDeque<BlockVector2> pendingChunks = new ArrayDeque<>();
+    private long enumerationEpoch;
+    private boolean enumerationScheduled;
     private final ThreadLocal<CachedChunkState> lastState = ThreadLocal.withInitial(CachedChunkState::new);
     private volatile long generation;
 
@@ -108,7 +125,8 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
             if (state == null && create) {
                 state = new ChunkState(position);
                 states.put(position.x(), position.z(), state);
-                executor.execute(new EnumerateRegions(position));
+                pendingChunks.addLast(position);
+                scheduleEnumeration();
             }
         }
         return state;
@@ -135,6 +153,34 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
         }
     }
 
+    private void scheduleEnumeration() {
+        if (enumerationScheduled || pendingChunks.isEmpty()) return;
+        enumerationScheduled = true;
+        long epoch = enumerationEpoch;
+        executor.execute(() -> enumeratePending(epoch));
+    }
+
+    private void enumeratePending(long epoch) {
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                List<BlockVector2> batch;
+                synchronized (lock) {
+                    if (epoch != enumerationEpoch || pendingChunks.isEmpty()) return;
+                    batch = new ArrayList<>(Math.min(64, pendingChunks.size()));
+                    while (batch.size() < 64 && !pendingChunks.isEmpty()) batch.add(pendingChunks.removeFirst());
+                }
+                new EnumerateRegions(batch, epoch).run();
+            }
+        } finally {
+            synchronized (lock) {
+                if (epoch == enumerationEpoch) {
+                    enumerationScheduled = false;
+                    if (!executor.isShutdown()) scheduleEnumeration();
+                }
+            }
+        }
+    }
+
     /**
      * Clear the current hash table and rebuild it in the background.
      */
@@ -144,6 +190,9 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
             LongHashTable<ChunkState> previousStates = states;
 
             previousExecutor.shutdownNow();
+            enumerationEpoch++;
+            enumerationScheduled = false;
+            pendingChunks.clear();
             states = new LongHashTable<>();
             recentStates.clear();
             executor = createExecutor();
@@ -156,7 +205,8 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
             }
 
             if (!positions.isEmpty()) {
-                executor.execute(new EnumerateRegions(positions));
+                pendingChunks.addAll(positions);
+                scheduleEnumeration();
             }
 
             generation++;
@@ -209,7 +259,6 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
                     recentStates.remove(recentStates.entrySet().iterator().next().getKey());
                 }
             }
-            generation++;
         }
     }
 
@@ -217,6 +266,9 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
     public void forgetAll() {
         synchronized (lock) {
             executor.shutdownNow();
+            enumerationEpoch++;
+            enumerationScheduled = false;
+            pendingChunks.clear();
             states = new LongHashTable<>();
             recentStates.clear();
             executor = createExecutor();
@@ -226,8 +278,10 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
 
     @Override
     public void add(ProtectedRegion region) {
+        List<ProtectedRegion> affected = affectedRegions(region);
         index.add(region);
-        rebuild();
+        if (affected == null) rebuild();
+        else rebuildAffected(affected);
     }
 
     @Override
@@ -239,8 +293,49 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
     @Override
     public Set<ProtectedRegion> remove(String id, RemovalStrategy strategy) {
         Set<ProtectedRegion> removed = index.remove(id, strategy);
-        rebuild();
+        if (!removed.isEmpty()) rebuildAffected(removed);
         return removed;
+    }
+
+    private List<ProtectedRegion> affectedRegions(ProtectedRegion region) {
+        List<ProtectedRegion> affected = new ArrayList<>();
+        for (ProtectedRegion current = region; current != null; current = current.getParent()) {
+            ProtectedRegion previous = index.get(current.getId());
+            if (previous == current) return null;
+            affected.add(current);
+            if (previous != null) affected.add(previous);
+        }
+        return affected;
+    }
+
+    private void rebuildAffected(Collection<ProtectedRegion> affected) {
+        synchronized (lock) {
+            enumerationEpoch++;
+            enumerationScheduled = false;
+            pendingChunks.clear();
+            for (ChunkState state : states.values()) {
+                if (affected(state, affected)) {
+                    state.loaded = false;
+                }
+                if (!state.isLoaded()) pendingChunks.addLast(state.getPosition());
+            }
+            recentStates.values().removeIf(state -> affected(state, affected));
+            generation++;
+            scheduleEnumeration();
+        }
+    }
+
+    private static boolean affected(ChunkState state, Collection<ProtectedRegion> regions) {
+        int x = state.position.x();
+        int z = state.position.z();
+        for (ProtectedRegion region : regions) {
+            if (!region.isPhysicalArea()) continue;
+            BlockVector3 minimum = region.getMinimumPoint();
+            BlockVector3 maximum = region.getMaximumPoint();
+            if (x >= minimum.x() >> 4 && x <= maximum.x() >> 4
+                    && z >= minimum.z() >> 4 && z <= maximum.z() >> 4) return true;
+        }
+        return false;
     }
 
     @Override
@@ -261,31 +356,64 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
 
     @Override
     public void applyContaining(BlockVector3 position, Predicate<ProtectedRegion> consumer) {
+        applyContaining(position, consumer, null);
+    }
+
+    @Override
+    public void applyContaining(BlockVector3 position, Predicate<ProtectedRegion> consumer, QueryBounds bounds) {
         checkNotNull(position);
         checkNotNull(consumer);
+        if (bounds != null && CUSTOM_CONTAINMENT.get(getClass())) {
+            bounds.point(position);
+            applyContaining(position, consumer);
+            return;
+        }
 
         int chunkX = position.x() >> 4;
         int chunkZ = position.z() >> 4;
         CachedChunkState cached = lastState.get();
         ChunkState state = cached.state;
+        long currentGeneration = generation;
 
-        if (cached.generation != generation || cached.chunkX != chunkX || cached.chunkZ != chunkZ) {
-            state = get(chunkX, chunkZ);
-            cached.generation = generation;
-            cached.chunkX = chunkX;
-            cached.chunkZ = chunkZ;
-            cached.state = state;
+        if (cached.generation != currentGeneration || cached.chunkX != chunkX || cached.chunkZ != chunkZ
+                || state == null) {
+            state = cacheChunk(cached, chunkX, chunkZ, currentGeneration);
         }
 
         if (state != null && state.isLoaded()) {
-            for (ProtectedRegion region : state.getRegions()) {
-                if (region.contains(position)) {
-                    consumer.test(region);
+            if (bounds != null) bounds.chunk(position);
+            List<ProtectedRegion> regions = state.getRegions();
+            for (ProtectedRegion region : regions) {
+                boolean contains = region.contains(position);
+                if (bounds != null) bounds.observe(region, contains);
+                if (contains && !consumer.test(region)) {
+                    if (bounds != null) bounds.restrictToPoint();
+                    return;
                 }
             }
         } else {
+            if (bounds != null) bounds.point(position);
             index.applyContaining(position, consumer);
         }
+    }
+
+    @Nullable
+    private ChunkState cacheChunk(CachedChunkState cached, int chunkX, int chunkZ, long currentGeneration) {
+        ChunkState state;
+        if (cached.generation == currentGeneration && cached.previousState != null
+                && cached.previousX == chunkX && cached.previousZ == chunkZ) {
+            state = cached.previousState;
+        } else {
+            state = get(chunkX, chunkZ);
+        }
+        cached.previousState = cached.generation == currentGeneration ? cached.state : null;
+        cached.previousX = cached.chunkX;
+        cached.previousZ = cached.chunkZ;
+        cached.generation = currentGeneration;
+        cached.chunkX = chunkX;
+        cached.chunkZ = chunkZ;
+        cached.state = state;
+        return state;
     }
 
     @Override
@@ -328,20 +456,19 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
      */
     private class EnumerateRegions implements Runnable {
         private final List<BlockVector2> positions;
+        private final long epoch;
 
-        private EnumerateRegions(BlockVector2 position) {
-            this(List.of(checkNotNull(position)));
-        }
-
-        private EnumerateRegions(List<BlockVector2> positions) {
+        private EnumerateRegions(List<BlockVector2> positions, long epoch) {
             checkNotNull(positions);
             checkArgument(!positions.isEmpty(), "List of positions can't be empty");
             this.positions = positions;
+            this.epoch = epoch;
         }
 
         @Override
         public void run() {
             for (BlockVector2 position : positions) {
+                if (Thread.currentThread().isInterrupted()) return;
                 ChunkState state = get(position, false);
 
                 if (state != null) {
@@ -353,7 +480,10 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
                     index.applyIntersecting(chunkRegion, new RegionCollectionConsumer(regions, false));
                     regions.sort(null);
 
-                    state.setRegions(Collections.unmodifiableList(regions));
+                    synchronized (lock) {
+                        if (epoch != enumerationEpoch || Thread.currentThread().isInterrupted()) return;
+                        state.setRegions(Collections.unmodifiableList(regions));
+                    }
 
                     if (Thread.currentThread().isInterrupted()) {
                         return;
@@ -401,6 +531,9 @@ public class ChunkHashTable implements ConcurrentRegionIndex {
         private long generation = -1;
         private int chunkX;
         private int chunkZ;
+        private int previousX;
+        private int previousZ;
+        private ChunkState previousState;
         @Nullable
         private ChunkState state;
     }

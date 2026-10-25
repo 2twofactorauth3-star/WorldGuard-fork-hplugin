@@ -90,8 +90,8 @@ public class WorldGuardHangingListener extends AbstractListener {
     private boolean isCreeperBreakBlocked(
             Hanging hanging, Entity remover, WorldConfiguration wcfg) {
         Cause cause = Cause.create(remover);
-        return blocksMechanic(wcfg.blockCreeperBlockDamage, hanging.getLocation(), cause)
-                || blocksMechanic(wcfg.blockCreeperExplosions, hanging.getLocation(), cause)
+        return blocksMechanic(wcfg.blockCreeperBlockDamage, wcfg.blockCreeperBlockDamageSetting, hanging.getLocation(), cause)
+                || blocksMechanic(wcfg.blockCreeperExplosions, wcfg.blockCreeperExplosionsSetting, hanging.getLocation(), cause)
                 || regionsDeny(hanging, wcfg, Flags.CREEPER_EXPLOSION);
     }
 
@@ -99,11 +99,11 @@ public class WorldGuardHangingListener extends AbstractListener {
             Hanging hanging, @Nullable Entity remover, WorldConfiguration wcfg) {
         Cause cause = Cause.create(remover);
         if (hanging instanceof Painting) {
-            return blocksMechanic(wcfg.blockEntityPaintingDestroy, hanging.getLocation(), cause)
+            return blocksMechanic(wcfg.blockEntityPaintingDestroy, wcfg.blockEntityPaintingDestroySetting, hanging.getLocation(), cause)
                     || regionsDeny(hanging, wcfg, Flags.ENTITY_PAINTING_DESTROY);
         }
         if (hanging instanceof ItemFrame) {
-            return blocksMechanic(wcfg.blockEntityItemFrameDestroy, hanging.getLocation(), cause)
+            return blocksMechanic(wcfg.blockEntityItemFrameDestroy, wcfg.blockEntityItemFrameDestroySetting, hanging.getLocation(), cause)
                     || regionsDeny(hanging, wcfg, Flags.ENTITY_ITEM_FRAME_DESTROY);
         }
         return false;
@@ -123,10 +123,10 @@ public class WorldGuardHangingListener extends AbstractListener {
             return false;
         }
         if (hanging instanceof Painting) {
-            return blocksMechanic(wcfg.blockEntityPaintingDestroy, hanging.getLocation());
+            return blocksMechanic(wcfg.blockEntityPaintingDestroy, wcfg.blockEntityPaintingDestroySetting, hanging.getLocation());
         }
         return hanging instanceof ItemFrame
-                && blocksMechanic(wcfg.blockEntityItemFrameDestroy, hanging.getLocation());
+                && blocksMechanic(wcfg.blockEntityItemFrameDestroy, wcfg.blockEntityItemFrameDestroySetting, hanging.getLocation());
     }
 
 }

@@ -48,6 +48,7 @@ import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -66,6 +67,7 @@ public final class SelectionVisualizer {
     private static final int MAX_CHUNK_CUBES = 1024;
     private static final long DISCOVERY_PERIOD_TICKS = 20;
     private static final long NO_WALL = Long.MIN_VALUE;
+    private static final int[] NO_LINES = new int[0];
 
     private final WorldGuardPlugin plugin;
     private final ConfigurationManager settings;
@@ -161,21 +163,25 @@ public final class SelectionVisualizer {
             return;
         }
 
+        var selector = session.getRegionSelector(selectionWorld);
+        if (!selector.isDefined()) {
+            activeSelections.remove(player.getUniqueId());
+            return;
+        }
         try {
-            Region selection = session.getRegionSelector(selectionWorld).getRegion();
-            SelectionShape shape = SelectionShape.capture(selectionWorld, selection);
+            Region selection = selector.getRegion();
             CachedSelection cached = activeSelections.get(player.getUniqueId());
             boolean manualExpansionDisabled = plugin.isClaimExpansionDisabled(player.getUniqueId());
-            boolean expansionDisabled = manualExpansionDisabled;
-            if (cached != null && cached.shape.equals(shape)
+            boolean newSelection = cached == null || !cached.shape.matches(selectionWorld, selection);
+            if (!newSelection
                     && cached.manualExpansionDisabled == manualExpansionDisabled
                     && cached.selectionLimit == settings.selectionLimit) {
                 return;
             }
-            boolean newSelection = cached == null || !cached.shape.equals(shape);
+            SelectionShape shape = newSelection ? SelectionShape.capture(selectionWorld, selection) : cached.shape;
             SelectionExpiry expiry = SelectionExpiry.capture(actor, selectionWorld);
             expiry.schedule(settings.selectionMaximumLifetimeSeconds);
-            Outline outline = createOutline(actor, selectionWorld, selection, expansionDisabled);
+            Outline outline = createOutline(actor, selectionWorld, selection, manualExpansionDisabled);
             SelectionLimitTracker.Decision limitDecision = plugin.getSelectionLimitTracker()
                     .evaluate(actor, selectionWorld, outline.originalRegion, outline.expandedVolume);
             if (limitDecision == SelectionLimitTracker.Decision.DENY) {
@@ -189,7 +195,6 @@ public final class SelectionVisualizer {
                 return;
             }
             if (limitDecision == SelectionLimitTracker.Decision.WITHOUT_EXPANSION) {
-                expansionDisabled = true;
                 plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
                         "selectionLimitExpansionSkipped",
                         "maximum", settings.selectionLimit.maximumVolume,
@@ -578,7 +583,7 @@ public final class SelectionVisualizer {
         double maxDistanceSquared = particles.maxDistanceSquared;
         Location eye = player.getEyeLocation();
         long visibleWall = particles.mode == SelectionParticleMode.CHUNK_BORDERS
-                ? nearestWall(lines, eye) : NO_WALL;
+                ? nearestWall(cached.wallCandidates(), eye) : NO_WALL;
         int visibleCount = updateVisibility(cached, eye, maxDistanceSquared, visibleWall);
         if (visibleCount == 0) {
             return;
@@ -592,34 +597,42 @@ public final class SelectionVisualizer {
 
     private static int updateVisibility(CachedSelection cached, Location eye,
                                         double maxDistanceSquared, long visibleWall) {
+        if (cached.eyeX == eye.getX() && cached.eyeY == eye.getY() && cached.eyeZ == eye.getZ()
+                && cached.maxDistanceSquared == maxDistanceSquared && cached.visibleWall == visibleWall) {
+            return cached.visibleCount;
+        }
         int visibleCount = 0;
         double totalVisibleLength = 0;
-        for (int i = 0; i < cached.lines.size(); i++) {
+        int[] wallLines = visibleWall == NO_WALL ? null : cached.wallLines(visibleWall);
+        int count = wallLines == null ? cached.lines.size() : wallLines.length;
+        for (int index = 0; index < count; index++) {
+            int i = wallLines == null ? index : wallLines[index];
             Line line = cached.lines.get(i);
             int offset = i * 2;
-            if (visibleWall != NO_WALL && !isOnWall(line, visibleWall)) {
-                cached.visibility[offset] = Double.NaN;
-                continue;
-            }
             if (visiblePart(line, eye, maxDistanceSquared, cached.visibility, offset)) {
-                visibleCount++;
+                cached.visibleLines[visibleCount++] = i;
                 totalVisibleLength += line.length
                         * (cached.visibility[offset + 1] - cached.visibility[offset]);
             }
         }
+        cached.eyeX = eye.getX();
+        cached.eyeY = eye.getY();
+        cached.eyeZ = eye.getZ();
+        cached.maxDistanceSquared = maxDistanceSquared;
+        cached.visibleWall = visibleWall;
+        cached.visibleCount = visibleCount;
         cached.totalVisibleLength = totalVisibleLength;
         return visibleCount;
     }
 
     private static void emitLineSamples(Player player, ParticleSettings particles,
                                         CachedSelection cached, int visibleCount, int maxParticles) {
-        int visibleIndex = 0;
         int emitted = 0;
-        for (int i = 0; i < cached.lines.size() && emitted < maxParticles; i++) {
+        for (int visibleIndex = 0; visibleIndex < visibleCount && emitted < maxParticles; visibleIndex++) {
+            int i = cached.visibleLines[visibleIndex];
             int offset = i * 2;
-            if (Double.isNaN(cached.visibility[offset])) continue;
             int target = emitted * visibleCount / maxParticles;
-            if (visibleIndex++ < target) continue;
+            if (visibleIndex < target) continue;
             emitParticle(player, particles, cached.lines.get(i),
                     cached.visibility[offset], cached.visibility[offset + 1], 0.5);
             emitted++;
@@ -633,9 +646,9 @@ public final class SelectionVisualizer {
         double spacing = Math.max(particles.spacing, cached.totalVisibleLength / extraPointBudget);
         int emitted = 0;
 
-        for (int lineIndex = 0; lineIndex < cached.lines.size(); lineIndex++) {
+        for (int visibleIndex = 0; visibleIndex < visibleCount; visibleIndex++) {
+            int lineIndex = cached.visibleLines[visibleIndex];
             int offset = lineIndex * 2;
-            if (Double.isNaN(cached.visibility[offset])) continue;
             Line line = cached.lines.get(lineIndex);
             double visibleLength = line.length
                     * (cached.visibility[offset + 1] - cached.visibility[offset]);
@@ -835,17 +848,88 @@ public final class SelectionVisualizer {
         public final SelectionShape shape;
         public final List<Line> lines;
         public final double[] visibility;
+        public final int[] visibleLines;
         public final boolean manualExpansionDisabled;
         public final SelectionLimit selectionLimit;
         public double totalVisibleLength;
+        private double eyeX = Double.NaN;
+        private double eyeY;
+        private double eyeZ;
+        private double maxDistanceSquared;
+        private long visibleWall;
+        private int visibleCount;
+        private List<Line> wallCandidates;
+        private Wall[] walls;
 
         private CachedSelection(SelectionShape shape, List<Line> lines, boolean manualExpansionDisabled,
                                 SelectionLimit selectionLimit) {
             this.shape = shape;
             this.lines = List.copyOf(lines);
             this.visibility = new double[lines.size() * 2];
+            this.visibleLines = new int[lines.size()];
             this.manualExpansionDisabled = manualExpansionDisabled;
             this.selectionLimit = selectionLimit;
+        }
+
+        private List<Line> wallCandidates() {
+            if (wallCandidates != null) return wallCandidates;
+            List<Line> candidates = new ArrayList<>();
+            for (Line line : lines) {
+                if ((line.startX == line.endX && line.startZ != line.endZ
+                        || line.startZ == line.endZ && line.startX != line.endX)
+                        && !hasWallSpan(candidates, line)) candidates.add(line);
+            }
+            wallCandidates = candidates;
+            return candidates;
+        }
+
+        private static boolean hasWallSpan(List<Line> candidates, Line line) {
+            for (Line candidate : candidates) {
+                if (candidate.startX == line.startX && candidate.endX == line.endX
+                        && candidate.startZ == line.startZ && candidate.endZ == line.endZ) return true;
+            }
+            return false;
+        }
+
+        private int[] wallLines(long key) {
+            if (walls == null) walls = collectWalls();
+            for (Wall wall : walls) {
+                if (wall.key == key) return wall.lines;
+            }
+            return NO_LINES;
+        }
+
+        private Wall[] collectWalls() {
+            List<Wall> result = new ArrayList<>();
+            for (Line candidate : wallCandidates()) {
+                boolean xAxis = candidate.startX == candidate.endX;
+                long key = wallKey(xAxis, (int) (xAxis ? candidate.startX : candidate.startZ));
+                if (hasWall(result, key)) continue;
+                int[] indices = new int[lines.size()];
+                int count = 0;
+                for (int i = 0; i < lines.size(); i++) {
+                    if (isOnWall(lines.get(i), key)) indices[count++] = i;
+                }
+                result.add(new Wall(key, Arrays.copyOf(indices, count)));
+            }
+            return result.toArray(Wall[]::new);
+        }
+
+        private static boolean hasWall(List<Wall> walls, long key) {
+            for (Wall wall : walls) {
+                if (wall.key == key) return true;
+            }
+            return false;
+        }
+    }
+
+    private static final class Wall {
+        public final long key;
+        public final int[] lines;
+
+        private Wall(long key, int[] lines) {
+            this.key = key;
+            this.lines = lines;
         }
     }
 
@@ -885,6 +969,14 @@ public final class SelectionVisualizer {
                     ? List.copyOf(polygon.getPoints()) : List.of();
             return new SelectionShape(
                     world.getName(), region.getMinimumPoint(), region.getMaximumPoint(), points);
+        }
+
+        private boolean matches(World world, Region region) {
+            return worldName.equals(world.getName())
+                    && minimum.equals(region.getMinimumPoint())
+                    && maximum.equals(region.getMaximumPoint())
+                    && (region instanceof Polygonal2DRegion polygon
+                    ? polygonPoints.equals(polygon.getPoints()) : polygonPoints.isEmpty());
         }
 
         @Override

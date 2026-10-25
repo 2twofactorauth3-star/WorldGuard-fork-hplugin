@@ -9,9 +9,14 @@ settings:
   showOnJoin: true
   # Считает вашей территорией также регионы, где вы участник; false учитывает только владельцев.
   includeMembers: true
+  # Интервал обработки перемещений для уведомлений, от 20 до 60 тиков. Не влияет на проверки защиты.
+  updatePeriodTicks: 20
   # Разрешённые миры: звёздочка включает все, пустой список отключает все.
   worlds:
     - '*'
+  # Исключённые миры: уведомления здесь отключены, даже если worlds разрешает все миры. Пустой список убирает исключения.
+  excludedWorlds:
+    - 'forhpvp'
   # Территория вне обычных регионов.
   free:
     # Название MiniMessage. В текстах ниже доступны {name}, {region}, {world}, {player}, {prefix}.
@@ -166,6 +171,40 @@ settings:
         message: '{name}'
         durationSeconds: -1
         color: YELLOW
+        overlay: PROGRESS
+        progress: 1.0
+      messages:
+        enable: false
+        message:
+          - '{name}'
+        repeatSeconds: -1
+    arenaZone:
+      worlds:
+        - 'arena'
+      regions:
+        - '*'
+      name: '<bold><gradient:#FF526D:#FF9B7A>ПВП АРЕНА</gradient></bold>'
+      sound:
+        enable: false
+        type: 'minecraft:block.note_block.pling'
+        volume: 1.0
+        pitch: 1.0
+      title:
+        enable: false
+        title: '{name}'
+        subtitle: ''
+        fadeInSeconds: 0.5
+        staySeconds: 3.0
+        fadeOutSeconds: 0.5
+      actionBar:
+        enable: true
+        message: '{name}'
+        durationSeconds: -1
+      bossBar:
+        enable: false
+        message: '{name}'
+        durationSeconds: -1
+        color: RED
         overlay: PROGRESS
         progress: 1.0
       messages:

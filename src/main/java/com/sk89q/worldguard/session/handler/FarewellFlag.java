@@ -19,7 +19,6 @@
 
 package com.sk89q.worldguard.session.handler;
 
-import com.google.common.collect.Sets;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -31,6 +30,8 @@ import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.util.MessagingUtil;
 
 import java.util.Collections;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
@@ -53,7 +54,8 @@ public class FarewellFlag extends Handler {
     }
 
     private Set<String> getMessages(LocalPlayer player, ApplicableRegionSet set, Flag<String> flag) {
-        return Sets.newLinkedHashSet(set.queryAllValues(player, flag));
+        Collection<String> values = set.queryAllValues(player, flag);
+        return values.isEmpty() ? Collections.emptySet() : new LinkedHashSet<>(values);
     }
 
     @Override

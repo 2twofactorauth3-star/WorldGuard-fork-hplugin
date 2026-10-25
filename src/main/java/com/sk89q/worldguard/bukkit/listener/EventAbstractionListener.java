@@ -800,7 +800,7 @@ public class EventAbstractionListener extends AbstractListener {
         }
 
         boolean rightClick = event.getAction() == Action.RIGHT_CLICK_BLOCK;
-        boolean hasItemInteraction = item != null && isItemAppliedToBlock(item, clicked) && rightClick;
+        boolean hasItemInteraction = rightClick && item != null && isItemAppliedToBlock(item, clicked);
         boolean modifiesWorld = hasItemInteraction || isBlockModifiedOnClick(clicked, rightClick);
         testBlockUse(event, cause, clicked, modifiesWorld);
         if (hasItemInteraction && Events.fireAndTestCancel(
@@ -809,11 +809,13 @@ public class EventAbstractionListener extends AbstractListener {
             event.setUseInteractedBlock(Result.DENY);
         }
 
-        Block placed = clicked.getRelative(event.getBlockFace());
-        if (!rightClick && Materials.isFire(placed.getType())
-                && Events.fireAndTestCancel(new BreakBlockEvent(event, cause, placed))) {
-            event.setUseInteractedBlock(Result.DENY);
-            return false;
+        if (!rightClick) {
+            Block placed = clicked.getRelative(event.getBlockFace());
+            if (Materials.isFire(placed.getType())
+                    && Events.fireAndTestCancel(new BreakBlockEvent(event, cause, placed))) {
+                event.setUseInteractedBlock(Result.DENY);
+                return false;
+            }
         }
         if (event.useInteractedBlock() == Result.DENY || event.useItemInHand() == Result.DENY) {
             playDenyEffect(event.getPlayer(), clicked.getLocation().add(0.5, 1, 0.5));
@@ -826,12 +828,10 @@ public class EventAbstractionListener extends AbstractListener {
         if (Events.fireAndTestCancel(new UseBlockEvent(event, cause, clicked).setAllowed(!modifiesWorld))) {
             event.setUseInteractedBlock(Result.DENY);
         }
-        for (Block connected : Blocks.getConnected(clicked)) {
-            if (Events.fireAndTestCancel(
-                    new UseBlockEvent(event, cause, connected).setAllowed(!modifiesWorld))) {
-                event.setUseInteractedBlock(Result.DENY);
-                return;
-            }
+        Block connected = Blocks.getConnectedBlock(clicked);
+        if (connected != null && Events.fireAndTestCancel(
+                new UseBlockEvent(event, cause, connected).setAllowed(!modifiesWorld))) {
+            event.setUseInteractedBlock(Result.DENY);
         }
     }
 
@@ -1223,8 +1223,8 @@ public class EventAbstractionListener extends AbstractListener {
     @EventHandler(ignoreCancelled = true)
     public void onEntityPickupItem(EntityPickupItemEvent event) {
         Item item = event.getItem();
-        pickupDebounce.fireToCancel(event,
-                new DestroyEntityEvent(event, create(event.getEntity()), event.getItem()),
+        pickupDebounce.fireToCancelLazy(event,
+                () -> new DestroyEntityEvent(event, create(event.getEntity()), item),
                 new EntityEntityKey(event.getEntity(), item));
     }
 

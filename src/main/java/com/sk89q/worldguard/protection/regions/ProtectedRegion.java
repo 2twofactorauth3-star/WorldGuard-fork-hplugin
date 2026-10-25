@@ -29,14 +29,13 @@ import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.util.ChangeTracked;
 import com.sk89q.worldguard.util.Normal;
+import com.sk89q.worldguard.util.RevisionedConcurrentMap;
 
 import java.awt.geom.Area;
 import java.awt.geom.Line2D;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
@@ -69,7 +68,7 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
     private ProtectedRegion parent;
     private DefaultDomain owners = new DefaultDomain();
     private DefaultDomain members = new DefaultDomain();
-    private ConcurrentMap<Flag<?>, Object> flags = new ConcurrentHashMap<>();
+    private ConcurrentMap<Flag<?>, Object> flags = new RevisionedConcurrentMap<>(Map.of(), this::flagsChanged);
     private boolean dirty = true;
 
     /**
@@ -399,16 +398,16 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
      */
     public <T extends Flag<V>, V> void setFlag(T flag, @Nullable V val) {
         checkNotNull(flag);
-        Object previous;
         if (val == null) {
-            previous = flags.remove(flag);
+            flags.remove(flag);
         } else {
-            previous = flags.put(flag, val);
+            flags.put(flag, val);
         }
-        if (!Objects.equals(previous, val)) {
-            setDirty(true);
-            FLAG_REVISION.incrementAndGet();
-        }
+    }
+
+    private void flagsChanged() {
+        setDirty(true);
+        FLAG_REVISION.incrementAndGet();
     }
 
     /**
@@ -432,9 +431,8 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
         if (this.flags.equals(flags)) {
             return;
         }
-        this.flags = new ConcurrentHashMap<>(flags);
-        setDirty(true);
-        FLAG_REVISION.incrementAndGet();
+        this.flags = new RevisionedConcurrentMap<>(flags, this::flagsChanged);
+        flagsChanged();
     }
 
     /**

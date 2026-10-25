@@ -37,9 +37,6 @@ import com.sk89q.worldguard.domains.Association;
 import com.sk89q.worldguard.protection.association.DelayedRegionOverlapAssociation;
 import com.sk89q.worldguard.protection.association.Associables;
 import com.sk89q.worldguard.protection.association.RegionAssociable;
-import com.sk89q.worldguard.protection.flags.Flags;
-import com.sk89q.worldguard.protection.ApplicableRegionSet;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import org.bukkit.Location;
@@ -171,11 +168,21 @@ class AbstractListener implements Listener {
     }
 
     protected boolean blocksMechanic(WorldMechanicSetting setting, Location target, Cause cause) {
-        return blocksMechanic(setting, target, createRegionAssociable(cause));
+        return blocksMechanic(setting.enable, setting, target, cause);
+    }
+
+    protected boolean blocksMechanic(boolean enabled, WorldMechanicSetting setting, Location target, Cause cause) {
+        if (!enabled) return false;
+        if (setting.mode == WorldMechanicSetting.Mode.EVERYWHERE) return true;
+        return blocksMechanic(true, setting, target, createRegionAssociable(cause));
     }
 
     protected boolean blocksMechanic(WorldMechanicSetting setting, Location target) {
-        return blocksMechanic(setting, target, Associables.constant(Association.NON_MEMBER));
+        return blocksMechanic(setting.enable, setting, target);
+    }
+
+    protected boolean blocksMechanic(boolean enabled, WorldMechanicSetting setting, Location target) {
+        return blocksMechanic(enabled, setting, target, Associables.constant(Association.NON_MEMBER));
     }
 
     protected boolean blocksMechanic(
@@ -183,33 +190,14 @@ class AbstractListener implements Listener {
             Location target,
             RegionAssociable associable
     ) {
-        if (!setting.enable) {
-            return false;
-        }
-        if (setting.mode == WorldMechanicSetting.Mode.EVERYWHERE) {
-            return true;
-        }
+        return blocksMechanic(setting.enable, setting, target, associable);
+    }
 
-        BukkitWorldConfiguration worldConfig = getWorldConfig(target.getWorld());
-        if (!worldConfig.useRegions) {
-            return setting.mode == WorldMechanicSetting.Mode.OUTSIDE_REGIONS;
-        }
-
-        RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
-        com.sk89q.worldedit.util.Location adapted = BukkitAdapter.adapt(target);
-        ApplicableRegionSet regions = query.getApplicableRegions(adapted);
-        boolean hasLocalRegion = false;
-        for (ProtectedRegion region : regions) {
-            if (!ProtectedRegion.GLOBAL_REGION.equals(region.getId())) {
-                hasLocalRegion = true;
-                break;
-            }
-        }
-
-        if (setting.mode == WorldMechanicSetting.Mode.OUTSIDE_REGIONS) {
-            return !hasLocalRegion;
-        }
-        return hasLocalRegion && !regions.testState(associable, Flags.BUILD);
+    protected boolean blocksMechanic(boolean enabled, WorldMechanicSetting setting,
+                                    Location target, RegionAssociable associable) {
+        if (!enabled) return false;
+        if (setting.mode == WorldMechanicSetting.Mode.EVERYWHERE) return true;
+        return getWorldConfig(target.getWorld()).blocksMechanic(true, setting, BukkitAdapter.adapt(target), associable);
     }
 
     private static final class WorldConfigCache {

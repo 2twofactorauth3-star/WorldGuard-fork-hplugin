@@ -54,6 +54,9 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.util.Vector;
 
 import java.util.Set;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.IdentityHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -72,6 +75,9 @@ public class PlayerMoveListener extends AbstractListener {
             Flags.TIME_LOCK,
             Flags.WEATHER_LOCK
     );
+    private static Set<com.sk89q.worldguard.protection.flags.Flag<?>> registeredMovementFlags = movementFlags;
+    private static final Map<Object, Set<com.sk89q.worldguard.protection.flags.Flag<?>>> movementFlagOwners =
+            new IdentityHashMap<>();
     private static final AtomicLong MOVEMENT_FLAGS_REVISION = new AtomicLong();
     private final ThreadLocal<MovementInterestCache> movementInterestCache =
             ThreadLocal.withInitial(MovementInterestCache::new);
@@ -79,9 +85,29 @@ public class PlayerMoveListener extends AbstractListener {
     public static synchronized void registerMovementFlag(
             com.sk89q.worldguard.protection.flags.Flag<?> flag) {
         java.util.HashSet<com.sk89q.worldguard.protection.flags.Flag<?>> updated =
-                new java.util.HashSet<>(movementFlags);
+                new java.util.HashSet<>(registeredMovementFlags);
         updated.add(flag);
-        movementFlags = Set.copyOf(updated);
+        registeredMovementFlags = Set.copyOf(updated);
+        refreshMovementFlags();
+    }
+
+    public static synchronized void setMovementFlags(Object owner,
+            Set<? extends com.sk89q.worldguard.protection.flags.Flag<?>> flags) {
+        if (flags.isEmpty()) {
+            movementFlagOwners.remove(owner);
+        } else {
+            movementFlagOwners.put(owner, Set.copyOf(flags));
+        }
+        refreshMovementFlags();
+    }
+
+    private static void refreshMovementFlags() {
+        java.util.HashSet<com.sk89q.worldguard.protection.flags.Flag<?>> updated =
+                new java.util.HashSet<>(registeredMovementFlags);
+        for (Set<com.sk89q.worldguard.protection.flags.Flag<?>> flags : movementFlagOwners.values()) updated.addAll(flags);
+        Set<com.sk89q.worldguard.protection.flags.Flag<?>> active = Set.copyOf(updated);
+        if (movementFlags.equals(active)) return;
+        movementFlags = active;
         MOVEMENT_FLAGS_REVISION.incrementAndGet();
     }
 
@@ -107,6 +133,7 @@ public class PlayerMoveListener extends AbstractListener {
     public void onPlayerToggleFlight(PlayerToggleFlightEvent event) {
         if (event.isFlying() && !isFlightAllowed(event.getPlayer(), event.getPlayer().getLocation(), Flags.FLY)) {
             event.setCancelled(true);
+            disableFlight(event.getPlayer());
         }
     }
 
@@ -142,15 +169,16 @@ public class PlayerMoveListener extends AbstractListener {
     public void onPlayerMove(PlayerMoveEvent event) {
         Location from = event.getFrom();
         Location to = event.getTo();
-        if (from.getBlockX() == to.getBlockX()
+        if (to == null || from.getWorld().equals(to.getWorld()) && from.getBlockX() == to.getBlockX()
                 && from.getBlockY() == to.getBlockY()
                 && from.getBlockZ() == to.getBlockZ()) {
             return;
         }
 
         final Player player = event.getPlayer();
-        RegionManager regionManager = ((BukkitRegionContainer) WorldGuard.getInstance().getPlatform()
-                .getRegionContainer()).get(player.getWorld());
+        getPlugin().requestTerritoryUpdate(player);
+        BukkitRegionContainer container = (BukkitRegionContainer) WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionManager regionManager = container.get(player.getWorld());
         if (!requiresMovementQuery(player, regionManager)) {
             return;
         }
@@ -165,7 +193,7 @@ public class PlayerMoveListener extends AbstractListener {
         } else if (player.getVehicle() instanceof AbstractHorse) {
             moveType = MoveType.RIDE;
         }
-        com.sk89q.worldedit.util.Location weLocation = session.testMoveTo(localPlayer, BukkitAdapter.adapt(to), moveType);
+        com.sk89q.worldedit.util.Location weLocation = session.testMoveTo(localPlayer, container.adapt(to), moveType);
 
         if (weLocation != null) {
             final Location override = BukkitAdapter.adapt(weLocation);
@@ -215,6 +243,7 @@ public class PlayerMoveListener extends AbstractListener {
         }
 
         if (weLocation == null) {
+            getPlugin().cacheTerritoryRegions(player, to, regionManager, session.getLastApplicableRegionSet());
             enforceFlightFlags(player, localPlayer, session.getLastApplicableRegionSet());
         }
     }
@@ -273,7 +302,7 @@ public class PlayerMoveListener extends AbstractListener {
     }
 
     private void enforceFlightFlags(Player player, Location location) {
-        boolean flying = player.isFlying();
+        boolean flying = hasFlight(player);
         boolean gliding = player.isGliding();
         if (Entities.isNPC(player) || !flying && !gliding) {
             return;
@@ -299,22 +328,41 @@ public class PlayerMoveListener extends AbstractListener {
         RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
         com.sk89q.worldedit.util.Location target = BukkitAdapter.adapt(location);
         if (checkFly && !query.testState(target, localPlayer, Flags.FLY)) {
-            player.setFlying(false);
+            disableFlight(player);
         }
         if (checkElytra && !query.testState(target, localPlayer, Flags.ELYTRA)) {
             player.setGliding(false);
         }
     }
 
-    private void enforceFlightFlags(Player player, LocalPlayer localPlayer, ApplicableRegionSet regions) {
-        if (regions == null || Entities.isNPC(player) || !player.isFlying() && !player.isGliding()) {
+    private static void enforceFlightFlags(Player player, LocalPlayer localPlayer, ApplicableRegionSet regions) {
+        if (regions == null || Entities.isNPC(player)) {
             return;
         }
-        if (player.isFlying() && !regions.testState(localPlayer, Flags.FLY)) {
+        boolean denyFly = hasFlight(player) && !regions.testState(localPlayer, Flags.FLY);
+        boolean denyElytra = player.isGliding() && !regions.testState(localPlayer, Flags.ELYTRA);
+        if ((!denyFly && !denyElytra) || WorldGuard.getInstance().getPlatform().getSessionManager()
+                .hasBypass(localPlayer, localPlayer.getWorld())) {
+            return;
+        }
+        if (denyFly) {
+            disableFlight(player);
+        }
+        if (denyElytra) {
+            player.setGliding(false);
+        }
+    }
+
+    private static boolean hasFlight(Player player) {
+        return player.getAllowFlight() || player.isFlying();
+    }
+
+    private static void disableFlight(Player player) {
+        if (player.isFlying()) {
             player.setFlying(false);
         }
-        if (player.isGliding() && !regions.testState(localPlayer, Flags.ELYTRA)) {
-            player.setGliding(false);
+        if (player.getAllowFlight()) {
+            player.setAllowFlight(false);
         }
     }
 
@@ -327,12 +375,13 @@ public class PlayerMoveListener extends AbstractListener {
                 || interest.boundary) {
             return true;
         }
-        return player.isFlying() && interest.flyDeny
-                || player.isGliding() && interest.elytraDeny;
+        return interest.flyDeny && hasFlight(player)
+                || interest.elytraDeny && player.isGliding();
     }
 
     private static final class MovementInterestCache {
 
+        private final Map<RegionManager, InterestEntry> worlds = new WeakHashMap<>();
         private RegionManager manager;
         private long flagRevision = -1;
         private long queryRevision = -1;
@@ -343,21 +392,32 @@ public class PlayerMoveListener extends AbstractListener {
             long currentFlagRevision = ProtectedRegion.flagRevision();
             long currentQueryRevision = currentManager.getQueryRevision();
             long currentMovementFlagsRevision = MOVEMENT_FLAGS_REVISION.get();
-            if (manager != currentManager
-                    || flagRevision != currentFlagRevision
-                    || queryRevision != currentQueryRevision
-                    || movementFlagsRevision != currentMovementFlagsRevision) {
-                manager = currentManager;
-                flagRevision = currentFlagRevision;
-                queryRevision = currentQueryRevision;
-                movementFlagsRevision = currentMovementFlagsRevision;
-                interest = new MovementInterest(
+            if (manager == currentManager && flagRevision == currentFlagRevision
+                    && queryRevision == currentQueryRevision && movementFlagsRevision == currentMovementFlagsRevision) {
+                return interest;
+            }
+            InterestEntry current = worlds.get(currentManager);
+            if (current == null || current.flagRevision != currentFlagRevision
+                    || current.queryRevision != currentQueryRevision
+                    || current.movementFlagsRevision != currentMovementFlagsRevision) {
+                current = new InterestEntry(currentFlagRevision, currentQueryRevision, currentMovementFlagsRevision,
+                        new MovementInterest(
                         currentManager.hasAnyFlag(movementFlags),
                         currentManager.hasState(Flags.FLY, StateFlag.State.DENY),
-                        currentManager.hasState(Flags.ELYTRA, StateFlag.State.DENY));
+                        currentManager.hasState(Flags.ELYTRA, StateFlag.State.DENY)));
+                worlds.put(currentManager, current);
             }
+            manager = currentManager;
+            flagRevision = current.flagRevision;
+            queryRevision = current.queryRevision;
+            movementFlagsRevision = current.movementFlagsRevision;
+            interest = current.interest;
             return interest;
         }
+    }
+
+    private record InterestEntry(long flagRevision, long queryRevision, long movementFlagsRevision,
+                                 MovementInterest interest) {
     }
 
     private record MovementInterest(boolean boundary, boolean flyDeny, boolean elytraDeny) {

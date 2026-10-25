@@ -66,9 +66,16 @@ public final class MMSupport {
 
     public static Component component(String text) {
         if (text == null || text.isEmpty()) return EMPTY_COMPONENT;
+        Component cached = COMPONENT_CACHE.get(text);
+        if (cached != null) return cached;
         if (COMPONENT_CACHE.size() >= CACHE_SIZE) COMPONENT_CACHE.clear();
         return COMPONENT_CACHE.computeIfAbsent(text,
                 value -> withoutDefaultItalic(MINI_MESSAGE.deserialize(value)));
+    }
+
+    public static Component component(String text, TagResolver resolver) {
+        return text == null || text.isEmpty() ? EMPTY_COMPONENT
+                : withoutDefaultItalic(MINI_MESSAGE.deserialize(text, resolver));
     }
 
     public static String miniMessage(com.sk89q.worldedit.util.formatting.text.Component component) {
@@ -89,7 +96,8 @@ public final class MMSupport {
     }
 
     public static String escape(String text) {
-        return text == null ? "" : MINI_MESSAGE.escapeTags(text);
+        if (text == null) return "";
+        return text.indexOf('<') < 0 && text.indexOf('\\') < 0 ? text : MINI_MESSAGE.escapeTags(text);
     }
 
     public static List<Component> components(Collection<String> lines) {

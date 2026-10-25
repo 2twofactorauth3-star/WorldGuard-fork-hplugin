@@ -5,6 +5,21 @@
 # Empty message values send nothing. MiniMessage is required.
 #
 messages:
+  cmiBackpackDenied:
+    mode: actionbar
+    cooldownMillis: 1000
+    message:
+      - '<white>You cannot open a <#FDBE00>CMI backpack<white> here'
+  cmiPortalDenied:
+    mode: actionbar
+    cooldownMillis: 1000
+    message:
+      - '<white>You cannot use a <#FDBE00>CMI portal<white> here'
+  cmiArmorstandEditDenied:
+    mode: actionbar
+    cooldownMillis: 1000
+    message:
+      - '<white>You cannot <#FDBE00>edit this armor stand<white> here'
   notificationPrefix:
     mode: message
     cooldownMillis: -1

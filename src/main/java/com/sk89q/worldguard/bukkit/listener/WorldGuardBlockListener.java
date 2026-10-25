@@ -26,6 +26,7 @@ import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.cause.Cause;
 import com.sk89q.worldguard.bukkit.util.Materials;
 import com.sk89q.worldguard.config.WorldConfiguration;
+import com.sk89q.worldguard.config.WorldMechanicSetting;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.association.RegionAssociable;
 import com.sk89q.worldguard.protection.flags.Flags;
@@ -154,15 +155,15 @@ public class WorldGuardBlockListener extends AbstractListener {
             BlockIgniteEvent event, WorldConfiguration wcfg, Cause mechanicCause) {
         IgniteCause cause = event.getCause();
         Location location = event.getBlock().getLocation();
-        if (cause == IgniteCause.LAVA && blocksMechanic(wcfg.preventLavaFire, location, mechanicCause)) {
+        if (cause == IgniteCause.LAVA && blocksMechanic(wcfg.preventLavaFire, wcfg.preventLavaFireSetting, location, mechanicCause)) {
             return true;
         }
-        if (cause == IgniteCause.SPREAD && blocksMechanic(wcfg.disableFireSpread, location, mechanicCause)) {
+        if (cause == IgniteCause.SPREAD && blocksMechanic(wcfg.disableFireSpread, wcfg.disableFireSpreadSetting, location, mechanicCause)) {
             return true;
         }
         return (cause == IgniteCause.FLINT_AND_STEEL || cause == IgniteCause.FIREBALL)
                 && event.getPlayer() != null
-                && blocksMechanic(wcfg.blockLighter, location, mechanicCause)
+                && blocksMechanic(wcfg.blockLighter, wcfg.blockLighterSetting, location, mechanicCause)
                 && !getPlugin().hasPermission(event.getPlayer(), "worldguard.override.lighter");
     }
 
@@ -204,7 +205,7 @@ public class WorldGuardBlockListener extends AbstractListener {
     public void onBlockBurn(BlockBurnEvent event) {
         BukkitWorldConfiguration wcfg = getWorldConfig(event.getBlock().getWorld());
 
-        if (blocksMechanic(wcfg.disableFireSpread, event.getBlock().getLocation())) {
+        if (blocksMechanic(wcfg.disableFireSpread, wcfg.disableFireSpreadSetting, event.getBlock().getLocation())) {
             event.setCancelled(true);
             return;
         }
@@ -256,26 +257,23 @@ public class WorldGuardBlockListener extends AbstractListener {
      */
     @EventHandler(ignoreCancelled = true)
     public void onBlockPhysics(BlockPhysicsEvent event) {
-        WorldConfiguration wcfg = getWorldConfig(event.getBlock().getWorld());
-        final Material id = event.getBlock().getType();
-
-        if (id == Material.GRAVEL
-                && blocksMechanic(wcfg.noPhysicsGravel, event.getBlock().getLocation(),
-                        Cause.create(event.getSourceBlock()))) {
-            event.setCancelled(true);
-            return;
-        }
-
-        if ((id == Material.SAND || id == Material.RED_SAND)
-                && blocksMechanic(wcfg.noPhysicsSand, event.getBlock().getLocation(),
-                        Cause.create(event.getSourceBlock()))) {
-            event.setCancelled(true);
-            return;
-        }
-
-        if (id == Material.NETHER_PORTAL
-                && blocksMechanic(wcfg.allowPortalAnywhere, event.getBlock().getLocation(),
-                        Cause.create(event.getSourceBlock()))) {
+        Block block = event.getBlock();
+        Material type = block.getType();
+        if (type != Material.GRAVEL && type != Material.SAND && type != Material.RED_SAND
+                && type != Material.NETHER_PORTAL) return;
+        WorldConfiguration wcfg = getWorldConfig(block.getWorld());
+        boolean enabled = switch (type) {
+            case GRAVEL -> wcfg.noPhysicsGravel;
+            case SAND, RED_SAND -> wcfg.noPhysicsSand;
+            default -> wcfg.allowPortalAnywhere;
+        };
+        if (!enabled) return;
+        WorldMechanicSetting setting = switch (type) {
+            case GRAVEL -> wcfg.noPhysicsGravelSetting;
+            case SAND, RED_SAND -> wcfg.noPhysicsSandSetting;
+            default -> wcfg.allowPortalAnywhereSetting;
+        };
+        if (blocksMechanic(true, setting, block.getLocation(), Cause.create(event.getSourceBlock()))) {
             event.setCancelled(true);
         }
 
@@ -303,7 +301,7 @@ public class WorldGuardBlockListener extends AbstractListener {
 
         if (event instanceof EntityBlockFormEvent) {
             if (((EntityBlockFormEvent) event).getEntity() instanceof Snowman) {
-                if (blocksMechanic(wcfg.disableSnowmanTrails, event.getBlock().getLocation(),
+                if (blocksMechanic(wcfg.disableSnowmanTrails, wcfg.disableSnowmanTrailsSetting, event.getBlock().getLocation(),
                         Cause.create(((EntityBlockFormEvent) event).getEntity()))) {
                     event.setCancelled(true);
                     return;
@@ -430,11 +428,12 @@ public class WorldGuardBlockListener extends AbstractListener {
     @EventHandler(ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
         WorldConfiguration wcfg = getWorldConfig(event.getBlock().getWorld());
+        if (!wcfg.blockOtherExplosions) return;
         Cause cause = Cause.create(event.getBlock());
-        boolean blocked = blocksMechanic(wcfg.blockOtherExplosions, event.getBlock().getLocation(), cause);
+        boolean blocked = blocksMechanic(wcfg.blockOtherExplosions, wcfg.blockOtherExplosionsSetting, event.getBlock().getLocation(), cause);
         if (!blocked) {
             for (Block block : event.blockList()) {
-                if (blocksMechanic(wcfg.blockOtherExplosions, block.getLocation(), cause)) {
+                if (blocksMechanic(wcfg.blockOtherExplosions, wcfg.blockOtherExplosionsSetting, block.getLocation(), cause)) {
                     blocked = true;
                     break;
                 }

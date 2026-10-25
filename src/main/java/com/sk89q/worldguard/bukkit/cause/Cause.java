@@ -40,6 +40,7 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -62,6 +63,12 @@ public final class Cause {
 
     private static final String CAUSE_KEY = "worldguard.cause";
     private static final Cause UNKNOWN = new Cause(Collections.emptyList(), false);
+    private static final ClassValue<RelatedCauseType> RELATED_CAUSES = new ClassValue<>() {
+        @Override
+        protected RelatedCauseType computeValue(@NonNull Class<?> type) {
+            return RelatedCauseType.of(type);
+        }
+    };
 
     private final List<Object> causes;
     private final boolean indirect;
@@ -266,13 +273,15 @@ public final class Cause {
      * Builds causes.
      */
     private static final class Builder {
-        private final List<Object> causes;
+        private final int expectedSize;
+        private List<Object> causes;
+        private Object firstCause;
         private Object firstSeen;
         private List<Object> additionalSeen;
         private boolean indirect;
 
         private Builder(int expectedSize) {
-            this.causes = new ArrayList<>(expectedSize);
+            this.expectedSize = expectedSize;
         }
 
         private void addAll(@Nullable Object... element) {
@@ -290,7 +299,26 @@ public final class Cause {
             }
             addRelatedCauses(source);
             addTrackedParentCauses(source);
-            causes.add(source);
+            appendCause(source);
+        }
+
+        private void appendCause(Object source) {
+            if (causes == null && firstCause == null) {
+                firstCause = source;
+            } else {
+                mutableCauses().add(source);
+            }
+        }
+
+        private List<Object> mutableCauses() {
+            if (causes == null) {
+                causes = new ArrayList<>(Math.max(2, expectedSize));
+                if (firstCause != null) {
+                    causes.add(firstCause);
+                    firstCause = null;
+                }
+            }
+            return causes;
         }
 
         private boolean markSeen(Object source) {
@@ -311,29 +339,26 @@ public final class Cause {
         }
 
         private void addRelatedCauses(Object source) {
-            if (source instanceof TNTPrimed tnt) {
-                add(tnt.getSource());
-            } else if (source instanceof Projectile projectile) {
-                addProjectileSource(projectile);
-            } else if (source instanceof Vehicle vehicle) {
-                for (Entity passenger : vehicle.getPassengers()) {
-                    add(passenger);
+            switch (RELATED_CAUSES.get(source.getClass())) {
+                case TNT -> add(((TNTPrimed) source).getSource());
+                case PROJECTILE -> addProjectileSource((Projectile) source);
+                case VEHICLE -> addPassengers((Vehicle) source);
+                case CLOUD -> addIndirect(((AreaEffectCloud) source).getSource());
+                case TAMEABLE -> addTameableOwner((Tameable) source);
+                case CREEPER -> {
+                    Creeper creeper = (Creeper) source;
+                    addIndirect(creeper.getTarget(), creeper.getIgniter());
                 }
-            } else if (source instanceof AreaEffectCloud cloud) {
-                addIndirect(cloud.getSource());
-            } else if (source instanceof Tameable tameable) {
-                addTameableOwner(tameable);
-            } else if (source instanceof Creeper creeper) {
-                addIndirect(creeper.getTarget(), creeper.getIgniter());
-            } else if (source instanceof Creature creature) {
-                addIndirect(creature.getTarget());
-            } else if (source instanceof BlockProjectileSource blockSource) {
-                add(blockSource.getBlock());
-            } else if (source instanceof LightningStrike lightning) {
-                addLightningSource(lightning);
-            } else if (source instanceof FallingBlock fallingBlock) {
-                addFallingBlockOrigin(fallingBlock);
+                case CREATURE -> addIndirect(((Creature) source).getTarget());
+                case BLOCK_PROJECTILE -> add(((BlockProjectileSource) source).getBlock());
+                case LIGHTNING -> addLightningSource((LightningStrike) source);
+                case FALLING_BLOCK -> addFallingBlockOrigin((FallingBlock) source);
+                case NONE -> { }
             }
+        }
+
+        private void addPassengers(Vehicle vehicle) {
+            for (Entity passenger : vehicle.getPassengers()) add(passenger);
         }
 
         private void addProjectileSource(Projectile projectile) {
@@ -380,20 +405,45 @@ public final class Cause {
 
         private void addTrackedParentCauses(Object original) {
             Object source = original;
-            int index = causes.size();
+            int index = causes == null ? (firstCause == null ? 0 : 1) : causes.size();
             while (source instanceof Metadatable && !(source instanceof Block)) {
                 source = WGMetadata.getIfPresent((Metadatable) source, CAUSE_KEY, Object.class);
                 if (source != null) {
                     if (!markSeen(source)) {
                         break;
                     }
-                    causes.add(index, source);
+                    if (causes == null && firstCause == null) {
+                        firstCause = source;
+                    } else {
+                        mutableCauses().add(index, source);
+                    }
                 }
             }
         }
 
         public Cause build() {
-            return causes.isEmpty() && !indirect ? UNKNOWN : new Cause(causes, indirect);
+            if (causes != null) return new Cause(causes, indirect);
+            if (firstCause != null) return new Cause(Collections.singletonList(firstCause), indirect);
+            return indirect ? new Cause(Collections.emptyList(), true) : UNKNOWN;
+        }
+    }
+
+    private enum RelatedCauseType {
+        TNT, PROJECTILE, VEHICLE, CLOUD, TAMEABLE, CREEPER, CREATURE,
+        BLOCK_PROJECTILE, LIGHTNING, FALLING_BLOCK, NONE;
+
+        private static RelatedCauseType of(Class<?> type) {
+            if (TNTPrimed.class.isAssignableFrom(type)) return TNT;
+            if (Projectile.class.isAssignableFrom(type)) return PROJECTILE;
+            if (Vehicle.class.isAssignableFrom(type)) return VEHICLE;
+            if (AreaEffectCloud.class.isAssignableFrom(type)) return CLOUD;
+            if (Tameable.class.isAssignableFrom(type)) return TAMEABLE;
+            if (Creeper.class.isAssignableFrom(type)) return CREEPER;
+            if (Creature.class.isAssignableFrom(type)) return CREATURE;
+            if (BlockProjectileSource.class.isAssignableFrom(type)) return BLOCK_PROJECTILE;
+            if (LightningStrike.class.isAssignableFrom(type)) return LIGHTNING;
+            if (FallingBlock.class.isAssignableFrom(type)) return FALLING_BLOCK;
+            return NONE;
         }
     }
 

@@ -22,12 +22,13 @@ package com.sk89q.worldguard.bukkit.util;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.Chest;
-import org.bukkit.util.Vector;
 
 import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * Utility methods to deal with blocks.
@@ -45,25 +46,31 @@ public final class Blocks {
      * @return a list of connected blocks, not including the given block
      */
     public static List<Block> getConnected(Block block) {
+        Block connected = getConnectedBlock(block);
+        return connected == null ? List.of() : List.of(connected);
+    }
+
+    @Nullable
+    public static Block getConnectedBlock(Block block) {
         Material type = block.getType();
         if (type != Material.CHEST && type != Material.TRAPPED_CHEST && !Tag.BEDS.isTagged(type)) {
-            return List.of();
+            return null;
         }
         BlockData data = block.getBlockData();
 
         if (data instanceof Bed bed) {
-            return List.of(block.getRelative(bed.getPart() == Bed.Part.FOOT
-                    ? bed.getFacing() : bed.getFacing().getOppositeFace()));
+            return block.getRelative(bed.getPart() == Bed.Part.FOOT
+                    ? bed.getFacing() : bed.getFacing().getOppositeFace());
         } else if (data instanceof Chest chest) {
             Chest.Type chestType = chest.getType();
             if (chestType == Chest.Type.SINGLE) {
-                return List.of();
+                return null;
             }
-            Vector offset = chest.getFacing().getDirection().rotateAroundY(
-                    Math.PI / 2 * (chestType == Chest.Type.LEFT ? -1 : 1));
-            return List.of(block.getRelative((int) Math.round(offset.getX()), 0, (int) Math.round(offset.getZ())));
+            BlockFace facing = chest.getFacing();
+            int direction = chestType == Chest.Type.LEFT ? -1 : 1;
+            return block.getRelative(direction * facing.getModZ(), 0, -direction * facing.getModX());
         } else {
-            return List.of();
+            return null;
         }
     }
 

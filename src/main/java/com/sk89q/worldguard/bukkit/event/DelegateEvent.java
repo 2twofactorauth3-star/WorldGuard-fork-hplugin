@@ -19,7 +19,6 @@
 
 package com.sk89q.worldguard.bukkit.event;
 
-import com.google.common.collect.Lists;
 import com.sk89q.worldguard.bukkit.cause.Cause;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import org.bukkit.event.Cancellable;
@@ -27,6 +26,7 @@ import org.bukkit.event.Event;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.ArrayList;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -35,11 +35,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * this event or its subclasses as the interface is highly subject to change.
  */
 public abstract class DelegateEvent extends Event implements Cancellable, Handleable {
+    private static final ClassValue<Boolean> CUSTOM_RELEVANT_FLAGS = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(Class<?> type) {
+            try {
+                return type.getMethod("getRelevantFlags").getDeclaringClass() != DelegateEvent.class;
+            } catch (NoSuchMethodException exception) {
+                throw new IllegalStateException(exception);
+            }
+        }
+    };
 
     @Nullable
     private final Event originalEvent;
     private final Cause cause;
-    private final List<StateFlag> relevantFlags = Lists.newArrayList();
+    private List<StateFlag> relevantFlags;
     private Result result = Result.DEFAULT;
     private boolean silent;
 
@@ -80,7 +90,13 @@ public abstract class DelegateEvent extends Event implements Cancellable, Handle
      * @return A list of relevant flags
      */
     public List<StateFlag> getRelevantFlags() {
+        if (relevantFlags == null) relevantFlags = new ArrayList<>(1);
         return relevantFlags;
+    }
+
+    public boolean hasRelevantFlags() {
+        return CUSTOM_RELEVANT_FLAGS.get(getClass()) ? !getRelevantFlags().isEmpty()
+                : relevantFlags != null && !relevantFlags.isEmpty();
     }
 
     @Override

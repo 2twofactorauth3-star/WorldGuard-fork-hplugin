@@ -125,6 +125,7 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
         return get(world.getName());
     }
 
+    @Override
     public long getRevision() {
         return revision.get();
     }

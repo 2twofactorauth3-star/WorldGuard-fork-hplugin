@@ -6,7 +6,11 @@ authors:
 main: com.sk89q.worldguard.bukkit.WorldGuardPlugin
 version: "7.0.17"
 depend: [WorldEdit]
-softdepend: [Essentials]
+softdepend:
+  - Essentials
+  - PremiumVanish
+  - SuperVanish
+  - CMI
 api-version: "1.21"
 folia-supported: true
 

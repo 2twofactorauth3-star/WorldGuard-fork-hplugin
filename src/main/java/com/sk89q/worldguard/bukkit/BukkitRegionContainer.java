@@ -56,6 +56,7 @@ public class BukkitRegionContainer extends RegionContainer {
     private final ConcurrentMap<UUID, RegionManager> managersByWorld = new ConcurrentHashMap<>();
     private final AtomicLong managerRevision = new AtomicLong();
     private final ThreadLocal<ManagerCache> localManager = ThreadLocal.withInitial(ManagerCache::new);
+    private final ChunkLoadBatch chunkLoads;
 
     /**
      * Create a new instance.
@@ -66,9 +67,14 @@ public class BukkitRegionContainer extends RegionContainer {
         this(plugin, true);
     }
 
+    @SuppressWarnings("this-escape")
     public BukkitRegionContainer(WorldGuardPlugin plugin, boolean active) {
         this.plugin = plugin;
         this.active = active;
+        chunkLoads = new ChunkLoadBatch(this::get, task -> {
+            if (plugin.isFolia()) plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, ignored -> task.run(), 1);
+            else Bukkit.getScheduler().runTask(plugin, task);
+        });
     }
 
     @Override
@@ -86,6 +92,7 @@ public class BukkitRegionContainer extends RegionContainer {
 
             @EventHandler
             public void onWorldUnload(WorldUnloadEvent event) {
+                chunkLoads.discard(event.getWorld());
                 World world = BukkitAdapter.adapt(event.getWorld());
                 managersByWorld.remove(event.getWorld().getUID());
                 cache.invalidate(world);
@@ -95,26 +102,21 @@ public class BukkitRegionContainer extends RegionContainer {
 
             @EventHandler
             public void onChunkLoad(ChunkLoadEvent event) {
-                RegionManager manager = get(event.getWorld());
-                if (manager != null) {
-                    Chunk chunk = event.getChunk();
-                    manager.loadChunk(BlockVector2.at(chunk.getX(), chunk.getZ()));
-                }
+                Chunk chunk = event.getChunk();
+                chunkLoads.submit(event.getWorld(), chunk.getX(), chunk.getZ(), true);
             }
 
             @EventHandler
             public void onChunkUnload(ChunkUnloadEvent event) {
-                RegionManager manager = get(event.getWorld());
-                if (manager != null) {
-                    Chunk chunk = event.getChunk();
-                    manager.unloadChunk(BlockVector2.at(chunk.getX(), chunk.getZ()));
-                }
+                Chunk chunk = event.getChunk();
+                chunkLoads.submit(event.getWorld(), chunk.getX(), chunk.getZ(), false);
             }
         }, plugin);
 
     }
 
     public void shutdown() {
+        chunkLoads.clear();
         managersByWorld.clear();
         managerRevision.incrementAndGet();
         container.shutdown();
@@ -124,7 +126,7 @@ public class BukkitRegionContainer extends RegionContainer {
     public RegionManager get(org.bukkit.World world) {
         long revision = managerRevision.get();
         ManagerCache local = localManager.get();
-        if (local.world == world && local.revision == revision) {
+        if (local.world == world && local.revision == revision && local.manager != null) {
             return local.manager;
         }
         RegionManager cached = managersByWorld.get(world.getUID());
@@ -141,7 +143,34 @@ public class BukkitRegionContainer extends RegionContainer {
     }
 
     @Override
+    public long getRevision() {
+        return managerRevision.get();
+    }
+
+    public com.sk89q.worldedit.util.Location adapt(org.bukkit.Location location) {
+        org.bukkit.World world = location.getWorld();
+        ManagerCache local = localManager.get();
+        World adapted = local.world == world ? local.adaptedWorld : null;
+        if (adapted == null) {
+            adapted = BukkitAdapter.adapt(world);
+            if (local.world == world) local.adaptedWorld = adapted;
+        }
+        return new com.sk89q.worldedit.util.Location(adapted, BukkitAdapter.asVector(location),
+                location.getYaw(), location.getPitch());
+    }
+
+    @Override
+    public void unload(World world) {
+        if (world instanceof BukkitWorld bukkitWorld) chunkLoads.discard(bukkitWorld.getWorld());
+        managersByWorld.clear();
+        managerRevision.incrementAndGet();
+        cache.invalidate(world);
+        super.unload(world);
+    }
+
+    @Override
     public void unload() {
+        chunkLoads.clear();
         managersByWorld.clear();
         managerRevision.incrementAndGet();
         super.unload();
@@ -158,9 +187,11 @@ public class BukkitRegionContainer extends RegionContainer {
 
         private org.bukkit.World world;
         private RegionManager manager;
+        private World adaptedWorld;
         private long revision = -1;
 
         private void set(org.bukkit.World world, @Nullable RegionManager manager, long revision) {
+            if (this.world != world) adaptedWorld = null;
             this.world = world;
             this.manager = manager;
             this.revision = revision;
@@ -215,9 +246,11 @@ public class BukkitRegionContainer extends RegionContainer {
             }
         }
 
-        if (world instanceof BukkitWorld bukkitWorld) {
+        managersByWorld.clear();
+        if (manager != null && world instanceof BukkitWorld bukkitWorld) {
             managersByWorld.put(bukkitWorld.getWorld().getUID(), manager);
         }
+        managerRevision.incrementAndGet();
         return manager;
     }
 

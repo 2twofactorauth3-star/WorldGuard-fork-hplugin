@@ -166,9 +166,7 @@ public abstract class AbstractSessionManager implements SessionManager {
     }
 
     private void initializeSession(Session session, LocalPlayer player) {
-        for (Handler.Factory<? extends Handler> factory : handlers) {
-            session.register(factory.create(session));
-        }
+        session.registerFactories(handlers);
         session.initialize(player);
     }
 

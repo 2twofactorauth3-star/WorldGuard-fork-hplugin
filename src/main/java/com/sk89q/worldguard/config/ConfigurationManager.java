@@ -33,6 +33,9 @@ import java.util.logging.Logger;
  * @author Michael
  */
 public abstract class ConfigurationManager {
+    public long getRevision() {
+        return -1;
+    }
 
     protected static final Logger log = Logger.getLogger(ConfigurationManager.class.getCanonicalName());
 

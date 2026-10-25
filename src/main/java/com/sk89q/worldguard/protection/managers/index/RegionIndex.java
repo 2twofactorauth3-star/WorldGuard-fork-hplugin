@@ -24,6 +24,7 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.protection.managers.RegionDifference;
 import com.sk89q.worldguard.protection.managers.RemovalStrategy;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.QueryBounds;
 import com.sk89q.worldguard.util.ChangeTracked;
 import com.sk89q.worldguard.util.Normal;
 
@@ -136,6 +137,11 @@ public interface RegionIndex extends ChangeTracked {
      * @param consumer a predicate that returns true to continue iterating
      */
     void applyContaining(BlockVector3 position, Predicate<ProtectedRegion> consumer);
+
+    default void applyContaining(BlockVector3 position, Predicate<ProtectedRegion> consumer, QueryBounds bounds) {
+        bounds.point(position);
+        applyContaining(position, consumer);
+    }
 
     /**
      * Apply the given predicate to all regions that intersect the given

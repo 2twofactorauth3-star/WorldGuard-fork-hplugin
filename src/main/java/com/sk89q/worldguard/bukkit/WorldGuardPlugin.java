@@ -31,6 +31,8 @@ import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.event.player.ProcessPlayerEvent;
 import com.sk89q.worldguard.bukkit.integration.EssentialsXIntegration;
+import com.sk89q.worldguard.bukkit.integration.CmiIntegration;
+import com.sk89q.worldguard.bukkit.integration.VanishIntegration;
 import com.sk89q.worldguard.bukkit.listener.EventAbstractionListener;
 import com.sk89q.worldguard.bukkit.listener.BlacklistListener;
 import com.sk89q.worldguard.bukkit.listener.InvincibilityListener;
@@ -103,6 +105,10 @@ public class WorldGuardPlugin extends JavaPlugin {
     private SelectionLimitTracker selectionLimitTracker;
     private Metrics metrics;
     private EssentialsXIntegration essentialsIntegration;
+    private VanishIntegration premiumVanishIntegration;
+    private VanishIntegration superVanishIntegration;
+    private VanishIntegration cmiVanishIntegration;
+    private CmiIntegration cmiIntegration;
     private boolean runtimeStarted;
     private boolean localeSelected;
 
@@ -116,6 +122,14 @@ public class WorldGuardPlugin extends JavaPlugin {
 
     @Override
     public void onLoad() {
+        essentialsIntegration = EssentialsXIntegration.prepare(this, WorldGuard.getInstance().getFlagRegistry(), getLogger());
+        premiumVanishIntegration = VanishIntegration.prepare(this, VanishIntegration.Type.PREMIUM,
+                WorldGuard.getInstance().getFlagRegistry(), getLogger());
+        superVanishIntegration = VanishIntegration.prepare(this, VanishIntegration.Type.SUPER,
+                WorldGuard.getInstance().getFlagRegistry(), getLogger());
+        cmiVanishIntegration = VanishIntegration.prepare(this, VanishIntegration.Type.CMI,
+                WorldGuard.getInstance().getFlagRegistry(), getLogger());
+        cmiIntegration = CmiIntegration.prepare(this, WorldGuard.getInstance().getFlagRegistry(), getLogger());
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             RegionCommands region = new RegionCommands(WorldGuard.getInstance());
             MemberCommands member = new MemberCommands(WorldGuard.getInstance());
@@ -212,10 +226,6 @@ public class WorldGuardPlugin extends JavaPlugin {
         PermissionsResolverManager.initialize(this);
 
         WorldGuard.getInstance().setPlatform(platform = new BukkitWorldGuardPlatform()); // Initialise WorldGuard
-        if (getServer().getPluginManager().isPluginEnabled("Essentials")) {
-            essentialsIntegration = EssentialsXIntegration.create(
-                    this, WorldGuard.getInstance().getFlagRegistry(), getLogger());
-        }
         WorldGuard.getInstance().setup();
         runtimeStarted = true;
         metrics = new Metrics(this, BSTATS_SERVICE_ID);
@@ -229,8 +239,12 @@ public class WorldGuardPlugin extends JavaPlugin {
 
         BukkitSessionManager sessionManager = (BukkitSessionManager) platform.getSessionManager();
         if (essentialsIntegration != null) {
-            essentialsIntegration.registerHandlers(sessionManager);
+            essentialsIntegration.start(sessionManager);
         }
+        if (premiumVanishIntegration != null) premiumVanishIntegration.start(sessionManager);
+        if (superVanishIntegration != null) superVanishIntegration.start(sessionManager);
+        if (cmiVanishIntegration != null) cmiVanishIntegration.start(sessionManager);
+        if (cmiIntegration != null) cmiIntegration.start(sessionManager);
 
         if (this.isFolia()) {
             getServer().getGlobalRegionScheduler().runAtFixedRate(
@@ -297,7 +311,15 @@ public class WorldGuardPlugin extends JavaPlugin {
             metrics = null;
         }
         if (territoryNotifications != null) territoryNotifications.close();
-        WorldGuard.getInstance().disable();
+        try {
+            WorldGuard.getInstance().disable();
+        } finally {
+            if (essentialsIntegration != null) essentialsIntegration.close();
+            if (premiumVanishIntegration != null) premiumVanishIntegration.close();
+            if (superVanishIntegration != null) superVanishIntegration.close();
+            if (cmiVanishIntegration != null) cmiVanishIntegration.close();
+            if (cmiIntegration != null) cmiIntegration.close();
+        }
         playerWrappers.clear();
         claimExpansionDisabled.clear();
         if (selectionLimitTracker != null) {
@@ -305,6 +327,10 @@ public class WorldGuardPlugin extends JavaPlugin {
             selectionLimitTracker = null;
         }
         essentialsIntegration = null;
+        premiumVanishIntegration = null;
+        superVanishIntegration = null;
+        cmiVanishIntegration = null;
+        cmiIntegration = null;
         if (this.isFolia()) {
             this.getServer().getGlobalRegionScheduler().cancelTasks(this);
             this.getServer().getAsyncScheduler().cancelTasks(this);
@@ -409,6 +435,8 @@ public class WorldGuardPlugin extends JavaPlugin {
      * @return The wrapped player
      */
     public LocalPlayer wrapPlayer(Player player) {
+        BukkitPlayer cached = playerWrappers.get(player.getUniqueId());
+        if (cached != null) return cached;
         return playerWrappers.computeIfAbsent(
                 player.getUniqueId(), ignored -> new BukkitPlayer(this, player));
     }
@@ -521,6 +549,16 @@ public class WorldGuardPlugin extends JavaPlugin {
 
     TerritoryNotifications getTerritoryNotifications() {
         return territoryNotifications;
+    }
+
+    public void requestTerritoryUpdate(Player player) {
+        if (territoryNotifications != null) territoryNotifications.requestUpdate(player);
+    }
+
+    public void cacheTerritoryRegions(Player player, org.bukkit.Location location,
+                                     com.sk89q.worldguard.protection.managers.RegionManager manager,
+                                     com.sk89q.worldguard.protection.ApplicableRegionSet regions) {
+        if (territoryNotifications != null) territoryNotifications.cacheRegions(player, location, manager, regions);
     }
 
     BukkitLocaleManager getLocaleManager() {
