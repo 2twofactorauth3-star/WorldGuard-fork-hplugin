@@ -284,8 +284,8 @@ public final class RegionManager {
      *
      * @param id the name of the region
      */
-    public void removeRegion(String id) {
-        removeRegion(id, RemovalStrategy.REMOVE_CHILDREN);
+    public Set<ProtectedRegion> removeRegion(String id) {
+        return removeRegion(id, RemovalStrategy.REMOVE_CHILDREN);
     }
 
     /**

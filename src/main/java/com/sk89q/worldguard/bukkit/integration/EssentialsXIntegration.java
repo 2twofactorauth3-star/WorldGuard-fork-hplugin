@@ -14,7 +14,6 @@ package com.sk89q.worldguard.bukkit.integration;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.LocalPlayer;
-import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.listener.PlayerMoveListener;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -46,7 +45,7 @@ public final class EssentialsXIntegration implements AutoCloseable {
     private final StateFlag vanishFlag;
     private final StateFlag godFlag;
     private final Function<Plugin, Provider> providerFactory;
-    private final Function<Player, LocalPlayer> playerWrapper;
+    private final IntegrationPlayerRefresh<Binding> playerRefresh;
     private final Handler.Factory<VanishStateHandler> vanishFactory;
     private final Handler.Factory<GodStateHandler> godFactory;
     private volatile Binding binding;
@@ -61,7 +60,7 @@ public final class EssentialsXIntegration implements AutoCloseable {
         this.vanishFlag = vanishFlag;
         this.godFlag = godFlag;
         this.providerFactory = providerFactory;
-        this.playerWrapper = playerWrapper;
+        playerRefresh = new IntegrationPlayerRefresh<>(owner, playerWrapper, () -> binding, this::refreshSession);
         vanishFactory = new Handler.Factory<>() {
             @Override
             public VanishStateHandler create(Session session) {
@@ -150,28 +149,7 @@ public final class EssentialsXIntegration implements AutoCloseable {
     }
 
     private void refreshPlayers(@Nullable Binding expected) {
-        AbstractSessionManager manager = sessionManager;
-        if (manager == null || !owner.isEnabled()) return;
-        for (Player player : owner.getServer().getOnlinePlayers()) {
-            Runnable refresh = () -> refreshPlayer(player, manager, expected);
-            if (owner instanceof WorldGuardPlugin plugin && plugin.isFolia()) {
-                player.getScheduler().run(owner, ignored -> refresh.run(), null);
-            } else {
-                owner.getServer().getScheduler().runTask(owner, refresh);
-            }
-        }
-    }
-
-    private void refreshPlayer(Player player, AbstractSessionManager manager, @Nullable Binding expected) {
-        if (binding != expected || !owner.isEnabled() || !player.isOnline()) return;
-        LocalPlayer localPlayer = playerWrapper.apply(player);
-        Session session = expected == null ? manager.getIfPresent(localPlayer) : manager.get(localPlayer);
-        if (session == null) return;
-        Location location = localPlayer.getLocation();
-        if (expected != null) session.testMoveTo(localPlayer, location, MoveType.OTHER_NON_CANCELLABLE);
-        ApplicableRegionSet regions = WorldGuard.getInstance().getPlatform()
-                .getRegionContainer().createQuery().getApplicableRegions(location);
-        refreshSession(session, localPlayer, location, regions);
+        playerRefresh.refresh(sessionManager, expected);
     }
 
     void refreshSession(Session session, LocalPlayer player, Location location, ApplicableRegionSet regions) {

@@ -59,11 +59,17 @@ public class HealFlag extends Handler {
         if (healDelay > 0 && now - lastHeal <= healDelay * 1000L) {
             return;
         }
+        if (applyHealing(player, set, health, healAmount, healDelay)) {
+            lastHeal = now;
+        }
+    }
+
+    private boolean applyHealing(LocalPlayer player, ApplicableRegionSet set, double health, int healAmount, int healDelay) {
         if (healAmount < 0
                 && (getSession().isInvincible(player)
                 || (player.getGameMode() != GameModes.SURVIVAL && player.getGameMode() != GameModes.ADVENTURE))) {
             // don't damage invincible players
-            return;
+            return false;
         }
         Double minHealth = set.queryValue(player, Flags.MIN_HEAL);
         Double maxHealth = set.queryValue(player, Flags.MAX_HEAL);
@@ -79,7 +85,7 @@ public class HealFlag extends Handler {
         maxHealth = Math.min(maximum, maxHealth);
 
         if (health >= maxHealth && healAmount > 0) {
-            return;
+            return false;
         }
 
         if (healDelay <= 0) {
@@ -87,7 +93,7 @@ public class HealFlag extends Handler {
         } else {
             player.setHealth(Math.clamp(health + healAmount, minHealth, maxHealth));
         }
-        lastHeal = now;
+        return true;
     }
 
 }

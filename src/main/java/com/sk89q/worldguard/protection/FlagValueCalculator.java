@@ -288,7 +288,12 @@ public class FlagValueCalculator {
             }
         }
 
-        if (!found && flag.usesMembershipAsDefault()) {
+        return found ? combined : defaultStateValue(subject, flag);
+    }
+
+    @Nullable
+    private State defaultStateValue(@Nullable RegionAssociable subject, StateFlag flag) {
+        if (flag.usesMembershipAsDefault()) {
             Result membership = getMembership(subject);
             if (membership == Result.SUCCESS) {
                 return State.ALLOW;
@@ -297,7 +302,7 @@ public class FlagValueCalculator {
                 return null;
             }
         }
-        return found ? combined : flag.getDefault();
+        return flag.getDefault();
     }
 
     @SuppressWarnings("unchecked")

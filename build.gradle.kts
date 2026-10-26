@@ -2,6 +2,11 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.Jar
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
 
 buildscript {
     repositories {
@@ -9,6 +14,7 @@ buildscript {
     }
     dependencies {
         classpath("com.github.johnrengelman:shadow:8.1.1")
+        classpath("org.ow2.asm:asm:9.7")
         constraints {
             classpath("org.ow2.asm:asm:9.7")
             classpath("org.ow2.asm:asm-commons:9.7")
@@ -108,6 +114,48 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.named<JavaCompile>("compileJava") {
+    doLast("addRegionRemovalCompatibilityBridge") {
+        val ownerName = "com/sk89q/worldguard/protection/managers/RegionManager"
+        val valueDescriptor = "(Ljava/lang/String;)Ljava/util/Set;"
+        val voidDescriptor = "(Ljava/lang/String;)V"
+        val classFile = destinationDirectory.file("$ownerName.class").get().asFile
+        val reader = ClassReader(classFile.readBytes())
+        val writer = ClassWriter(reader, 0)
+        var valueMethodFound = false
+        var voidMethodFound = false
+        reader.accept(object : ClassVisitor(Opcodes.ASM9, writer) {
+            override fun visitMethod(access: Int, name: String, descriptor: String,
+                                     signature: String?, exceptions: Array<out String>?): MethodVisitor? {
+                if (name == "removeRegion") {
+                    if (descriptor == valueDescriptor) valueMethodFound = true
+                    if (descriptor == voidDescriptor) voidMethodFound = true
+                }
+                return super.visitMethod(access, name, descriptor, signature, exceptions)
+            }
+
+            override fun visitEnd() {
+                check(valueMethodFound) { "RegionManager.removeRegion(String) returning Set is missing" }
+                if (!voidMethodFound) {
+                    writer.visitMethod(Opcodes.ACC_PUBLIC or Opcodes.ACC_BRIDGE or Opcodes.ACC_SYNTHETIC,
+                            "removeRegion", voidDescriptor, null, null).apply {
+                        visitCode()
+                        visitVarInsn(Opcodes.ALOAD, 0)
+                        visitVarInsn(Opcodes.ALOAD, 1)
+                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, ownerName, "removeRegion", valueDescriptor, false)
+                        visitInsn(Opcodes.POP)
+                        visitInsn(Opcodes.RETURN)
+                        visitMaxs(2, 2)
+                        visitEnd()
+                    }
+                }
+                super.visitEnd()
+            }
+        }, 0)
+        classFile.writeBytes(writer.toByteArray())
+    }
 }
 
 tasks.jar {

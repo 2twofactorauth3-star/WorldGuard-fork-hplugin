@@ -262,7 +262,11 @@ public final class QueryCache {
         }
 
         private ApplicableRegionSet result(QueryOption option) {
-            return switch (option) { case NONE -> none; case SORT -> sorted; case COMPUTE_PARENTS -> parents; };
+            return switch (option) {
+                case NONE -> none;
+                case SORT -> sorted;
+                case COMPUTE_PARENTS -> parents;
+            };
         }
 
         private ApplicableRegionSet compute(RegionManager manager, Location location, QueryOption option) {

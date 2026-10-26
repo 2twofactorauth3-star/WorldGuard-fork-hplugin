@@ -55,13 +55,19 @@ public class FeedFlag extends Handler {
         if (feedDelay > 0 && now - lastFeed <= feedDelay * 1000L) {
             return;
         }
+        if (applyFeeding(player, set, feedAmount, feedDelay)) {
+            lastFeed = now;
+        }
+    }
+
+    private boolean applyFeeding(LocalPlayer player, ApplicableRegionSet set, int feedAmount, int feedDelay) {
         Integer minHunger = set.queryValue(player, Flags.MIN_FOOD);
         Integer maxHunger = set.queryValue(player, Flags.MAX_FOOD);
         if (feedAmount < 0
                 && (getSession().isInvincible(player)
                 || (player.getGameMode() != GameModes.SURVIVAL && player.getGameMode() != GameModes.ADVENTURE))) {
             // don't starve invincible players
-            return;
+            return false;
         }
         if (minHunger == null) {
             minHunger = 0;
@@ -75,7 +81,7 @@ public class FeedFlag extends Handler {
         maxHunger = Math.min(20, maxHunger);
 
         if (player.getFoodLevel() >= maxHunger && feedAmount > 0) {
-            return;
+            return false;
         }
 
         if (feedDelay <= 0) {
@@ -85,7 +91,7 @@ public class FeedFlag extends Handler {
             player.setFoodLevel(Math.clamp(player.getFoodLevel() + feedAmount, minHunger, maxHunger));
         }
         player.setSaturation(player.getFoodLevel());
-        lastFeed = now;
+        return true;
     }
 
 }

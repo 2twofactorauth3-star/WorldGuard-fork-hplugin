@@ -44,6 +44,7 @@ public final class CmiIntegration implements AutoCloseable {
     private final EnumMap<Action, StateFlag> actionFlags;
     private final Function<Plugin, GodApi> godFactory;
     private final Function<Player, LocalPlayer> playerWrapper;
+    private final IntegrationPlayerRefresh<Binding> playerRefresh;
     private final BiConsumer<Player, Action> deniedMessage;
     private final Handler.Factory<GodHandler> factory = new Handler.Factory<>() {
         @Override
@@ -64,6 +65,7 @@ public final class CmiIntegration implements AutoCloseable {
         this.actionFlags = actionFlags;
         this.godFactory = godFactory;
         this.playerWrapper = playerWrapper;
+        playerRefresh = new IntegrationPlayerRefresh<>(owner, playerWrapper, () -> binding, this::refreshSession);
         this.deniedMessage = deniedMessage;
     }
 
@@ -176,27 +178,7 @@ public final class CmiIntegration implements AutoCloseable {
     }
 
     private void refreshPlayers(@Nullable Binding expected) {
-        AbstractSessionManager manager = sessionManager;
-        if (manager == null || !owner.isEnabled()) return;
-        for (Player player : owner.getServer().getOnlinePlayers()) {
-            Runnable refresh = () -> refreshPlayer(player, manager, expected);
-            if (owner instanceof WorldGuardPlugin plugin && plugin.isFolia()) {
-                player.getScheduler().run(owner, ignored -> refresh.run(), null);
-            } else {
-                owner.getServer().getScheduler().runTask(owner, refresh);
-            }
-        }
-    }
-
-    private void refreshPlayer(Player player, AbstractSessionManager manager, @Nullable Binding expected) {
-        if (binding != expected || !owner.isEnabled() || !player.isOnline()) return;
-        LocalPlayer local = playerWrapper.apply(player);
-        Session session = expected == null ? manager.getIfPresent(local) : manager.get(local);
-        if (session == null) return;
-        Location location = local.getLocation();
-        if (expected != null) session.testMoveTo(local, location, MoveType.OTHER_NON_CANCELLABLE);
-        var regions = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery().getApplicableRegions(location);
-        refreshSession(session, local, location, regions);
+        playerRefresh.refresh(sessionManager, expected);
     }
 
     void refreshSession(Session session, LocalPlayer player, Location location, ApplicableRegionSet regions) {

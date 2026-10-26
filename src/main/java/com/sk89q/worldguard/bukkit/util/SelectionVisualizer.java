@@ -169,56 +169,59 @@ public final class SelectionVisualizer {
             return;
         }
         try {
-            Region selection = selector.getRegion();
-            CachedSelection cached = activeSelections.get(player.getUniqueId());
-            boolean manualExpansionDisabled = plugin.isClaimExpansionDisabled(player.getUniqueId());
-            boolean newSelection = cached == null || !cached.shape.matches(selectionWorld, selection);
-            if (!newSelection
-                    && cached.manualExpansionDisabled == manualExpansionDisabled
-                    && cached.selectionLimit == settings.selectionLimit) {
-                return;
-            }
-            SelectionShape shape = newSelection ? SelectionShape.capture(selectionWorld, selection) : cached.shape;
-            SelectionExpiry expiry = SelectionExpiry.capture(actor, selectionWorld);
-            expiry.schedule(settings.selectionMaximumLifetimeSeconds);
-            Outline outline = createOutline(actor, selectionWorld, selection, manualExpansionDisabled);
-            SelectionLimitTracker.Decision limitDecision = plugin.getSelectionLimitTracker()
-                    .evaluate(actor, selectionWorld, outline.originalRegion, outline.expandedVolume);
-            if (limitDecision == SelectionLimitTracker.Decision.DENY) {
-                expiry.clear();
-                activeSelections.remove(player.getUniqueId());
-                plugin.getSelectionLimitTracker().forget(player.getUniqueId());
-                plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
-                        "selectionLimitExceeded",
-                        "maximum", settings.selectionLimit.maximumVolume,
-                        "current", outline.originalVolume));
-                return;
-            }
-            if (limitDecision == SelectionLimitTracker.Decision.WITHOUT_EXPANSION) {
-                plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
-                        "selectionLimitExpansionSkipped",
-                        "maximum", settings.selectionLimit.maximumVolume,
-                        "expanded", outline.expandedVolume));
-                outline = createOutline(actor, selectionWorld, selection, true);
-            } else if (limitDecision == SelectionLimitTracker.Decision.CONFIRM
-                    && plugin.getSelectionLimitTracker().markPrompted(
-                            actor, selectionWorld, outline.originalRegion)) {
-                plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
-                        "selectionLimitConfirmationRequired",
-                        "maximum", settings.selectionLimit.maximumVolume,
-                        "current", outline.originalVolume));
-            }
-            activeSelections.put(player.getUniqueId(), new CachedSelection(
-                    shape, outline.lines, manualExpansionDisabled, settings.selectionLimit));
-            if (newSelection && outline.offerRemoval && outline.expandedVolume != outline.originalVolume) {
-                plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
-                        "claimExpansionSelection",
-                        "original", outline.originalVolume,
-                        "expanded", outline.expandedVolume));
-            }
+            updateSelection(player, actor, selectionWorld, selector.getRegion());
         } catch (IncompleteRegionException ignored) {
             activeSelections.remove(player.getUniqueId());
             // An incomplete selection has no border to display.
+        }
+    }
+
+    private void updateSelection(Player player, LocalPlayer actor, World selectionWorld, Region selection) {
+        CachedSelection cached = activeSelections.get(player.getUniqueId());
+        boolean manualExpansionDisabled = plugin.isClaimExpansionDisabled(player.getUniqueId());
+        boolean newSelection = cached == null || !cached.shape.matches(selectionWorld, selection);
+        if (!newSelection
+                && cached.manualExpansionDisabled == manualExpansionDisabled
+                && cached.selectionLimit == settings.selectionLimit) {
+            return;
+        }
+        SelectionShape shape = newSelection ? SelectionShape.capture(selectionWorld, selection) : cached.shape;
+        SelectionExpiry expiry = SelectionExpiry.capture(actor, selectionWorld);
+        expiry.schedule(settings.selectionMaximumLifetimeSeconds);
+        Outline outline = createOutline(actor, selectionWorld, selection, manualExpansionDisabled);
+        SelectionLimitTracker.Decision limitDecision = plugin.getSelectionLimitTracker()
+                .evaluate(actor, selectionWorld, outline.originalRegion, outline.expandedVolume);
+        if (limitDecision == SelectionLimitTracker.Decision.DENY) {
+            expiry.clear();
+            activeSelections.remove(player.getUniqueId());
+            plugin.getSelectionLimitTracker().forget(player.getUniqueId());
+            plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
+                    "selectionLimitExceeded",
+                    "maximum", settings.selectionLimit.maximumVolume,
+                    "current", outline.originalVolume));
+            return;
+        }
+        if (limitDecision == SelectionLimitTracker.Decision.WITHOUT_EXPANSION) {
+            plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
+                    "selectionLimitExpansionSkipped",
+                    "maximum", settings.selectionLimit.maximumVolume,
+                    "expanded", outline.expandedVolume));
+            outline = createOutline(actor, selectionWorld, selection, true);
+        } else if (limitDecision == SelectionLimitTracker.Decision.CONFIRM
+                && plugin.getSelectionLimitTracker().markPrompted(
+                        actor, selectionWorld, outline.originalRegion)) {
+            plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
+                    "selectionLimitConfirmationRequired",
+                    "maximum", settings.selectionLimit.maximumVolume,
+                    "current", outline.originalVolume));
+        }
+        activeSelections.put(player.getUniqueId(), new CachedSelection(
+                shape, outline.lines, manualExpansionDisabled, settings.selectionLimit));
+        if (newSelection && outline.offerRemoval && outline.expandedVolume != outline.originalVolume) {
+            plugin.getMessages().send(player, com.sk89q.worldguard.bukkit.BukkitMessages.template(
+                    "claimExpansionSelection",
+                    "original", outline.originalVolume,
+                    "expanded", outline.expandedVolume));
         }
     }
 
