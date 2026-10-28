@@ -561,11 +561,11 @@ public final class RegionCommands extends RegionCommandsBase {
         ProtectedRegion existing;
 
         if (args.argsLength() == 0) { // Get region from where the player is
-            if (!(sender instanceof LocalPlayer)) {
+            if (!(sender instanceof LocalPlayer playerSender)) {
                 throw new CommandException("@wg:specifyRegionInfo@");
             }
 
-            existing = checkRegionStandingIn(manager, (LocalPlayer) sender, true,
+            existing = checkRegionStandingIn(manager, playerSender, true,
                     "/rg info -w \"" + world.getName() + "\" %id%" + (args.hasFlag('u') ? " -u" : "") + (args.hasFlag('s') ? " -s" : ""));
             if (ProtectedRegion.GLOBAL_REGION.equals(existing.getId()) && !wcfg.showGlobalRegionInfo) {
                 return;
@@ -737,11 +737,11 @@ public final class RegionCommands extends RegionCommandsBase {
         RegionManager manager = checkRegionManager(world);
         ProtectedRegion region;
         if (args.argsLength() == 0) { // Get region from where the player is
-            if (!(sender instanceof LocalPlayer)) {
+            if (!(sender instanceof LocalPlayer playerSender)) {
                 throw new CommandException("@wg:specifyRegionFlags@");
             }
 
-            region = checkRegionStandingIn(manager, (LocalPlayer) sender, true,
+            region = checkRegionStandingIn(manager, playerSender, true,
                     "/rg flags -w \"" + world.getName() + "\" %id%");
         } else { // Get region from the ID
             region = checkExistingRegion(manager, args.getString(0), true);

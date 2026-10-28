@@ -117,9 +117,11 @@ public final class Cause {
             return false;
         }
 
-        if (object instanceof TNTPrimed || object instanceof Vehicle) {
-            Entity entity = (Entity) object;
-            return entity.getOrigin() != null;
+        if (object instanceof TNTPrimed tnt) {
+            return tnt.getOrigin() != null;
+        }
+        if (object instanceof Vehicle vehicle) {
+            return vehicle.getOrigin() != null;
         }
 
         return true;
@@ -187,9 +189,9 @@ public final class Cause {
     @Nullable
     public EntityType find(EntityType... types) {
         for (Object object : causes) {
-            if (object instanceof Entity) {
+            if (object instanceof Entity entity) {
                 for (EntityType type : types) {
-                    if (((Entity) object).getType() == type) {
+                    if (entity.getType() == type) {
                         return type;
                     }
                 }
@@ -406,8 +408,8 @@ public final class Cause {
         private void addTrackedParentCauses(Object original) {
             Object source = original;
             int index = causes == null ? (firstCause == null ? 0 : 1) : causes.size();
-            while (source instanceof Metadatable && !(source instanceof Block)) {
-                source = WGMetadata.getIfPresent((Metadatable) source, CAUSE_KEY, Object.class);
+            while (source instanceof Metadatable metadatable && !(source instanceof Block)) {
+                source = WGMetadata.getIfPresent(metadatable, CAUSE_KEY, Object.class);
                 if (source != null) {
                     if (!markSeen(source)) {
                         break;

@@ -135,8 +135,8 @@ public class WorldGuardEntityListener extends AbstractListener {
     }
 
     private void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
-        if (event.getDamager() instanceof Projectile) {
-            onEntityDamageByProjectile(event);
+        if (event.getDamager() instanceof Projectile projectile) {
+            onEntityDamageByProjectile(event, projectile);
             return;
         }
         Entity attacker = event.getDamager();
@@ -189,9 +189,9 @@ public class WorldGuardEntityListener extends AbstractListener {
                 .testState(localPlayer, Flags.MOB_DAMAGE);
     }
 
-    private void onEntityDamageByProjectile(EntityDamageByEntityEvent event) {
+    private void onEntityDamageByProjectile(EntityDamageByEntityEvent event, Projectile projectile) {
         Entity defender = event.getEntity();
-        ProjectileSource source = ((Projectile) event.getDamager()).getShooter();
+        ProjectileSource source = projectile.getShooter();
         if (!(source instanceof LivingEntity attacker)) return;
         WorldConfiguration wcfg = getWorldConfig(defender.getWorld());
         if (isProjectilePlayerDamageBlocked(event, attacker, defender, wcfg)
@@ -242,11 +242,11 @@ public class WorldGuardEntityListener extends AbstractListener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
 
-        if (event instanceof EntityDamageByEntityEvent) {
-            this.onEntityDamageByEntity((EntityDamageByEntityEvent) event);
+        if (event instanceof EntityDamageByEntityEvent entityEvent) {
+            this.onEntityDamageByEntity(entityEvent);
             return;
-        } else if (event instanceof EntityDamageByBlockEvent) {
-            this.onEntityDamageByBlock((EntityDamageByBlockEvent) event);
+        } else if (event instanceof EntityDamageByBlockEvent blockEvent) {
+            this.onEntityDamageByBlock(blockEvent);
             return;
         }
 

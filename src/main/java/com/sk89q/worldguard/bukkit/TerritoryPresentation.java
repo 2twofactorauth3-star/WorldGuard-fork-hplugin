@@ -8,6 +8,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.title.Title;
+import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,10 @@ final class TerritoryPresentation {
 
     private static final long MIN_ACTION_BAR_REFRESH_NANOS = 500_000_000L;
     private final Notification notification;
+    private final Function<String, Component> renderer;
+    private final boolean dynamicActionBar;
+    private final boolean dynamicBossBar;
+    private final boolean dynamicMessages;
     private final Component actionBar;
     private final BossBar bossBar;
     private final Title title;
@@ -24,6 +29,8 @@ final class TerritoryPresentation {
     private final long started;
     private long lastRepeat;
     private long lastActionBarElapsed;
+    private long lastBossBarElapsed;
+    private boolean messagesSent;
     private boolean actionBarVisible;
     private boolean bossBarVisible;
     private boolean titleVisible;
@@ -31,29 +38,57 @@ final class TerritoryPresentation {
 
     TerritoryPresentation(Notification notification, Function<String, Component> renderer, long now) {
         this.notification = notification;
+        this.renderer = renderer;
+        dynamicActionBar = dynamic(renderer, notification.actionBar.message);
+        dynamicBossBar = dynamic(renderer, notification.bossBar.message);
         actionBar = notification.actionBar.enabled ? renderer.apply(notification.actionBar.message) : null;
         bossBar = notification.bossBar.enabled ? BossBar.bossBar(renderer.apply(notification.bossBar.message),
                 notification.bossBarProgress, notification.bossBarColor, notification.bossBarOverlay) : null;
         title = notification.title.enabled ? Title.title(renderer.apply(notification.title.title),
                 renderer.apply(notification.title.subtitle), notification.title.times) : null;
         List<Component> rendered = new ArrayList<>(notification.messages.size());
-        for (String line : notification.messages) rendered.add(renderer.apply(line));
+        boolean dynamicMessages = false;
+        for (String line : notification.messages) {
+            rendered.add(renderer.apply(line));
+            dynamicMessages |= dynamic(renderer, line);
+        }
+        this.dynamicMessages = dynamicMessages;
         messages = List.copyOf(rendered);
         started = now;
         lastRepeat = now;
     }
 
     static Function<String, Component> renderer(
-            BukkitMessages messages, Notification notification, String region, String world, String player) {
-        Component name = messages.component(placeholders(notification.name, region, world, player));
-        return text -> {
-            if (text.equals("{name}")) return name;
-            String value = placeholders(text, region, world, player);
-            return value.contains("{name}")
-                    ? messages.component(value.replace("{name}", "<wg_territory_name>"),
-                            TagResolver.resolver("wg_territory_name", Tag.selfClosingInserting(name)))
-                    : messages.component(value);
+            BukkitMessages messages, Notification notification, String region, String world, String player,
+            CommandSender viewer) {
+        boolean dynamicName = messages.containsPlaceholder(notification.name);
+        Component name = dynamicName ? Component.empty()
+                : messages.componentFor(viewer, placeholders(notification.name, region, world, player));
+        return new Renderer() {
+            @Override
+            public Component apply(String text) {
+                String value = placeholders(text, region, world, player);
+                if (!value.contains("{name}")) return messages.componentFor(viewer, value);
+                Component currentName = dynamicName
+                        ? messages.componentFor(viewer, placeholders(notification.name, region, world, player)) : name;
+                if (text.equals("{name}")) return currentName;
+                return messages.componentFor(viewer, value.replace("{name}", "<wg_territory_name>"),
+                        TagResolver.resolver("wg_territory_name", Tag.selfClosingInserting(currentName)));
+            }
+
+            @Override
+            public boolean dynamic(String text) {
+                return dynamicName && text.contains("{name}") || messages.containsPlaceholder(text);
+            }
         };
+    }
+
+    private static boolean dynamic(Function<String, Component> renderer, String text) {
+        return renderer instanceof Renderer contextual && contextual.dynamic(text);
+    }
+
+    private interface Renderer extends Function<String, Component> {
+        boolean dynamic(String text);
     }
 
     static boolean requiresRegion(BukkitMessages messages, Notification notification) {
@@ -103,7 +138,7 @@ final class TerritoryPresentation {
     }
 
     boolean needsRefresh() {
-        return shown && (actionBarVisible || bossBarVisible && notification.bossBar.durationNanos >= 0
+        return shown && (actionBarVisible || bossBarVisible && (dynamicBossBar || notification.bossBar.durationNanos >= 0)
                 || titleVisible || !messages.isEmpty() && notification.repeatNanos > 0);
     }
 
@@ -111,7 +146,7 @@ final class TerritoryPresentation {
         if (actionBar == null) return;
         if (active(notification.actionBar.durationNanos, elapsed)) {
             if (!actionBarVisible || elapsed - lastActionBarElapsed >= MIN_ACTION_BAR_REFRESH_NANOS) {
-                audience.sendActionBar(actionBar);
+                audience.sendActionBar(dynamicActionBar ? renderer.apply(notification.actionBar.message) : actionBar);
                 lastActionBarElapsed = elapsed;
                 actionBarVisible = true;
             }
@@ -124,6 +159,10 @@ final class TerritoryPresentation {
     private void refreshBossBar(Audience audience, long elapsed) {
         if (bossBar == null) return;
         boolean active = active(notification.bossBar.durationNanos, elapsed);
+        if (active && dynamicBossBar && elapsed - lastBossBarElapsed >= MIN_ACTION_BAR_REFRESH_NANOS) {
+            bossBar.name(renderer.apply(notification.bossBar.message));
+            lastBossBarElapsed = elapsed;
+        }
         if (active && !bossBarVisible) audience.showBossBar(bossBar);
         if (!active && bossBarVisible) audience.hideBossBar(bossBar);
         bossBarVisible = active;
@@ -140,7 +179,11 @@ final class TerritoryPresentation {
     }
 
     private void sendMessages(Audience audience) {
-        for (Component line : messages) audience.sendMessage(line);
+        for (int index = 0; index < messages.size(); index++) {
+            audience.sendMessage(dynamicMessages && messagesSent
+                    ? renderer.apply(notification.messages.get(index)) : messages.get(index));
+        }
+        messagesSent = true;
     }
 
     private static boolean active(long duration, long elapsed) {

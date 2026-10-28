@@ -4,6 +4,7 @@
 # cooldownMillis suppresses repeated sends to the same player for this message; -1 disables cooldown.
 # Empty message values send nothing. MiniMessage is required.
 #
+# Optional worlds: type is blacklist/whitelist; list accepts a world name or a list. "*" matches all worlds. Omit worlds for no restriction.
 messages:
   cmiBackpackDenied:
     mode: actionbar
@@ -323,272 +324,434 @@ messages:
   protection:
     denied:
       placeFire:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>start<white> fires here'
       useFrostwalker:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>use<white> Frost Walker here'
       placeBlock:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>place<white> this block here'
       useDynamite:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>use<white> dynamite here'
       breakBlock:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>break<white> this block here'
       use:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>use<white> this here'
       open:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>open<white> this here'
       take:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>take<white> this here'
       sleep:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>sleep'
       useAnchors:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>use<white> respawn anchors here'
       useExplosives:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>use<white> explosives here'
       placeVehicles:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>place<white> vehicles here'
       dropItems:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>drop<white> items here'
       dropXp:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>drop<white> experience here'
       useLingeringPotions:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>use<white> lingering potions here'
       placeThings:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>place<white> objects here'
       breakVehicles:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>break<white> vehicles here'
       pickupItems:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>pick up<white> items here'
       breakThings:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>break<white> objects here'
       change:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>change<white> this here'
       ride:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>ride<white> this here'
       hit:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>hit<white> this here'
       pvp:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>fight<white> other players here'
       damage:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>damage<white> this here'
       harm:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>harm<white> this here'
       createPortals:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>create<white> portals here'
       useCommand:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: actionbar
         cooldownMillis: 500
         message:
           - 'You cannot <#FDBE00>use<white> command <#FDBE00>{command}'
     action:
       placeFire:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'place fire'
       useFrostwalker:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'use Frost Walker'
       placeBlock:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'place that block'
       useDynamite:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'use dynamite'
       breakBlock:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'break that block'
       use:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'use that'
       open:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'open that'
       take:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'take that'
       sleep:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'sleep'
       useAnchors:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'use respawn anchors'
       useExplosives:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'use explosives'
       placeVehicles:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'place vehicles'
       dropItems:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'drop items'
       dropXp:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'drop experience'
       useLingeringPotions:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'use lingering potions'
       placeThings:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'place things'
       breakVehicles:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'break vehicles'
       pickupItems:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'pick up items'
       breakThings:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'break things'
       change:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'change that'
       ride:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'ride that'
       hit:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'hit that'
       pvp:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'fight players'
       damage:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'damage that'
       harm:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'harm that'
       createPortals:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:
           - 'create portals'
       useCommand:
+        worlds:
+          type: blacklist
+          list: '*'
         mode: message
         cooldownMillis: -1
         message:

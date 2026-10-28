@@ -4,6 +4,10 @@
 #
 
 logs:
+  configInvalidMessageWorlds:
+    message: 'Некорректный фильтр миров сообщения: укажите blacklist/whitelist и строку либо список миров в '
+  placeholderIntegrationFailed:
+    message: 'Ошибка интеграции PlaceholderAPI; будет использован исходный текст.'
   cmiIntegrationEnabled:
     message: 'Подключена интеграция CMI: god, рюкзак, порталы и редактор стоек для брони'
   cmiIntegrationDisabled:

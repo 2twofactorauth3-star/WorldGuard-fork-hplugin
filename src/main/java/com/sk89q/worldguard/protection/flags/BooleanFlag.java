@@ -51,11 +51,7 @@ public class BooleanFlag extends Flag<Boolean> {
 
     @Override
     public Boolean unmarshal(Object o) {
-        if (o instanceof Boolean) {
-            return (Boolean) o;
-        } else {
-            return null;
-        }
+        return o instanceof Boolean value ? value : null;
     }
 
     @Override

@@ -155,8 +155,8 @@ public class PlayerMoveListener extends AbstractListener {
     @EventHandler
     public void onVehicleEnter(VehicleEnterEvent event) {
         Entity entity = event.getEntered();
-        if (entity instanceof Player) {
-            LocalPlayer player = getPlugin().wrapPlayer((Player) entity);
+        if (entity instanceof Player bukkitPlayer) {
+            LocalPlayer player = getPlugin().wrapPlayer(bukkitPlayer);
             Session session = WorldGuard.getInstance().getPlatform().getSessionManager().get(player);
             if (null != session.testMoveTo(player, BukkitAdapter.adapt(event.getVehicle().getLocation()), MoveType.EMBARK, true)) {
                 event.setCancelled(true);
@@ -426,8 +426,8 @@ public class PlayerMoveListener extends AbstractListener {
     @EventHandler
     public void onEntityMount(EntityMountEvent event) {
         Entity entity = event.getEntity();
-        if (entity instanceof Player) {
-            LocalPlayer player = getPlugin().wrapPlayer((Player) entity);
+        if (entity instanceof Player bukkitPlayer) {
+            LocalPlayer player = getPlugin().wrapPlayer(bukkitPlayer);
             Session session = WorldGuard.getInstance().getPlatform().getSessionManager().get(player);
             if (null != session.testMoveTo(player, BukkitAdapter.adapt(event.getMount().getLocation()), MoveType.EMBARK, true)) {
                 event.setCancelled(true);

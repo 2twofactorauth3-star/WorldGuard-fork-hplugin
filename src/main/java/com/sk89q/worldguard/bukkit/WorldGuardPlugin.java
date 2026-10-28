@@ -32,6 +32,7 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.event.player.ProcessPlayerEvent;
 import com.sk89q.worldguard.bukkit.integration.EssentialsXIntegration;
 import com.sk89q.worldguard.bukkit.integration.CmiIntegration;
+import com.sk89q.worldguard.bukkit.integration.PlaceholderIntegration;
 import com.sk89q.worldguard.bukkit.integration.VanishIntegration;
 import com.sk89q.worldguard.bukkit.listener.EventAbstractionListener;
 import com.sk89q.worldguard.bukkit.listener.BlacklistListener;
@@ -63,6 +64,7 @@ import com.sk89q.worldguard.util.logging.LogMessages;
 import com.sk89q.worldguard.util.logging.RecordMessagePrefixer;
 import io.papermc.paper.ServerBuildInfo;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
@@ -109,6 +111,7 @@ public class WorldGuardPlugin extends JavaPlugin {
     private VanishIntegration superVanishIntegration;
     private VanishIntegration cmiVanishIntegration;
     private CmiIntegration cmiIntegration;
+    private PlaceholderIntegration placeholderIntegration;
     private boolean runtimeStarted;
     private boolean localeSelected;
 
@@ -215,6 +218,8 @@ public class WorldGuardPlugin extends JavaPlugin {
         BukkitLogs.installBundledDefaults(this, localeManager.currentLocale());
         logs = new BukkitLogs(this);
         logs.load();
+        placeholderIntegration = new PlaceholderIntegration(this);
+        placeholderIntegration.start();
         regionDefaults = new BukkitRegionDefaults(this);
         messages = new BukkitMessages(this);
         territoryNotifications = new TerritoryNotifications(this);
@@ -302,6 +307,10 @@ public class WorldGuardPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (placeholderIntegration != null) {
+            placeholderIntegration.close();
+            placeholderIntegration = null;
+        }
         if (!runtimeStarted) {
             return;
         }
@@ -639,7 +648,7 @@ public class WorldGuardPlugin extends JavaPlugin {
 
     private final LazyReference<Boolean> folia = LazyReference.from(() -> {
         try {
-            return ServerBuildInfo.buildInfo().isBrandCompatible(net.kyori.adventure.key.Key.key("papermc", "folia"));
+            return ServerBuildInfo.buildInfo().isBrandCompatible(Key.key("papermc", "folia"));
         } catch (Throwable t) {
             // Ignore, this likely means an outdated version.
             WorldGuard.logger.log(Level.WARNING, "@wglog:failedFoliaCheck@", t);

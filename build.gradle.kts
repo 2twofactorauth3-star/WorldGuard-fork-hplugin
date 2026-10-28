@@ -73,6 +73,9 @@ dependencies {
     compileOnly(libs.cmiApi) {
         isTransitive = false
     }
+    compileOnly(libs.placeholderApi) {
+        isTransitive = false
+    }
     compileOnly(libs.paperApi) {
         exclude("org.slf4j", "slf4j-api")
         exclude("junit", "junit")

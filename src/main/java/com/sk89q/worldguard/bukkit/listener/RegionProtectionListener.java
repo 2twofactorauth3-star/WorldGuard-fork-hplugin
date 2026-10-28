@@ -19,7 +19,6 @@
 
 package com.sk89q.worldguard.bukkit.listener;
 
-import com.google.common.base.Predicate;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
@@ -168,7 +167,7 @@ public class RegionProtectionListener extends AbstractListener {
             return;
         }
 
-        event.filter((Predicate<Location>) target -> {
+        event.filter((Location target) -> {
             if (target == null) return true;
             boolean canPlace;
             String what;
@@ -219,7 +218,7 @@ public class RegionProtectionListener extends AbstractListener {
         if (!event.isCancelled()) {
             final RegionAssociable associable = createRegionAssociable(event.getCause());
 
-            event.filter((Predicate<Location>) target -> {
+            event.filter((Location target) -> {
                 if (target == null) return true;
                 boolean canBreak;
                 String what;
@@ -255,7 +254,7 @@ public class RegionProtectionListener extends AbstractListener {
         final RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
         final RegionAssociable associable = createRegionAssociable(event.getCause());
 
-        event.filter((Predicate<Location>) target -> {
+        event.filter((Location target) -> {
             if (target == null) return true;
             boolean canUse;
             String what;

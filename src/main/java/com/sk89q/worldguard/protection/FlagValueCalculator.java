@@ -548,7 +548,7 @@ public class FlagValueCalculator {
 
         if (consideredValues.isEmpty()) {
             V fallback = flag.getDefault();
-            return fallback != null ? ImmutableList.of(fallback) : (Collection<V>) ImmutableList.of();
+            return fallback != null ? ImmutableList.of(fallback) : ImmutableList.of();
         }
 
         return consideredValues.values();

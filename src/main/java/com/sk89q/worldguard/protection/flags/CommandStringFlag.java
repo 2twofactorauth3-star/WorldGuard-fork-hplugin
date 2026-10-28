@@ -44,11 +44,7 @@ public class CommandStringFlag extends Flag<String> {
 
     @Override
     public String unmarshal(Object o) {
-        if (o instanceof String) {
-            return (String) o;
-        } else {
-            return null;
-        }
+        return o instanceof String value ? value : null;
     }
 
     @Override

@@ -123,6 +123,7 @@ final class BukkitConfigValidator {
             return;
         }
         if (map.containsKey("message") || map.containsKey("mode") || map.containsKey("cooldownMillis")) {
+            validateMessageWorlds(plugin, map.get("worlds"), path + ".worlds", fileName);
             Object mode = map.get("mode");
             if (!(mode instanceof String string)
                     || (!string.equalsIgnoreCase("message")
@@ -153,6 +154,26 @@ final class BukkitConfigValidator {
             validateMessageDefinitions(plugin, entry.getValue(), path + "." + entry.getKey(), fileName,
                     actionBarMultipleLinesMode);
         }
+    }
+
+    private static void validateMessageWorlds(WorldGuardPlugin plugin, Object value, String path, String fileName) {
+        if (value == null) return;
+        Map<String, Object> worlds = readMap(value);
+        Object type = worlds.get("type");
+        boolean validType = type instanceof String string
+                && (string.equalsIgnoreCase("blacklist") || string.equalsIgnoreCase("whitelist"));
+        if (!validType || !validWorldList(worlds.get("list"))) {
+            warn(plugin, "@wglog:configInvalidMessageWorlds@" + path + "@wglog:configInFile@" + fileName);
+        }
+    }
+
+    private static boolean validWorldList(Object value) {
+        if (value instanceof String) return true;
+        if (!(value instanceof Collection<?> worlds)) return false;
+        for (Object world : worlds) {
+            if (!(world instanceof String)) return false;
+        }
+        return true;
     }
 
     private static void validateFlags(

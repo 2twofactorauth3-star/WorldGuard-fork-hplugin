@@ -39,10 +39,10 @@ public class IntegerFlag extends NumberFlag<Integer> {
 
     @Override
     public Integer unmarshal(Object o) {
-        if (o instanceof Integer) {
-            return (Integer) o;
-        } else if (o instanceof Number) {
-            return ((Number) o).intValue();
+        if (o instanceof Integer value) {
+            return value;
+        } else if (o instanceof Number value) {
+            return value.intValue();
         } else {
             return null;
         }

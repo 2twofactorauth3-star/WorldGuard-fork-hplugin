@@ -56,10 +56,10 @@ public class TimestampFlag extends Flag<Instant> {
             try {
                 TemporalAccessor parsed = PARSER.parseBest(input, ZonedDateTime::from, LocalDateTime::from);
                 // convert whatever input into UTC for storage
-                if (parsed instanceof LocalDateTime) {
-                    return ((LocalDateTime) parsed).atZone(ZoneOffset.UTC).toInstant();
-                } else if (parsed instanceof ZonedDateTime) {
-                    return ((ZonedDateTime) parsed).toInstant();
+                if (parsed instanceof LocalDateTime dateTime) {
+                    return dateTime.atZone(ZoneOffset.UTC).toInstant();
+                } else if (parsed instanceof ZonedDateTime dateTime) {
+                    return dateTime.toInstant();
                 } else {
                     throw InvalidFlagFormat.localized("flagErrorTimestampUnrecognized");
                 }
@@ -71,9 +71,9 @@ public class TimestampFlag extends Flag<Instant> {
 
     @Override
     public Instant unmarshal(@Nullable Object o) {
-        if (o instanceof String) {
+        if (o instanceof String value) {
             try {
-                return Instant.from(SERIALIZER.parse((String) o));
+                return Instant.from(SERIALIZER.parse(value));
             } catch(DateTimeParseException ignored) {
                 return null;
             }

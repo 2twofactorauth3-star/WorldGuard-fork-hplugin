@@ -169,8 +169,9 @@ public class RegionResultSet extends AbstractRegionSet {
 
     @SuppressWarnings("unchecked")
     private <V> V calculate(@Nullable RegionAssociable subject, Flag<V> flag) {
-        if (immutable && getClass() == RegionResultSet.class && flag != null && flag.getClass() == StateFlag.class) {
-            Object value = snapshot().state((StateFlag) flag, flagValueCalculator);
+        if (immutable && getClass() == RegionResultSet.class && flag instanceof StateFlag stateFlag
+                && stateFlag.getClass() == StateFlag.class) {
+            Object value = snapshot().state(stateFlag, flagValueCalculator);
             if (value != RegionFlagSnapshot.DYNAMIC) return (V) value;
         }
         return flagValueCalculator.queryValue(subject, flag);

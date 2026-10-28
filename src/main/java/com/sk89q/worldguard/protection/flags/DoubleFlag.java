@@ -39,10 +39,10 @@ public class DoubleFlag extends NumberFlag<Double> {
 
     @Override
     public Double unmarshal(Object o) {
-        if (o instanceof Double) {
-            return (Double) o;
-        } else if (o instanceof Number) {
-            return ((Number) o).doubleValue();
+        if (o instanceof Double value) {
+            return value;
+        } else if (o instanceof Number value) {
+            return value.doubleValue();
         } else {
             return null;
         }

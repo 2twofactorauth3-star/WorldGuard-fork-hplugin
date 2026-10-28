@@ -89,7 +89,7 @@ class RegionCommandsBase {
                 try {
                     World override = WorldEdit.getInstance().getSessionManager().get(sender).getWorldOverride();
                     if (override != null) {
-                        if (sender instanceof LocalPlayer && !override.equals(((LocalPlayer) sender).getWorld())) {
+                        if (sender instanceof LocalPlayer player && !override.equals(player.getWorld())) {
                             sender.printDebug(TextComponent.of(BukkitMessages.template(
                                     "usingWorldOverride", "world", override.getName())));
                         }

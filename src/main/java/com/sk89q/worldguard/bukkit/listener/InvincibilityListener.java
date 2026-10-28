@@ -66,13 +66,13 @@ public class InvincibilityListener extends AbstractListener {
             if (event instanceof EntityDamageByEntityEvent byEntityEvent) {
                 Entity attacker = byEntityEvent.getDamager();
 
-                if (attacker instanceof Projectile && ((Projectile) attacker).getShooter() instanceof Entity) {
-                    attacker = (Entity) ((Projectile) attacker).getShooter();
+                if (attacker instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) {
+                    attacker = shooter;
                 }
 
                 if (getWorldConfig(player.getWorld()).regionInvinciblityRemovesMobs
                         && attacker instanceof LivingEntity && !(attacker instanceof Player)
-                        && !(attacker instanceof Tameable && ((Tameable) attacker).isTamed())) {
+                        && !(attacker instanceof Tameable tameable && tameable.isTamed())) {
                     attacker.remove();
                 }
             }

@@ -68,7 +68,7 @@ public class BukkitPlayer extends com.sk89q.worldedit.bukkit.BukkitPlayer implem
     @Override
     public void kick(String msg) {
         if (!silenced) {
-            getPlayer().kick(plugin.getMessages().component(msg));
+            getPlayer().kick(plugin.getMessages().componentFor(getPlayer(), msg));
         }
     }
 
@@ -76,7 +76,7 @@ public class BukkitPlayer extends com.sk89q.worldedit.bukkit.BukkitPlayer implem
     public void ban(String msg) {
         if (!silenced) {
             getPlayer().ban(null, (java.time.Instant) null, null, true);
-            getPlayer().kick(plugin.getMessages().component(msg));
+            getPlayer().kick(plugin.getMessages().componentFor(getPlayer(), msg));
         }
     }
 
@@ -178,8 +178,8 @@ public class BukkitPlayer extends com.sk89q.worldedit.bukkit.BukkitPlayer implem
 
     @Override
     public void sendTitle(String title, String subtitle) {
-        net.kyori.adventure.text.Component titleComponent = plugin.getMessages().component(title);
-        net.kyori.adventure.text.Component subtitleComponent = plugin.getMessages().component(subtitle);
+        var titleComponent = plugin.getMessages().componentFor(getPlayer(), title);
+        var subtitleComponent = plugin.getMessages().componentFor(getPlayer(), subtitle);
         if (WorldGuard.getInstance().getPlatform().getGlobalStateManager().get(getWorld()).forceDefaultTitleTimes) {
             getPlayer().showTitle(Title.title(titleComponent, subtitleComponent,
                     Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(3500), Duration.ofMillis(1000))));

@@ -64,8 +64,8 @@ public final class FlagContext {
      * @throws InvalidFlagFormat if the sender is not a player
      */
     public LocalPlayer getPlayerSender() throws InvalidFlagFormat {
-        if (sender.isPlayer() && sender instanceof LocalPlayer) {
-            return (LocalPlayer) sender;
+        if (sender.isPlayer() && sender instanceof LocalPlayer player) {
+            return player;
         } else {
             throw InvalidFlagFormat.localized("flagErrorPlayerRequired");
         }

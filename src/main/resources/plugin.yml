@@ -11,6 +11,7 @@ softdepend:
   - PremiumVanish
   - SuperVanish
   - CMI
+  - PlaceholderAPI
 api-version: "1.21"
 folia-supported: true
 

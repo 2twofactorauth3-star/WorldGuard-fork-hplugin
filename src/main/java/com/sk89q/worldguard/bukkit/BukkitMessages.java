@@ -20,8 +20,10 @@
 package com.sk89q.worldguard.bukkit;
 
 import com.sk89q.util.yaml.YAMLProcessor;
-import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldguard.bukkit.util.MMSupport;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.title.Title;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.yaml.snakeyaml.Yaml;
@@ -77,7 +79,7 @@ public final class BukkitMessages {
         Map<String, Replacement> loaded = new LinkedHashMap<>();
         for (Map.Entry<String, List<String>> entry : messages.entrySet()) {
             MessageDefinition definition =
-                    new MessageDefinition(entry.getValue(), DeliveryMode.MESSAGE, -1);
+                    new MessageDefinition(entry.getValue(), DeliveryMode.MESSAGE, -1, WorldFilter.ALL);
             loaded.put(entry.getKey(), new Replacement(entry.getKey(), definition));
         }
         replacements = Map.copyOf(loaded);
@@ -238,7 +240,7 @@ public final class BukkitMessages {
                     ? readTitleLines(messageValue)
                     : readLines(messageValue);
             long cooldownMillis = readCooldown(map.get("cooldownMillis"));
-            definitions.put(key, new MessageDefinition(messages, mode, cooldownMillis));
+            definitions.put(key, new MessageDefinition(messages, mode, cooldownMillis, WorldFilter.read(map.get("worlds"))));
             return;
         }
 
@@ -271,6 +273,10 @@ public final class BukkitMessages {
     }
 
     private List<String> render(String input, boolean preserveEmptyLines) {
+        return render(input, preserveEmptyLines, null);
+    }
+
+    private List<String> render(String input, boolean preserveEmptyLines, Player recipient) {
         if (input == null || input.isEmpty()) return List.of();
 
         List<String> rendered = List.of(input);
@@ -278,7 +284,7 @@ public final class BukkitMessages {
             List<String> previous = rendered;
             List<String> next = new ArrayList<>(previous.size());
             for (String source : previous) {
-                next.addAll(expandSource(source));
+                next.addAll(expandSource(source, recipient));
             }
             rendered = List.copyOf(next);
             if (rendered.isEmpty() || rendered.equals(previous)) break;
@@ -291,7 +297,7 @@ public final class BukkitMessages {
         return List.copyOf(formatted);
     }
 
-    private List<String> expandSource(String source) {
+    private List<String> expandSource(String source, Player recipient) {
         Map<String, Replacement> available = replacements;
         Matcher matcher = MESSAGE_TOKEN.matcher(source);
         List<StringBuilder> outputs = new ArrayList<>();
@@ -319,6 +325,7 @@ public final class BukkitMessages {
             if (replacement == null) {
                 for (StringBuilder output : outputs) output.append(matcher.group());
             } else {
+                if (!replacement.worlds.allows(recipient)) return List.of();
                 changed = true;
                 List<String> choices = replacement.messages.isEmpty() ? List.of("") : replacement.messages;
                 List<StringBuilder> expanded = new ArrayList<>(outputs.size() * choices.size());
@@ -360,7 +367,7 @@ public final class BukkitMessages {
             }
             Object value = placeholders[i + 1];
             output.append("@wgarg:").append(name).append(':');
-            if (value instanceof net.kyori.adventure.text.Component component) {
+            if (value instanceof Component component) {
                 output.append(MMSupport.encodeComponent(component)).append(":component");
             } else {
                 output.append(encoder.encodeToString(String.valueOf(value).getBytes(StandardCharsets.UTF_8)));
@@ -398,19 +405,33 @@ public final class BukkitMessages {
         return output.append(input, cursor, input.length()).toString();
     }
 
-    public net.kyori.adventure.text.Component component(String input) {
-        if (input == null || !input.contains("@wg:") && !input.contains("{prefix}")) return MMSupport.component(input);
-        List<String> translated = lines(input);
-        return translated.isEmpty() ? MMSupport.component("") : MMSupport.component(translated.get(0));
+    public Component component(String input) {
+        return componentFor(null, input);
     }
 
-    public net.kyori.adventure.text.Component component(
-            String input, net.kyori.adventure.text.minimessage.tag.resolver.TagResolver resolver) {
+    public Component componentFor(CommandSender sender, String input) {
+        if (input == null || !input.contains("@wg:") && !input.contains("{prefix}")) return MMSupport.componentFor(sender, input);
+        List<String> translated = render(input, false, sender instanceof Player player ? player : null);
+        return translated.isEmpty() ? MMSupport.component("") : MMSupport.componentFor(sender, translated.get(0));
+    }
+
+    public Component component(String input, TagResolver resolver) {
+        return componentFor(null, input, resolver);
+    }
+
+    public Component componentFor(CommandSender sender, String input, TagResolver resolver) {
         if (input == null || !input.contains("@wg:") && !input.contains("{prefix}")) {
-            return MMSupport.component(input, resolver);
+            return MMSupport.componentFor(sender, input, resolver);
         }
-        List<String> translated = lines(input);
-        return MMSupport.component(translated.isEmpty() ? "" : translated.get(0), resolver);
+        List<String> translated = render(input, false, sender instanceof Player player ? player : null);
+        return MMSupport.componentFor(sender, translated.isEmpty() ? "" : translated.get(0), resolver);
+    }
+
+    public boolean containsPlaceholder(String input) {
+        for (String line : lines(input)) {
+            if (MMSupport.containsPlaceholder(line)) return true;
+        }
+        return false;
     }
 
     public void send(CommandSender sender, String message) {
@@ -419,7 +440,7 @@ public final class BukkitMessages {
         int deliveryModes = deliveryModes(deliveries);
         boolean title = (deliveryModes & TITLE_DELIVERY) != 0;
         boolean actionBar = (deliveryModes & ACTION_BAR_DELIVERY) != 0;
-        List<String> lines = render(message, title);
+        List<String> lines = render(message, title, sender instanceof Player player ? player : null);
         if (lines.isEmpty() || allEmpty(lines)) return;
         String actionBarLine = actionBar
                 ? selectActionBarLine(lines, actionBarMultipleLinesMode)
@@ -450,16 +471,16 @@ public final class BukkitMessages {
 
     private static void sendTitle(CommandSender sender, List<String> lines) {
         if (!(sender instanceof Player player)) return;
-        net.kyori.adventure.text.Component titleLine = MMSupport.component(lines.get(0));
-        net.kyori.adventure.text.Component subtitleLine = lines.size() > 1
-                ? MMSupport.component(lines.get(1))
+        Component titleLine = MMSupport.componentFor(player, lines.get(0));
+        Component subtitleLine = lines.size() > 1
+                ? MMSupport.componentFor(player, lines.get(1))
                 : MMSupport.component("");
-        player.showTitle(net.kyori.adventure.title.Title.title(titleLine, subtitleLine));
+        player.showTitle(Title.title(titleLine, subtitleLine));
     }
 
     private static void sendActionBar(CommandSender sender, String line) {
         if (sender instanceof Player player) {
-            player.sendActionBar(MMSupport.component(line));
+            player.sendActionBar(MMSupport.componentFor(player, line));
         } else {
             MMSupport.send(sender, List.of(line));
         }
@@ -472,12 +493,12 @@ public final class BukkitMessages {
         return lines.get(ThreadLocalRandom.current().nextInt(lines.size()));
     }
 
-    public void send(CommandSender sender, Component component) {
+    public void send(CommandSender sender, com.sk89q.worldedit.util.formatting.text.Component component) {
         if (component == null) return;
         send(sender, toMiniMessage(component));
     }
 
-    static String toMiniMessage(Component component) {
+    static String toMiniMessage(com.sk89q.worldedit.util.formatting.text.Component component) {
         return MMSupport.miniMessage(component);
     }
 
@@ -550,16 +571,18 @@ public final class BukkitMessages {
     }
 
     private static final class MessageDefinition {
-        private static final MessageDefinition EMPTY = new MessageDefinition(List.of(), DeliveryMode.MESSAGE, -1);
+        private static final MessageDefinition EMPTY = new MessageDefinition(List.of(), DeliveryMode.MESSAGE, -1, WorldFilter.ALL);
 
         public final List<String> messages;
         public final DeliveryMode mode;
         public final long cooldownMillis;
+        public final WorldFilter worlds;
 
-        private MessageDefinition(List<String> messages, DeliveryMode mode, long cooldownMillis) {
+        private MessageDefinition(List<String> messages, DeliveryMode mode, long cooldownMillis, WorldFilter worlds) {
             this.messages = messages;
             this.mode = mode;
             this.cooldownMillis = cooldownMillis;
+            this.worlds = worlds;
         }
     }
 
@@ -568,14 +591,51 @@ public final class BukkitMessages {
         public final List<String> messages;
         public final DeliveryMode mode;
         public final long cooldownMillis;
+        public final WorldFilter worlds;
 
         private Replacement(String key, MessageDefinition definition) {
             this.key = key;
             this.messages = definition.messages;
             this.mode = definition.mode;
             this.cooldownMillis = definition.cooldownMillis;
+            this.worlds = definition.worlds;
         }
 
+    }
+
+    private static final class WorldFilter {
+        private static final WorldFilter ALL = new WorldFilter(false, Set.of());
+
+        public final boolean whitelist;
+        public final Set<String> names;
+        public final boolean allWorlds;
+
+        private WorldFilter(boolean whitelist, Set<String> names) {
+            this.whitelist = whitelist;
+            this.names = names;
+            this.allWorlds = names.contains("*");
+        }
+
+        private static WorldFilter read(Object value) {
+            Map<?, ?> map;
+            if (value instanceof com.sk89q.util.yaml.YAMLNode node) {
+                map = node.getMap();
+            } else if (value instanceof Map<?, ?> values) {
+                map = values;
+            } else {
+                return ALL;
+            }
+            if (!(map.get("type") instanceof String type)) return ALL;
+            if (!type.equalsIgnoreCase("blacklist") && !type.equalsIgnoreCase("whitelist")) return ALL;
+            Set<String> names = Set.copyOf(readLines(map.get("list")));
+            return new WorldFilter(type.equalsIgnoreCase("whitelist"), names);
+        }
+
+        private boolean allows(Player player) {
+            if (this == ALL || player == null) return true;
+            boolean matches = allWorlds || names.contains(player.getWorld().getName());
+            return whitelist == matches;
+        }
     }
 
 }

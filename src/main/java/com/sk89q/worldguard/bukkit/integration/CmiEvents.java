@@ -9,25 +9,38 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.Plugin;
 
 import javax.annotation.Nullable;
-import java.util.function.Consumer;
 
 final class CmiEvents {
 
     static void register(Plugin owner, Listener listener, ActionHandler handler) {
         register(owner, listener, CMIBackpackOpenEvent.class,
-                event -> handler.handle(CmiIntegration.Action.BACKPACK, event, event.getPlayer(), null));
+                (ignored, event) -> {
+                    if (event instanceof CMIBackpackOpenEvent backpackEvent) {
+                        handler.handle(CmiIntegration.Action.BACKPACK, backpackEvent, backpackEvent.getPlayer(), null);
+                    }
+                });
         register(owner, listener, CMIPortalUseEvent.class,
-                event -> handler.handle(CmiIntegration.Action.PORTAL, event, event.getPlayer(), null));
+                (ignored, event) -> {
+                    if (event instanceof CMIPortalUseEvent portalEvent) {
+                        handler.handle(CmiIntegration.Action.PORTAL, portalEvent, portalEvent.getPlayer(), null);
+                    }
+                });
         register(owner, listener, CMIPlayerOpenArmorStandEditorEvent.class,
-                event -> handler.handle(CmiIntegration.Action.ARMORSTAND_EDIT, event, event.getPlayer(), event.getArmorStand()));
+                (ignored, event) -> {
+                    if (event instanceof CMIPlayerOpenArmorStandEditorEvent editorEvent) {
+                        handler.handle(CmiIntegration.Action.ARMORSTAND_EDIT, editorEvent,
+                                editorEvent.getPlayer(), editorEvent.getArmorStand());
+                    }
+                });
     }
 
-    private static <T extends Event> void register(Plugin owner, Listener listener, Class<T> type, Consumer<T> handler) {
+    private static void register(Plugin owner, Listener listener, Class<? extends Event> type, EventExecutor handler) {
         owner.getServer().getPluginManager().registerEvent(type, listener, EventPriority.HIGH,
-                (ignored, event) -> handler.accept(type.cast(event)), owner, true);
+                handler, owner, true);
     }
 
     interface ActionHandler {

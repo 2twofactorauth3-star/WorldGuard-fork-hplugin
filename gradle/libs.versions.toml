@@ -4,6 +4,7 @@ bstats = "3.2.1"
 essentialsx = "2.21.2"
 premiumVanishApi = "2.9.18-2"
 cmiApi = "9.8.6.4"
+placeholderApi = "2.12.3"
 
 [libraries]
 
@@ -22,6 +23,7 @@ bstats-bukkit = { module = "org.bstats:bstats-bukkit", version.ref = "bstats" }
 essentialsx = { module = "net.essentialsx:EssentialsX", version.ref = "essentialsx" }
 premiumVanishApi = { module = "com.github.LeonMangler:PremiumVanishAPI", version.ref = "premiumVanishApi" }
 cmiApi = { module = "com.github.Zrips:CMI-API", version.ref = "cmiApi" }
+placeholderApi = { module = "me.clip:placeholderapi", version.ref = "placeholderApi" }
 
 
 hamcrest-library = "org.hamcrest:hamcrest-library:2.2"

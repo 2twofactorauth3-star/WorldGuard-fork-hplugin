@@ -560,8 +560,8 @@ public class EventAbstractionListener extends AbstractListener {
                 setDelegateEventMaterialOptions(placeDelegate, fromType, toType);
                 denied = Events.fireToCancel(event, placeDelegate);
             }
-            if (denied && entity instanceof Player) {
-                playDenyEffect((Player) entity, block.getLocation());
+            if (denied && entity instanceof Player responsiblePlayer) {
+                playDenyEffect(responsiblePlayer, block.getLocation());
             }
 
             handleFallingBlock(event, denied);
@@ -998,12 +998,12 @@ public class EventAbstractionListener extends AbstractListener {
 
     @EventHandler(ignoreCancelled = true)
     public void onHangingBreak(HangingBreakEvent event) {
-        if (event instanceof HangingBreakByEntityEvent) {
-            Entity remover = ((HangingBreakByEntityEvent) event).getRemover();
+        if (event instanceof HangingBreakByEntityEvent entityEvent) {
+            Entity remover = entityEvent.getRemover();
             Events.fireToCancel(event, new DestroyEntityEvent(event, create(remover), event.getEntity()));
 
-            if (event.isCancelled() && remover instanceof Player) {
-                playDenyEffect((Player) remover, event.getEntity().getLocation());
+            if (event.isCancelled() && remover instanceof Player removerPlayer) {
+                playDenyEffect(removerPlayer, event.getEntity().getLocation());
             }
         } else if (event.getCause() == HangingBreakEvent.RemoveCause.EXPLOSION) {
             DestroyEntityEvent destroyEntityEvent = new DestroyEntityEvent(event, Cause.unknown(), event.getEntity());
@@ -1160,15 +1160,15 @@ public class EventAbstractionListener extends AbstractListener {
                 eventToFire.getRelevantFlags().add(Flags.CREEPER_EXPLOSION);
             }
             if (Events.fireToCancel(event, eventToFire)) {
-                if (damager instanceof Tameable && damager instanceof Mob) {
-                    ((Mob) damager).setTarget(null);
+                if (damager instanceof Tameable && damager instanceof Mob mob) {
+                    mob.setTarget(null);
                 }
             }
 
             // Item use event with the item in hand
-            if (damager instanceof Player) {
+            if (damager instanceof Player playerDamager) {
                 // this event doesn't tell us which hand the weapon was in
-                ItemStack item = ((Player) damager).getInventory().getItemInMainHand();
+                ItemStack item = playerDamager.getInventory().getItemInMainHand();
 
                 if (item.getType() != Material.AIR) {
                     Events.fireToCancel(event, new UseItemEvent(event, cause, event.getEntity().getWorld(), item));
@@ -1184,14 +1184,14 @@ public class EventAbstractionListener extends AbstractListener {
             Block combuster = combustByBlockEvent.getCombuster();
             Events.fireToCancel(event, new DamageEntityEvent(event,
                     create(combuster == null ? event.getEntity().getLocation().getBlock() : combuster), event.getEntity()));
-        } else if (event instanceof EntityCombustByEntityEvent) {
+        } else if (event instanceof EntityCombustByEntityEvent combustByEntityEvent) {
             if (event.getEntity() instanceof Arrow) {
                 // this only happens from the Flame enchant. igniting arrows in other ways (eg with lava) doesn't even
                 // throw the combust event, not even the CombustByBlock event... they're also very buggy and don't even
                 // show as lit on the client consistently
                 return;
             }
-            Events.fireToCancel(event, new DamageEntityEvent(event, create(((EntityCombustByEntityEvent) event).getCombuster()), event.getEntity()));
+            Events.fireToCancel(event, new DamageEntityEvent(event, create(combustByEntityEvent.getCombuster()), event.getEntity()));
         }
     }
 
@@ -1276,8 +1276,8 @@ public class EventAbstractionListener extends AbstractListener {
 
             if (causeHolder instanceof Entity) {
                 cause = create(causeHolder);
-            } else if (causeHolder instanceof BlockState) {
-                cause = create(((BlockState) causeHolder).getBlock());
+            } else if (causeHolder instanceof BlockState blockState) {
+                cause = create(blockState.getBlock());
             } else {
                 cause = Cause.unknown();
             }
@@ -1490,11 +1490,11 @@ public class EventAbstractionListener extends AbstractListener {
             } else if (holder instanceof DoubleChest doubleChest) {
                 InventoryHolder left = doubleChest.getLeftSide(false);
                 InventoryHolder right = doubleChest.getRightSide(false);
-                if (left instanceof Chest) {
-                    Events.fireToCancel(originalEvent, new UseBlockEvent(originalEvent, cause, ((Chest) left).getBlock()));
+                if (left instanceof Chest leftChest) {
+                    Events.fireToCancel(originalEvent, new UseBlockEvent(originalEvent, cause, leftChest.getBlock()));
                 }
-                if (right instanceof Chest) {
-                    Events.fireToCancel(originalEvent, new UseBlockEvent(originalEvent, cause, ((Chest) right).getBlock()));
+                if (right instanceof Chest rightChest) {
+                    Events.fireToCancel(originalEvent, new UseBlockEvent(originalEvent, cause, rightChest.getBlock()));
                 }
             }
         }

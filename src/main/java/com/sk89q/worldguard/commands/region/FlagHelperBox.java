@@ -142,20 +142,20 @@ class FlagHelperBox extends LocalizedPaginationBox {
     }
 
     private void appendFlagValue(TextComponent.Builder builder, Flag<?> flag) {
-        if (flag instanceof StateFlag) {
-            appendStateFlagValue(builder, (StateFlag) flag);
-        } else if (flag instanceof BooleanFlag) {
-            appendBoolFlagValue(builder, ((BooleanFlag) flag));
-        } else if (flag instanceof SetFlag) {
-            appendSetFlagValue(builder, ((SetFlag<?>) flag));
-        } else if (flag instanceof RegistryFlag) {
-            appendRegistryFlagValue(builder, ((RegistryFlag<?>) flag));
-        } else if (flag instanceof StringFlag) {
-            appendStringFlagValue(builder, ((StringFlag) flag));
-        } else if (flag instanceof LocationFlag) {
-            appendLocationFlagValue(builder, ((LocationFlag) flag));
-        } else if (flag instanceof NumberFlag) {
-            appendNumericFlagValue(builder, (NumberFlag<? extends Number>) flag);
+        if (flag instanceof StateFlag stateFlag) {
+            appendStateFlagValue(builder, stateFlag);
+        } else if (flag instanceof BooleanFlag booleanFlag) {
+            appendBoolFlagValue(builder, booleanFlag);
+        } else if (flag instanceof SetFlag<?> setFlag) {
+            appendSetFlagValue(builder, setFlag);
+        } else if (flag instanceof RegistryFlag<?> registryFlag) {
+            appendRegistryFlagValue(builder, registryFlag);
+        } else if (flag instanceof StringFlag stringFlag) {
+            appendStringFlagValue(builder, stringFlag);
+        } else if (flag instanceof LocationFlag locationFlag) {
+            appendLocationFlagValue(builder, locationFlag);
+        } else if (flag instanceof NumberFlag<?> numberFlag) {
+            appendNumericFlagValue(builder, numberFlag);
         } else {
             String display = String.valueOf(region.getFlag(flag));
             if (display.length() > 23) {

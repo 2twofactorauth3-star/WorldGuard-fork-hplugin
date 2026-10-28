@@ -299,10 +299,10 @@ public class WorldGuardBlockListener extends AbstractListener {
 
         Material type = event.getNewState().getType();
 
-        if (event instanceof EntityBlockFormEvent) {
-            if (((EntityBlockFormEvent) event).getEntity() instanceof Snowman) {
+        if (event instanceof EntityBlockFormEvent entityFormEvent) {
+            if (entityFormEvent.getEntity() instanceof Snowman) {
                 if (blocksMechanic(wcfg.disableSnowmanTrails, wcfg.disableSnowmanTrailsSetting, event.getBlock().getLocation(),
-                        Cause.create(((EntityBlockFormEvent) event).getEntity()))) {
+                        Cause.create(entityFormEvent.getEntity()))) {
                     event.setCancelled(true);
                     return;
                 }

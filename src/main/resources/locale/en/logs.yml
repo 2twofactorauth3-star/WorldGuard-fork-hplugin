@@ -4,6 +4,10 @@
 #
 
 logs:
+  configInvalidMessageWorlds:
+    message: 'Invalid message world filter; use blacklist/whitelist and a String or StringList at '
+  placeholderIntegrationFailed:
+    message: 'Could not process PlaceholderAPI integration; the original text will be used.'
   cmiIntegrationEnabled:
     message: 'CMI integration connected: god, backpack, portal and armor stand editor'
   cmiIntegrationDisabled:

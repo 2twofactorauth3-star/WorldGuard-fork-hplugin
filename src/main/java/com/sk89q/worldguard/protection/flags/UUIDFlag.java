@@ -47,11 +47,11 @@ public class UUIDFlag extends Flag<UUID> {
 
     @Override
     public UUID unmarshal(@Nullable Object o) {
-        if (!(o instanceof String)) {
+        if (!(o instanceof String value)) {
             return null;
         }
         try {
-            return UUID.fromString((String)o);
+            return UUID.fromString(value);
         } catch (IllegalArgumentException e) {
             return null;
         }

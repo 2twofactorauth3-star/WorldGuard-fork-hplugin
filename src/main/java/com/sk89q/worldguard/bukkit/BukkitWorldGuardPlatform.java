@@ -80,7 +80,7 @@ public class BukkitWorldGuardPlatform implements WorldGuardPlatform {
     public void broadcastNotification(String message) {
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
             if (WorldGuardPlugin.inst().hasPermission(player, "worldguard.notify")) {
-                player.sendMessage(message);
+                WorldGuardPlugin.inst().getMessages().send(player, message);
             }
         }
         WorldGuard.logger.info(message);
@@ -156,8 +156,8 @@ public class BukkitWorldGuardPlatform implements WorldGuardPlatform {
     @Nullable
     @Override
     public ProtectedRegion getSpawnProtection(World world) {
-        if (world instanceof BukkitWorld) {
-            org.bukkit.World bWorld = ((BukkitWorld) world).getWorld();
+        if (world instanceof BukkitWorld bukkitWorld) {
+            org.bukkit.World bWorld = bukkitWorld.getWorld();
             if (bWorld.getUID().equals(Bukkit.getServer().getWorlds().get(0).getUID())) {
                 int radius = Bukkit.getServer().getSpawnRadius();
                 if (radius > 0) {

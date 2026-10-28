@@ -26,6 +26,17 @@ dependencyResolutionManagement {
         exclusiveContent {
             forRepository {
                 maven {
+                    name = "PlaceholderAPI"
+                    url = uri("https://repo.helpch.at/releases/")
+                }
+            }
+            filter {
+                includeModule("me.clip", "placeholderapi")
+            }
+        }
+        exclusiveContent {
+            forRepository {
+                maven {
                     name = "JitPack"
                     url = uri("https://jitpack.io")
                 }

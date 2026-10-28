@@ -19,6 +19,7 @@
 
 package com.sk89q.worldguard.bukkit.util;
 
+import com.sk89q.worldguard.bukkit.integration.PlaceholderIntegration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -27,6 +28,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.command.CommandSender;
 
+import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -78,6 +80,32 @@ public final class MMSupport {
                 : withoutDefaultItalic(MINI_MESSAGE.deserialize(text, resolver));
     }
 
+    public static Component componentFor(@Nullable CommandSender sender, String text) {
+        if (text == null || text.isEmpty()) return EMPTY_COMPONENT;
+        if (text.indexOf('%') < 0 && !text.contains("<wg_component:") || !PlaceholderIntegration.available()) return component(text);
+        if (text.contains("<wg_component:")) return resolveComponent(sender, component(text));
+        return component(PlaceholderIntegration.resolve(sender, text));
+    }
+
+    public static Component componentFor(@Nullable CommandSender sender, String text, TagResolver resolver) {
+        if (text == null || text.isEmpty()) return EMPTY_COMPONENT;
+        if (text.indexOf('%') < 0 && !text.contains("<wg_component:") || !PlaceholderIntegration.available()) return component(text, resolver);
+        if (text.contains("<wg_component:")) return resolveComponent(sender, component(text, resolver));
+        return component(PlaceholderIntegration.resolve(sender, text), resolver);
+    }
+
+    public static boolean containsPlaceholder(String text) {
+        return PlaceholderIntegration.containsPlaceholder(text)
+                || text != null && text.contains("<wg_component:")
+                && PlaceholderIntegration.containsPlaceholder(MINI_MESSAGE.serialize(component(text)));
+    }
+
+    private static Component resolveComponent(@Nullable CommandSender sender, Component original) {
+        String template = MINI_MESSAGE.serialize(original);
+        String resolved = PlaceholderIntegration.resolve(sender, template);
+        return resolved.equals(template) ? original : component(resolved);
+    }
+
     public static String miniMessage(com.sk89q.worldedit.util.formatting.text.Component component) {
         if (component == null) return "";
         String json = com.sk89q.worldedit.util.formatting.text.serializer.gson.GsonComponentSerializer.INSTANCE
@@ -113,7 +141,7 @@ public final class MMSupport {
     public static void send(CommandSender sender, Collection<String> lines) {
         if (sender == null || lines == null || lines.isEmpty()) return;
         for (String line : lines) {
-            if (line != null && !line.isEmpty()) sender.sendMessage(component(line));
+            if (line != null && !line.isEmpty()) sender.sendMessage(componentFor(sender, line));
         }
     }
 

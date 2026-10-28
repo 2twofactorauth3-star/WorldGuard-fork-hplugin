@@ -232,7 +232,7 @@ final class TerritoryNotifications implements Listener {
         TerritoryPresentation presentation = new TerritoryPresentation(notification,
                 TerritoryPresentation.renderer(plugin.getMessages(), notification,
                         region == null ? ProtectedRegion.GLOBAL_REGION : region.getId(),
-                        world.getName(), tracker.player.getName()), now);
+                        world.getName(), tracker.player.getName(), tracker.player), now);
         if (current.showOnJoin || !tracker.initial && !reloaded) presentation.show(tracker.player, now);
         tracker.presentation = presentation;
         tracker.initial = false;

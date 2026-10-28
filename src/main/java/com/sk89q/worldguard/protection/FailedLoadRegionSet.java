@@ -89,7 +89,7 @@ public class FailedLoadRegionSet extends AbstractRegionSet {
             return (Collection<V>) denyMessageCollection;
         }
         V fallback = flag.getDefault();
-        return fallback != null ? ImmutableList.of(fallback) : (Collection<V>) ImmutableList.of();
+        return fallback != null ? ImmutableList.of(fallback) : ImmutableList.of();
     }
 
     @Override

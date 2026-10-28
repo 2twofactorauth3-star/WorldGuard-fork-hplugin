@@ -81,7 +81,7 @@ public class PermissiveRegionSet extends AbstractRegionSet {
             return (Collection<V>) ImmutableList.of(State.DENY);
         }
         V fallback = flag.getDefault();
-        return fallback != null ? ImmutableList.of(fallback) : (Collection<V>) ImmutableList.of();
+        return fallback != null ? ImmutableList.of(fallback) : ImmutableList.of();
     }
 
     @Override

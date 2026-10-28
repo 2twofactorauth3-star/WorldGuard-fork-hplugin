@@ -112,8 +112,8 @@ public final class CommandUtils {
     public static String getOwnerName(@Nullable Object owner) {
         if (owner == null) {
             return "?";
-        } else if (owner instanceof Actor) {
-            return ((Actor) owner).getName();
+        } else if (owner instanceof Actor actor) {
+            return actor.getName();
         } else {
             return "?";
         }
