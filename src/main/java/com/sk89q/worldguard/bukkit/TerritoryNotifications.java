@@ -1,6 +1,5 @@
 package com.sk89q.worldguard.bukkit;
 
-import com.sk89q.util.yaml.YAMLFormat;
 import com.sk89q.util.yaml.YAMLProcessor;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
@@ -26,6 +25,8 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -49,11 +50,14 @@ final class TerritoryNotifications implements Listener {
     void load() {
         File file = new File(plugin.getDataFolder(), "territoryNotifications.yml");
         plugin.createDefaultConfiguration(file, "territoryNotifications.yml");
-        YAMLProcessor config = new YAMLProcessor(file, false, YAMLFormat.EXTENDED);
+        YAMLProcessor config = new CommentedYamlProcessor(
+                file, () -> plugin.getDefaultConfigurationResource("territoryNotifications.yml"), plugin.getLogger());
         try {
             BukkitConfigValidator.validateNoDuplicateKeys(plugin, file);
             config.load();
+            boolean migrated = migrateLegacyZones(config);
             settings = TerritoryNotificationSettings.read(config);
+            if (migrated) config.save();
         } catch (IOException | YAMLException | IllegalArgumentException e) {
             settings = null;
             plugin.getLogger().log(Level.SEVERE, "@wglog:unableLoadTerritoryNotifications@", e);
@@ -61,6 +65,18 @@ final class TerritoryNotifications implements Listener {
         if (cancelTimer != null) {
             for (Player player : Bukkit.getOnlinePlayers()) requestUpdate(player);
         }
+    }
+
+    static boolean migrateLegacyZones(YAMLProcessor config) {
+        if (config.getProperty("settings.zones") != null) return false;
+        config.setProperty("settings.zones", Map.of(
+                "allowedWorlds", Map.of("type", "whitelist", "list", List.of(Map.of(
+                        "worlds", config.getStringList("settings.worlds", List.of("*")), "regions", "*"))),
+                "excludedWorlds", Map.of("type", "blacklist", "list", List.of(Map.of(
+                        "worlds", config.getStringList("settings.excludedWorlds", List.of("forhpvp")), "regions", "*")))));
+        config.removeProperty("settings.worlds");
+        config.removeProperty("settings.excludedWorlds");
+        return true;
     }
 
     void start() {
@@ -216,6 +232,10 @@ final class TerritoryNotifications implements Listener {
             return;
         }
         ProtectedRegion region = tracker.fixed == null ? selectRegion(tracker, location, manager) : null;
+        if (!current.appliesTo(world.getName(), region)) {
+            clear(tracker);
+            return;
+        }
         Notification notification = tracker.fixed == null
                 ? current.notification(tracker.localPlayer, world.getName(), region) : tracker.fixed;
         present(tracker, current, world, region, notification, changed, reloaded);

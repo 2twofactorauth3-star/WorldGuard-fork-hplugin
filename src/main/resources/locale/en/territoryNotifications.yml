@@ -11,12 +11,26 @@ settings:
   includeMembers: true
   # Movement processing interval for notifications, from 20 to 60 ticks. Does not affect protection checks.
   updatePeriodTicks: 20
-  # Allowed worlds: an asterisk enables all, an empty list disables all.
-  worlds:
-    - '*'
-  # Excluded worlds: notifications are disabled here even when worlds allows all worlds. An empty list removes exclusions.
-  excludedWorlds:
-    - 'forhpvp'
+  # Territory filters. Entry IDs are arbitrary. An empty zones: {} section allows all territories.
+  # Blacklists override whitelists. Whitelists are combined; without a whitelist, everything outside blacklists is allowed.
+  # Filters use the region selected for the notification; __global__ means outside physical regions, even without a defined global region.
+  zones:
+    # Example exclusion: all territories in the forhpvp world.
+    excluded:
+      # blacklist disables notifications in the listed zones; whitelist allows only the listed zones.
+      type: blacklist
+      # Each entry pairs worlds with regions. An empty whitelist disables everything; an empty blacklist excludes nothing.
+      list:
+        # Exact world names: a string or StringList. '*' matches all worlds.
+        - worlds: 'forhpvp'
+          # Region IDs: a string or StringList, case-insensitive. '*' includes every region and unclaimed territory.
+          regions: '*'
+    # Disables notifications only in the pool region of the spawn world.
+    pool:
+      type: blacklist
+      list:
+        - worlds: 'spawn'
+          regions: 'pool'
   # Territory outside physical regions.
   free:
     # MiniMessage name. Texts below support {name}, {region}, {world}, {player}, {prefix}.
