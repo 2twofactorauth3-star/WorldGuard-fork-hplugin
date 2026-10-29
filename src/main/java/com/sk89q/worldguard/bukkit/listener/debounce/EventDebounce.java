@@ -122,6 +122,10 @@ public class EventDebounce<K> {
         public final long expiresAtNanos;
         private volatile Boolean cancelled;
 
+        public Entry() {
+            this(Long.MAX_VALUE);
+        }
+
         private Entry(long expiresAtNanos) {
             this.expiresAtNanos = expiresAtNanos;
         }

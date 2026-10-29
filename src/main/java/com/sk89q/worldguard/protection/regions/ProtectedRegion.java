@@ -328,6 +328,21 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
      * @param player player to check
      * @return whether an owner or member
      */
+    public boolean isOwner(String playerName) {
+        for (ProtectedRegion region = this; region != null; region = region.getParent()) {
+            if (region.getOwners().contains(playerName)) return true;
+        }
+        return false;
+    }
+
+    public boolean isMember(String playerName) {
+        if (isOwner(playerName)) return true;
+        for (ProtectedRegion region = this; region != null; region = region.getParent()) {
+            if (region.getMembers().contains(playerName)) return true;
+        }
+        return false;
+    }
+
     public boolean isMember(LocalPlayer player) {
         checkNotNull(player);
 

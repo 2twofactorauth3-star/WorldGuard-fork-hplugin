@@ -73,7 +73,9 @@ public class PlayerMoveListener extends AbstractListener {
             Flags.FAREWELL_TITLE,
             Flags.GAME_MODE,
             Flags.TIME_LOCK,
-            Flags.WEATHER_LOCK
+            Flags.WEATHER_LOCK,
+            Flags.NOTIFY_ENTER,
+            Flags.NOTIFY_LEAVE
     );
     private static Set<com.sk89q.worldguard.protection.flags.Flag<?>> registeredMovementFlags = movementFlags;
     private static final Map<Object, Set<com.sk89q.worldguard.protection.flags.Flag<?>>> movementFlagOwners =

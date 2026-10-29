@@ -45,6 +45,10 @@ public abstract class YamlConfigurationManager extends ConfigurationManager {
                     "@wglog:logErrorReadingConfigurationForGlobalConfig@", e);
         }
 
+        Object migration = config.getProperty("regions.uuid-migration.perform-on-next-start");
+        Object unresolved = config.getProperty("regions.uuid-migration.keep-names-that-lack-uuids");
+        migrateRegionsToUuid = !(migration instanceof Boolean value) || value;
+        keepUnresolvedNames = !(unresolved instanceof Boolean value) || value;
         useRegionsCreatureSpawnEvent = getBoolean("regions.useCreatureSpawnEvent", true);
         disableDefaultBypass = getBoolean("regions.disableBypassByDefault", false);
         announceBypassStatus = getBoolean("regions.announceBypassStatus", false);
@@ -103,6 +107,13 @@ public abstract class YamlConfigurationManager extends ConfigurationManager {
 
     public YAMLProcessor getConfig() {
         return config;
+    }
+
+    @Override
+    public void disableUuidMigration() {
+        super.disableUuidMigration();
+        config.setProperty("regions.uuid-migration.perform-on-next-start", false);
+        config.save();
     }
 
     protected final String settingsPath(String node) {

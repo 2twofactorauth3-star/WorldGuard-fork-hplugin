@@ -299,21 +299,32 @@ public class YamlRegionFile implements RegionDatabase {
             return Map.of();
         }
 
+        var platform = WorldGuard.getInstance().getPlatformIfPresent();
+        var settings = platform == null ? null : platform.getGlobalStateManager();
+        if (settings != null && !settings.migrateRegionsToUuid) return Map.of();
+        boolean keepNames = settings == null || settings.keepUnresolvedNames;
+        var profiles = WorldGuard.getInstance().getProfileService();
+        if (profiles == null) {
+            if (keepNames) return Map.of();
+            throw new StorageException("UUID lookup is unavailable; regions.yml was not changed");
+        }
         Map<String, UUID> resolved = new HashMap<>();
         try {
-            for (Profile profile : WorldGuard.getInstance().getProfileService().findAllByName(names)) {
+            for (Profile profile : profiles.findAllByName(names)) {
                 resolved.put(profile.getName().toLowerCase(Locale.ROOT), profile.getUniqueId());
             }
         } catch (IOException e) {
+            if (keepNames) return Map.of();
             throw new StorageException("Could not migrate legacy region player names to UUIDs; regions.yml was not changed", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            if (keepNames) return Map.of();
             throw new StorageException("Legacy region player-name migration was interrupted; regions.yml was not changed", e);
         }
 
         Set<String> unresolved = new HashSet<>(names);
         unresolved.removeAll(resolved.keySet());
-        if (!unresolved.isEmpty()) {
+        if (!unresolved.isEmpty() && !keepNames) {
             throw new StorageException("Could not resolve legacy region player names: " + String.join(", ", unresolved)
                     + ". regions.yml was not changed");
         }
@@ -340,7 +351,9 @@ public class YamlRegionFile implements RegionDatabase {
 
         for (String name : node.getStringList("players", null)) {
             if (!name.isEmpty()) {
-                domain.addPlayer(migratedPlayers.get(name.trim().toLowerCase(Locale.ROOT)));
+                UUID uniqueId = migratedPlayers.get(name.trim().toLowerCase(Locale.ROOT));
+                if (uniqueId == null) domain.addPlayer(name);
+                else domain.addPlayer(uniqueId);
             }
         }
 
@@ -374,6 +387,7 @@ public class YamlRegionFile implements RegionDatabase {
     private Map<String, Object> getDomainData(DefaultDomain domain) {
         Map<String, Object> domainData = new HashMap<>();
 
+        setDomainData(domainData, "players", domain.getPlayers());
         setDomainData(domainData, "unique-ids", domain.getUniqueIds());
         setDomainData(domainData, "groups", domain.getGroups());
 

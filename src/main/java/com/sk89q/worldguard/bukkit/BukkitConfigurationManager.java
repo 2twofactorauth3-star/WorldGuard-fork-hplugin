@@ -26,6 +26,7 @@ import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.config.YamlConfigurationManager;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -45,6 +46,10 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
     public BukkitConfigurationManager(WorldGuardPlugin plugin) {
         super();
         this.plugin = plugin;
+    }
+
+    public Collection<BukkitWorldConfiguration> getWorldConfigs() {
+        return worlds.values();
     }
 
     @Override

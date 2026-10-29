@@ -22,6 +22,8 @@ package com.sk89q.worldguard.internal.permission;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
@@ -38,6 +40,25 @@ public class RegionPermissionModel extends AbstractPermissionModel {
 
     public boolean mayForceLoadRegions() {
         return hasPluginPermission("region.load");
+    }
+
+    public boolean mayIgnoreRegionProtection(World world) {
+        if (getSender() instanceof LocalPlayer player) {
+            return WorldGuard.getInstance().getPlatform().getSessionManager().hasBypass(player, world);
+        }
+        return hasPluginPermission("region.bypass." + world.getName());
+    }
+
+    public boolean mayMigrateRegionNames() {
+        return hasPluginPermission("region.migrateuuid");
+    }
+
+    public boolean mayMigrateRegionHeights() {
+        return hasPluginPermission("region.migrateheights");
+    }
+
+    public boolean mayMigrateRegionStore() {
+        return hasPluginPermission("region.migratedb");
     }
     
     public boolean mayForceSaveRegions() {

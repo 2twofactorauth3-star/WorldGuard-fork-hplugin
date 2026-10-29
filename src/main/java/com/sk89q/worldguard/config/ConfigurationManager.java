@@ -20,6 +20,10 @@
 package com.sk89q.worldguard.config;
 
 import com.sk89q.worldedit.world.World;
+import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.session.Session;
+import com.sk89q.worldguard.session.handler.WaterBreathing;
 import com.sk89q.worldguard.protection.managers.storage.RegionDriver;
 
 import java.io.File;
@@ -61,6 +65,8 @@ public abstract class ConfigurationManager {
             "#\r\n";
 
     public boolean useRegionsCreatureSpawnEvent;
+    public boolean migrateRegionsToUuid = true;
+    public boolean keepUnresolvedNames = true;
     public boolean particleEffects;
     public boolean showSelectionBorders;
     public boolean selectionParticleChunkCubes;
@@ -125,5 +131,30 @@ public abstract class ConfigurationManager {
      * @return {@code world}'s configuration
      */
     public abstract WorldConfiguration get(World world);
+
+    public void disableUuidMigration() {
+        migrateRegionsToUuid = false;
+    }
+
+    public boolean hasGodMode(LocalPlayer player) {
+        return WorldGuard.getInstance().getPlatform().getSessionManager().get(player).isInvincible(player);
+    }
+
+    public void enableAmphibiousMode(LocalPlayer player) {
+        WaterBreathing.set(player, WorldGuard.getInstance().getPlatform().getSessionManager().get(player), true);
+    }
+
+    public void disableAmphibiousMode(LocalPlayer player) {
+        Session session = WorldGuard.getInstance().getPlatform().getSessionManager().getIfPresent(player);
+        if (session == null) return;
+        WaterBreathing handler = session.getHandler(WaterBreathing.class);
+        if (handler != null) handler.setWaterBreathing(false);
+    }
+
+    public boolean hasAmphibiousMode(LocalPlayer player) {
+        Session session = WorldGuard.getInstance().getPlatform().getSessionManager().getIfPresent(player);
+        WaterBreathing handler = session == null ? null : session.getHandler(WaterBreathing.class);
+        return handler != null && handler.hasWaterBreathing();
+    }
 
 }

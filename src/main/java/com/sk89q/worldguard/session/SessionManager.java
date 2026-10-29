@@ -110,4 +110,8 @@ public interface SessionManager {
      * @return The {@code player}'s session
      */
     Session get(LocalPlayer player);
+
+    default Session createSession(LocalPlayer player) {
+        return get(player);
+    }
 }

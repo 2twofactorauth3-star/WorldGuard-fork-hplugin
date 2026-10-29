@@ -112,6 +112,18 @@ public class DefaultDomain implements Domain, ChangeTracked {
         playerDomain.removePlayer(uuid);
     }
 
+    public void addPlayer(String name) {
+        playerDomain.addPlayer(name);
+    }
+
+    public void removePlayer(String name) {
+        playerDomain.removePlayer(name);
+    }
+
+    public Set<String> getPlayers() {
+        return playerDomain.getPlayers();
+    }
+
     /**
      * Add the given player to the domain, identified by the player's UUID.
      *
@@ -147,6 +159,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
      */
     public void addAll(DefaultDomain other) {
         checkNotNull(other);
+        for (String name : other.getPlayers()) addPlayer(name);
         for (UUID uuid : other.getUniqueIds()) {
             addPlayer(uuid);
         }
@@ -162,6 +175,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
      */
     public void removeAll(DefaultDomain other) {
         checkNotNull(other);
+        for (String name : other.getPlayers()) removePlayer(name);
         for (UUID uuid : other.getUniqueIds()) {
             removePlayer(uuid);
         }
@@ -243,6 +257,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
     public String toPlayersString(@Nullable ProfileCache cache) {
         StringBuilder str = new StringBuilder();
         List<String> output = new ArrayList<>();
+        for (String name : playerDomain.getPlayers()) output.add("name:" + name);
 
         if (cache != null) {
             ImmutableMap<UUID, Profile> results = cache.getAllPresent(playerDomain.getUniqueIds());
@@ -350,6 +365,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
     private Component toPlayersComponent(ProfileCache cache, boolean showPlayerUuids) {
         List<String> uuids = Lists.newArrayList();
         Map<String, UUID> profileMap = Maps.newHashMap();
+        for (String name : playerDomain.getPlayers()) profileMap.put(name, null);
 
         if (cache != null) {
             ImmutableMap<UUID, Profile> results = cache.getAllPresent(playerDomain.getUniqueIds());
@@ -372,9 +388,10 @@ public class DefaultDomain implements Domain, ChangeTracked {
         profileNames.sort(null);
         for (int index = 0; index < profileNames.size(); index++) {
             String name = profileNames.get(index);
+            UUID uuid = profileMap.get(name);
             builder.append(TextComponent.of(BukkitMessages.template(
-                    showPlayerUuids ? "domainPlayer" : "domainPlayerPlain",
-                    "name", name, "uuid", profileMap.get(name))));
+                    showPlayerUuids && uuid != null ? "domainPlayer" : "domainPlayerPlain",
+                    "name", name, "uuid", uuid)));
             if (index + 1 < profileNames.size() || !uuids.isEmpty()) {
                 builder.append(TextComponent.of(", "));
             }

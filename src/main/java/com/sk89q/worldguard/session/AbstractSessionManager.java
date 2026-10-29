@@ -30,10 +30,13 @@ import com.sk89q.worldguard.session.handler.GameModeFlag;
 import com.sk89q.worldguard.session.handler.GreetingFlag;
 import com.sk89q.worldguard.session.handler.Handler;
 import com.sk89q.worldguard.session.handler.HealFlag;
+import com.sk89q.worldguard.session.handler.NotifyEntryFlag;
+import com.sk89q.worldguard.session.handler.NotifyExitFlag;
 import com.sk89q.worldguard.session.handler.TimeLockFlag;
 import com.sk89q.worldguard.session.handler.WeatherLockFlag;
 
 import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,6 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class AbstractSessionManager implements SessionManager {
 
     public static final int RUN_DELAY = 20;
+    public static final long SESSION_LIFETIME = 10;
     private static final BiPredicate<World, LocalPlayer> BYPASS_PERMISSION_TEST =
             (world, player) -> player.hasPermission("worldguard.region.bypass." + world.getName());
 
@@ -62,6 +66,8 @@ public abstract class AbstractSessionManager implements SessionManager {
         Handler.Factory<?>[] factories = {
                 HealFlag.FACTORY,
                 FeedFlag.FACTORY,
+                NotifyEntryFlag.FACTORY,
+                NotifyExitFlag.FACTORY,
                 EntryFlag.FACTORY,
                 ExitFlag.FACTORY,
                 FarewellFlag.FACTORY,
@@ -161,6 +167,11 @@ public abstract class AbstractSessionManager implements SessionManager {
         sessions.remove(player.getUniqueId());
     }
 
+    @Override
+    public Session createSession(LocalPlayer player) {
+        return get(player);
+    }
+
     protected void clearSessions() {
         sessions.clear();
     }
@@ -168,6 +179,26 @@ public abstract class AbstractSessionManager implements SessionManager {
     private void initializeSession(Session session, LocalPlayer player) {
         session.registerFactories(handlers);
         session.initialize(player);
+    }
+
+    protected static final class CacheKey {
+        public final WeakReference<LocalPlayer> playerRef;
+        public final UUID uuid;
+
+        CacheKey(LocalPlayer player) {
+            playerRef = new WeakReference<>(player);
+            uuid = player.getUniqueId();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return this == other || other instanceof CacheKey key && uuid.equals(key.uuid);
+        }
+
+        @Override
+        public int hashCode() {
+            return uuid.hashCode();
+        }
     }
 
 }

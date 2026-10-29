@@ -34,6 +34,7 @@ import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.session.MoveType;
 import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.session.handler.GameModeFlag;
@@ -47,6 +48,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -70,6 +72,32 @@ public class WorldGuardPlayerListener extends AbstractListener {
 
     public WorldGuardPlayerListener(WorldGuardPlugin plugin) {
         super(plugin);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerChat(AsyncPlayerChatEvent event) {
+        Player sender = event.getPlayer();
+        if (!isRegionSupportEnabled(sender.getWorld())) return;
+        RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
+        RegionManager manager = getRegionManager(sender.getWorld());
+        if (manager == null || manager.hasState(Flags.SEND_CHAT, StateFlag.State.DENY)) {
+            LocalPlayer local = getPlugin().wrapPlayer(sender);
+            ApplicableRegionSet regions = query.getApplicableRegions(local.getLocation());
+            if (!regions.testState(local, Flags.SEND_CHAT)) {
+                RegionProtectionListener.formatAndSendDenyMessage("@wg:protectionActionChat@", local,
+                        regions.queryValue(local, Flags.DENY_MESSAGE));
+                event.setCancelled(true);
+                return;
+            }
+        }
+        for (Iterator<Player> recipients = event.getRecipients().iterator(); recipients.hasNext();) {
+            Player recipient = recipients.next();
+            if (!isRegionSupportEnabled(recipient.getWorld())) continue;
+            RegionManager recipientManager = getRegionManager(recipient.getWorld());
+            if (recipientManager != null && !recipientManager.hasState(Flags.RECEIVE_CHAT, StateFlag.State.DENY)) continue;
+            LocalPlayer local = getPlugin().wrapPlayer(recipient);
+            if (!query.testState(local.getLocation(), local, Flags.RECEIVE_CHAT)) recipients.remove();
+        }
     }
 
 

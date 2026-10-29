@@ -64,6 +64,11 @@ public class RegionRemover implements Callable<Set<ProtectedRegion>> {
         this.removalStrategy = removalStrategy;
     }
 
+    @Nullable
+    public RemovalStrategy getRemovalStrategy() {
+        return removalStrategy;
+    }
+
     @Override
     public Set<ProtectedRegion> call() throws Exception {
         if (removalStrategy == null) {

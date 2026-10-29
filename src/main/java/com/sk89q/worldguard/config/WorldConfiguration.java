@@ -22,12 +22,20 @@ package com.sk89q.worldguard.config;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldedit.util.Location;
+import com.sk89q.worldedit.world.registry.LegacyMapper;
+import com.sk89q.worldedit.world.item.ItemType;
+import com.sk89q.worldedit.world.item.ItemTypes;
+import com.sk89q.worldedit.world.block.BlockType;
+import com.sk89q.worldedit.world.block.BlockTypes;
+import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldguard.blacklist.Blacklist;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.association.RegionAssociable;
 
 import java.io.File;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -157,6 +165,50 @@ public abstract class WorldConfiguration {
 
     public Blacklist getBlacklist() {
         return blacklist;
+    }
+
+    public List<String> convertLegacyItems(List<String> values) {
+        List<String> result = new ArrayList<>(values.size());
+        for (String value : values) {
+            String converted = convertLegacyItem(value);
+            if (converted != null) result.add(converted);
+        }
+        return result;
+    }
+
+    public List<String> convertLegacyBlocks(List<String> values) {
+        List<String> result = new ArrayList<>(values.size());
+        for (String value : values) {
+            String converted = convertLegacyBlock(value);
+            if (converted != null) result.add(converted);
+        }
+        return result;
+    }
+
+    public String convertLegacyItem(String value) {
+        String[] parts = value.split(":", 2);
+        try {
+            int id = Integer.parseInt(parts[0]);
+            byte data = parts.length == 1 ? 0 : Byte.parseByte(parts[1]);
+            ItemType item = LegacyMapper.getInstance().getItemFromLegacy(id, data);
+            if (item != null) return item.id();
+        } catch (NumberFormatException ignored) {
+        }
+        ItemType item = ItemTypes.get(value);
+        return item == null ? null : item.id();
+    }
+
+    public String convertLegacyBlock(String value) {
+        String[] parts = value.split(":", 2);
+        try {
+            int id = Integer.parseInt(parts[0]);
+            byte data = parts.length == 1 ? 0 : Byte.parseByte(parts[1]);
+            BlockState block = LegacyMapper.getInstance().getBlockFromLegacy(id, data);
+            if (block != null) return block.getBlockType().id();
+        } catch (NumberFormatException ignored) {
+        }
+        BlockType block = BlockTypes.get(value);
+        return block == null ? null : block.id();
     }
 
     public boolean blocksMechanic(boolean enabled, WorldMechanicSetting setting,

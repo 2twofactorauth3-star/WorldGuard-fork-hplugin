@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.util.MathUtils;
+import com.sk89q.worldguard.WorldGuard;
 
 import java.awt.Rectangle;
 import java.awt.geom.Area;
@@ -79,6 +80,14 @@ public class ProtectedCuboidRegion extends ProtectedRegion {
         points.add(position1);
         points.add(position2);
         setMinMaxPoints(points);
+    }
+
+    public void setMinimumPoint(BlockVector3 position) {
+        WorldGuard.logger.warning("ProtectedCuboidRegion#setMinimumPoint call ignored. Mutating regions leads to undefined behavior.");
+    }
+
+    public void setMaximumPoint(BlockVector3 position) {
+        WorldGuard.logger.warning("ProtectedCuboidRegion#setMaximumPoint call ignored. Mutating regions leads to undefined behavior.");
     }
 
     @Override

@@ -273,6 +273,11 @@ public final class RegionManager {
      * @return a region or {@code null}
      */
     @Nullable
+    public ProtectedRegion matchRegion(String pattern) {
+        return getRegion(pattern);
+    }
+
+    @Nullable
     public ProtectedRegion getRegion(String id) {
         checkNotNull(id);
         return index.get(id);

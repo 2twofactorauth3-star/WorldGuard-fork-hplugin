@@ -77,6 +77,10 @@ public class RegionLister implements Callable<Integer> {
         this.page = page;
     }
 
+    public int getPage() {
+        return page;
+    }
+
     public void setCommandScope(String commandScope) {
         this.commandScope = commandScope;
     }

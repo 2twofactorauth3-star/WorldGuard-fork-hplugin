@@ -40,6 +40,7 @@ public class RegionAdder implements Callable<ProtectedRegion> {
     private final ProtectedRegion region;
     @Nullable
     private String[] ownersInput;
+    private DomainInputResolver.UserLocatorPolicy locatorPolicy = DomainInputResolver.UserLocatorPolicy.UUID_ONLY;
 
     /**
      * Create a new instance.
@@ -71,6 +72,7 @@ public class RegionAdder implements Callable<ProtectedRegion> {
     public ProtectedRegion call() throws Exception {
         if (ownersInput != null) {
             DomainInputResolver resolver = new DomainInputResolver(WorldGuard.getInstance().getProfileService(), ownersInput);
+            resolver.setLocatorPolicy(locatorPolicy);
             DefaultDomain domain = resolver.call();
             region.getOwners().addAll(domain);
         }
@@ -82,6 +84,19 @@ public class RegionAdder implements Callable<ProtectedRegion> {
 
     public void setOwnersInput(@Nullable String[] ownersInput) {
         this.ownersInput = ownersInput;
+    }
+
+    @Nullable
+    public String[] getOwnersInput() {
+        return ownersInput;
+    }
+
+    public DomainInputResolver.UserLocatorPolicy getLocatorPolicy() {
+        return locatorPolicy;
+    }
+
+    public void setLocatorPolicy(DomainInputResolver.UserLocatorPolicy locatorPolicy) {
+        this.locatorPolicy = locatorPolicy;
     }
 
 }

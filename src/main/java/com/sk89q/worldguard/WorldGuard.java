@@ -40,6 +40,7 @@ import com.sk89q.worldguard.util.WorldGuardExceptionConverter;
 import com.sk89q.worldguard.util.concurrent.EvenMoreExecutors;
 
 import java.io.File;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -100,6 +101,11 @@ public final class WorldGuard {
      */
     public WorldGuardPlatform getPlatform() {
         checkNotNull(platform, "WorldGuard is not enabled, unable to access the platform.");
+        return platform;
+    }
+
+    @Nullable
+    public WorldGuardPlatform getPlatformIfPresent() {
         return platform;
     }
 

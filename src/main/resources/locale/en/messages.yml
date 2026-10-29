@@ -6,6 +6,16 @@
 #
 # Optional worlds: type is blacklist/whitelist; list accepts a world name or a list. "*" matches all worlds. Omit worlds for no restriction.
 messages:
+  notifyEnteredRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - ' entered a notification region: {regions}'
+  notifyLeftRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - ' left a notification region'
   cmiBackpackDenied:
     mode: actionbar
     cooldownMillis: 1000
@@ -323,6 +333,14 @@ messages:
 
   protection:
     denied:
+      chat:
+        worlds:
+          type: blacklist
+          list: '*'
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'You cannot <#FDBE00>send chat messages<white> here'
       placeFire:
         worlds:
           type: blacklist
@@ -540,6 +558,14 @@ messages:
         message:
           - 'You cannot <#FDBE00>use<white> command <#FDBE00>{command}'
     action:
+      chat:
+        worlds:
+          type: blacklist
+          list: '*'
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'send chat messages'
       placeFire:
         worlds:
           type: blacklist

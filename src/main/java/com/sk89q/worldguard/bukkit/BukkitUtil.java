@@ -19,11 +19,20 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 
-public final class BukkitUtil {
+public class BukkitUtil {
 
     private static final Target[] TARGETS = new Target[Material.values().length];
 
     private BukkitUtil() {
+    }
+
+    @SuppressWarnings("deprecation")
+    public static int getPotionEffectBits(ItemStack item) {
+        return item.getDurability() & 0x3F;
+    }
+
+    public static boolean isWaterPotion(ItemStack item) {
+        return getPotionEffectBits(item) == 0;
     }
 
     public static Target createTarget(Block block) {

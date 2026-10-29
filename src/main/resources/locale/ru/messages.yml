@@ -6,6 +6,16 @@
 #
 # Необязательный worlds: type — blacklist/whitelist; list — строка или список миров. "*" означает все миры. Без worlds ограничений нет.
 messages:
+  notifyEnteredRegions:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - ' вошёл в регион уведомлений: {regions}'
+  notifyLeftRegion:
+    mode: message
+    cooldownMillis: -1
+    message:
+      - ' вышел из региона уведомлений'
   cmiBackpackDenied:
     mode: actionbar
     cooldownMillis: 1000
@@ -323,6 +333,14 @@ messages:
 
   protection:
     denied:
+      chat:
+        worlds:
+          type: blacklist
+          list: '*'
+        mode: actionbar
+        cooldownMillis: 500
+        message:
+          - 'Здесь нельзя <#FDBE00>писать<white> в чат'
       placeFire:
         worlds:
           type: blacklist
@@ -540,6 +558,14 @@ messages:
         message:
           - 'Здесь нельзя <#FDBE00>использовать<white> команду <#FDBE00>{command}'
     action:
+      chat:
+        worlds:
+          type: blacklist
+          list: '*'
+        mode: message
+        cooldownMillis: -1
+        message:
+          - 'писать в чат'
       placeFire:
         worlds:
           type: blacklist

@@ -20,6 +20,7 @@
 package com.sk89q.worldguard.protection.util;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Function;
 import org.enginehub.squirrelid.Profile;
 import org.enginehub.squirrelid.resolver.ProfileService;
 import org.enginehub.squirrelid.util.UUIDs;
@@ -29,6 +30,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
@@ -45,6 +47,36 @@ public class DomainInputResolver implements Callable<DefaultDomain> {
 
     private final ProfileService profileService;
     private final String[] input;
+    private UserLocatorPolicy locatorPolicy = UserLocatorPolicy.UUID_ONLY;
+
+    public enum UserLocatorPolicy {
+        UUID_ONLY,
+        NAME_ONLY,
+        UUID_AND_NAME
+    }
+
+    public UserLocatorPolicy getLocatorPolicy() {
+        return locatorPolicy;
+    }
+
+    public void setLocatorPolicy(UserLocatorPolicy locatorPolicy) {
+        checkNotNull(locatorPolicy);
+        this.locatorPolicy = locatorPolicy;
+    }
+
+    public Function<DefaultDomain, DefaultDomain> createAddAllFunction(DefaultDomain target) {
+        return domain -> {
+            target.addAll(domain);
+            return domain;
+        };
+    }
+
+    public Function<DefaultDomain, DefaultDomain> createRemoveAllFunction(DefaultDomain target) {
+        return domain -> {
+            target.removeAll(domain);
+            return domain;
+        };
+    }
 
     /**
      * Create a new instance.
@@ -74,7 +106,8 @@ public class DomainInputResolver implements Callable<DefaultDomain> {
                     // Try to add any UUIDs given
                     domain.addPlayer(UUID.fromString(UUIDs.addDashes(s.replaceAll("^uuid:", ""))));
                 } else {
-                    namesToQuery.add(s.toLowerCase());
+                    if (locatorPolicy != UserLocatorPolicy.UUID_ONLY) domain.addPlayer(s);
+                    if (locatorPolicy != UserLocatorPolicy.NAME_ONLY) namesToQuery.add(s.toLowerCase(Locale.ROOT));
                 }
             }
         }
@@ -82,7 +115,7 @@ public class DomainInputResolver implements Callable<DefaultDomain> {
         if (!namesToQuery.isEmpty()) {
             try {
                 for (Profile profile : profileService.findAllByName(namesToQuery)) {
-                    namesToQuery.remove(profile.getName().toLowerCase());
+                    namesToQuery.remove(profile.getName().toLowerCase(Locale.ROOT));
                     domain.addPlayer(profile.getUniqueId());
                 }
             } catch (IOException e) {

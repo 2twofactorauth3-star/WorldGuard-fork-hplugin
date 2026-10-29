@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * within a proven spatial cell. Each entry stores three direct result slots
  * instead of a second map keyed by {@link QueryOption}.</p>
  */
-public final class QueryCache {
+public class QueryCache {
     private final ConcurrentMap<World, WorldCache> worlds = new ConcurrentHashMap<>();
     private final ThreadLocal<RecentQueries> recent = ThreadLocal.withInitial(RecentQueries::new);
     private volatile long invalidationRevision;

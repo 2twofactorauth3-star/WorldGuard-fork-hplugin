@@ -22,6 +22,7 @@ package com.sk89q.worldguard.internal.platform;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.gamemode.GameMode;
 import com.sk89q.worldedit.util.formatting.text.Component;
+import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldguard.config.ConfigurationManager;
 import com.sk89q.worldguard.protection.flags.FlagContext;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -62,6 +63,11 @@ public interface WorldGuardPlatform {
     void broadcastNotification(String message);
 
     void broadcastNotification(Component component);
+
+    default void broadcastNotification(TextComponent component) {
+        Component message = component;
+        broadcastNotification(message);
+    }
 
     /**
      * Get the global ConfigurationManager.

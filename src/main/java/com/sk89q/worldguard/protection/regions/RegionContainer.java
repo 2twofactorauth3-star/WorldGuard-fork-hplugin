@@ -28,11 +28,15 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.config.ConfigurationManager;
 import com.sk89q.worldguard.protection.managers.RegionContainerImpl;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.managers.migration.Migration;
+import com.sk89q.worldguard.protection.managers.migration.MigrationException;
+import com.sk89q.worldguard.protection.managers.migration.UUIDMigration;
 import com.sk89q.worldguard.protection.managers.storage.RegionDriver;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import javax.annotation.Nullable;
 
@@ -160,6 +164,32 @@ public abstract class RegionContainer {
      */
     public void invalidateCache() {
         cache.invalidateAll();
+    }
+
+    public void migrate(Migration migration) throws MigrationException {
+        synchronized (lock) {
+            try {
+                unload();
+                migration.migrate();
+            } finally {
+                invalidateCache();
+                loadWorlds();
+            }
+        }
+    }
+
+    protected void autoMigrate() {
+        ConfigurationManager config = WorldGuard.getInstance().getPlatform().getGlobalStateManager();
+        if (!config.migrateRegionsToUuid) return;
+        UUIDMigration migration = new UUIDMigration(getDriver(), WorldGuard.getInstance().getProfileService(),
+                WorldGuard.getInstance().getFlagRegistry());
+        migration.setKeepUnresolvedNames(config.keepUnresolvedNames);
+        try {
+            migrate(migration);
+            config.disableUuidMigration();
+        } catch (MigrationException error) {
+            WorldGuard.logger.log(Level.WARNING, "UUID migration failed", error);
+        }
     }
 
     /**

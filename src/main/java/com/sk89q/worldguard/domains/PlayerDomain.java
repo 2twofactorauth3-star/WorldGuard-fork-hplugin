@@ -26,6 +26,7 @@ import org.enginehub.squirrelid.Profile;
 import org.enginehub.squirrelid.cache.ProfileCache;
 
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -38,6 +39,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class PlayerDomain implements Domain, ChangeTracked {
 
     private final Set<UUID> uniqueIds = new CopyOnWriteArraySet<>();
+    private final Set<String> names = new CopyOnWriteArraySet<>();
+    private final Set<UUID> uniqueIdView = Collections.unmodifiableSet(uniqueIds);
+    private final Set<String> nameView = Collections.unmodifiableSet(names);
     private boolean dirty = true;
 
     /**
@@ -54,7 +58,32 @@ public class PlayerDomain implements Domain, ChangeTracked {
     public PlayerDomain(PlayerDomain domain) {
         checkNotNull(domain, "domain");
         uniqueIds.addAll(domain.getUniqueIds());
+        names.addAll(domain.getPlayers());
         dirty = true;
+    }
+
+    public PlayerDomain(String[] names) {
+        for (String name : names) {
+            String normalized = name.trim().toLowerCase(Locale.ROOT);
+            if (!normalized.isEmpty()) this.names.add(normalized);
+        }
+    }
+
+    public void addPlayer(String name) {
+        String normalized = name.trim().toLowerCase(Locale.ROOT);
+        if (!normalized.isEmpty()) {
+            names.add(normalized);
+            setDirty(true);
+        }
+    }
+
+    public void removePlayer(String name) {
+        names.remove(name.trim().toLowerCase(Locale.ROOT));
+        setDirty(true);
+    }
+
+    public Set<String> getPlayers() {
+        return nameView;
     }
 
     /**
@@ -98,13 +127,14 @@ public class PlayerDomain implements Domain, ChangeTracked {
     public void removePlayer(LocalPlayer player) {
         checkNotNull(player);
         setDirty(true);
+        removePlayer(player.getName());
         removePlayer(player.getUniqueId());
     }
 
     @Override
     public boolean contains(LocalPlayer player) {
         checkNotNull(player);
-        return contains(player.getUniqueId());
+        return contains(player.getUniqueId()) || !names.isEmpty() && contains(player.getName());
     }
 
     /**
@@ -113,7 +143,7 @@ public class PlayerDomain implements Domain, ChangeTracked {
      * @return the set of player UUIDs
      */
     public Set<UUID> getUniqueIds() {
-        return Collections.unmodifiableSet(uniqueIds);
+        return uniqueIdView;
     }
 
     @Override
@@ -125,6 +155,7 @@ public class PlayerDomain implements Domain, ChangeTracked {
     @Override
     public boolean contains(String playerName) {
         checkNotNull(playerName);
+        if (names.contains(playerName.trim().toLowerCase(Locale.ROOT))) return true;
         String identifier = playerName.startsWith("uuid:")
                 ? playerName.substring("uuid:".length()) : playerName;
         try {
@@ -149,13 +180,14 @@ public class PlayerDomain implements Domain, ChangeTracked {
 
     @Override
     public int size() {
-        return uniqueIds.size();
+        return uniqueIds.size() + names.size();
     }
 
     @Override
     public void clear() {
         setDirty(true);
         uniqueIds.clear();
+        names.clear();
     }
 
     @Override
@@ -172,6 +204,7 @@ public class PlayerDomain implements Domain, ChangeTracked {
     public String toString() {
         return "{" +
                 "uuids=" + uniqueIds +
+                ", names=" + names +
                 '}';
     }
 }

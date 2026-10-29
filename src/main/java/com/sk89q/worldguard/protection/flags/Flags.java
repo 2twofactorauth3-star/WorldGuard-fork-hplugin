@@ -216,6 +216,11 @@ public final class Flags {
     @Deprecated
     public static final StringFlag DENY_MESSAGE = register(new StringFlag("deny-message",
             "@wg:protectionDeniedUse@"));
+
+    public static final StateFlag SEND_CHAT = register(new StateFlag("send-chat", true));
+    public static final StateFlag RECEIVE_CHAT = register(new StateFlag("receive-chat", true));
+    public static final BooleanFlag NOTIFY_ENTER = register(new BooleanFlag("notify-enter"));
+    public static final BooleanFlag NOTIFY_LEAVE = register(new BooleanFlag("notify-leave"));
     /**
      * @deprecated The type of this flag will change from a StringFlag to a ComponentFlag to support JSON text
      *              in a future release. If you depend on the type of this flag, take proper precaution for future breakage.

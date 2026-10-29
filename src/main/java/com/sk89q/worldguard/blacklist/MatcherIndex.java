@@ -98,7 +98,7 @@ final class MatcherIndex {
         return EMPTY_INSTANCE;
     }
 
-    public static final class Builder {
+    public static class Builder {
         private final Map<String, List<BlacklistEntry>> entries = new HashMap<>();
         private int size;
 

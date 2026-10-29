@@ -64,7 +64,7 @@ import org.bukkit.inventory.PlayerInventory;
 
 import static com.sk89q.worldguard.bukkit.BukkitUtil.createTarget;
 
-public final class BlacklistListener extends AbstractListener {
+public class BlacklistListener extends AbstractListener {
 
     private final BukkitConfigurationManager configurationManager;
 
